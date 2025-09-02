@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/view@6.24.0/style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/theme-one-dark@6.2.0/theme.css">
 <title>CodX Editor</title>
 <style>
   :root {
@@ -65,6 +63,7 @@
     font-size: 1.2em;
     gap: 10px;
     transition: background-color 0.3s ease;
+    flex-wrap: wrap;
   }
 
   .switch {
@@ -189,7 +188,7 @@
     background: var(--bg-secondary);
     color: var(--text-primary);
     display: none;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
     position: absolute;
     top: 0;
     left: 0;
@@ -273,7 +272,7 @@
 
   @media (max-width: 768px) {
     .editor-container { flex-direction: column; }
-    .editors { width: 100% !important; max-width: 100%; }
+    .editors { width: 100% !important; max-width: 100%; height: 50vh; }
     .divider { width: 100%; height: 5px; cursor: row-resize; }
     .preview { height: 50vh; }
     .code-container { flex-direction: row; }
@@ -294,15 +293,6 @@
   .header-btn:hover {
     color: var(--accent-color);
   }
-
-  .theme-icon {
-    font-size: 20px;
-    transition: transform 0.3s ease;
-  }
-
-  body.light .theme-icon {
-    transform: rotate(180deg);
-  }
 </style>
 </head>
 <body>
@@ -321,6 +311,11 @@
       <span class="slider"></span>
     </label>
   </div>
+  
+  <button id="collabBtn" class="run-button" style="margin-left: 20px;">
+    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Collab with Friends
+  </button>
 
   <div class="theme-toggle">
     <span>🌙</span>
@@ -362,8 +357,9 @@
         <textarea id="cssCode">h1 {color: rgb(2, 255, 116);
     text-align: center;
     font-family: Arial, sans-serif;}</textarea>
-        <textarea id="jsCode">console.log('Hello World');</textarea>
+        <textarea id="jsCode">console.log('Hello World from CodX!');</textarea>
       </div>
+      <div id="typingIndicator" style="display: none; position: absolute; top: 5px; right: 15px; padding: 3px 8px; border-radius: 4px; font-size: 12px; color: white; transition: opacity 0.3s ease; z-index:10;"></div>
     </div>
 
     <div style="display: flex; gap: 5px; padding: 8px; justify-content: center; background: var(--bg-tertiary); border-top: 1px solid var(--border-color);">
@@ -406,6 +402,17 @@
   </div>
 </div>
 
+<div id="collabModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+  <div style="background-color: var(--bg-secondary); margin: 15% auto; padding: 20px; border: 1px solid var(--border-color); width: 80%; max-width: 400px; text-align: center; border-radius: 8px;">
+    <h3 id="modalTitle">Modal Title</h3>
+    <div id="modalBody" style="margin: 20px 0;"></div>
+    <div id="modalActions">
+      <button id="modalDoneBtn" class="run-button">Done</button>
+    </div>
+  </div>
+</div>
+
+
 <script>
 const tabs = document.querySelectorAll('.tab');
 const editors = document.querySelectorAll('textarea');
@@ -423,7 +430,6 @@ const editorContainer = document.querySelector('.editor-container');
 // Theme toggle functionality
 themeToggle.addEventListener('change', () => {
   document.body.classList.toggle('light', themeToggle.checked);
-  // Save theme preference
   localStorage.setItem('theme', themeToggle.checked ? 'light' : 'dark');
 });
 
@@ -450,11 +456,7 @@ tabs.forEach(tab => {
 // Toggle console
 showConsoleCheckbox.addEventListener('change', () => {
   const consoleContainer = document.getElementById('consoleContainer');
-  if (showConsoleCheckbox.checked) {
-    consoleContainer.classList.add('show');
-  } else {
-    consoleContainer.classList.remove('show');
-  }
+  consoleContainer.classList.toggle('show', showConsoleCheckbox.checked);
 });
 
 // Update preview with console capture
@@ -463,149 +465,86 @@ function updatePreview() {
   const css = `<style>${document.getElementById('cssCode').value}</style>`;
   const js = document.getElementById('jsCode').value;
   
-  // Clear previous console output
   consoleOutput.value = '';
   
-  // Only add JavaScript console capture if there's JS code
   let jsWithConsole = '';
   if (js.trim()) {
     jsWithConsole = `<script>
-      // Capture console.log
-      const originalLog = console.log;
-      const originalError = console.error;
-      const originalWarn = console.warn;
-      
-      console.log = function(...args) {
-        parent.document.getElementById('consoleOutput').value += '> ' + args.map(arg => 
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' ') + '\\n';
-        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
-        originalLog.apply(console, args);
-      };
-      
-      console.error = function(...args) {
-        parent.document.getElementById('consoleOutput').value += '❌ ERROR: ' + args.join(' ') + '\\n';
-        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
-        originalError.apply(console, args);
-      };
-      
-      console.warn = function(...args) {
-        parent.document.getElementById('consoleOutput').value += '⚠️ WARNING: ' + args.join(' ') + '\\n';
-        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
-        originalWarn.apply(console, args);
-      };
-      
-      // Capture runtime errors
-      window.onerror = function(message, source, lineno, colno, error) {
-        parent.document.getElementById('consoleOutput').value += '❌ Runtime Error: ' + message + ' (Line ' + lineno + ')\\n';
-        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
-        return false;
-      };
-      
-      // Capture unhandled promise rejections
-      window.addEventListener('unhandledrejection', function(event) {
-        parent.document.getElementById('consoleOutput').value += '❌ Unhandled Promise Rejection: ' + event.reason + '\\n';
-        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
-      });
-      
-      try {
-        ${js}
-      } catch (error) {
-        parent.document.getElementById('consoleOutput').value += '❌ Script Error: ' + error.message + '\\n';
-        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
+      const originalLog = console.log, originalError = console.error, originalWarn = console.warn;
+      const parentConsole = parent.document.getElementById('consoleOutput');
+      function updateParentConsole(prefix, args) {
+        parentConsole.value += prefix + args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ') + '\\n';
+        parentConsole.scrollTop = parentConsole.scrollHeight;
       }
+      console.log = function(...args) { updateParentConsole('> ', args); originalLog.apply(console, args); };
+      console.error = function(...args) { updateParentConsole('❌ ERROR: ', args); originalError.apply(console, args); };
+      console.warn = function(...args) { updateParentConsole('⚠️ WARNING: ', args); originalWarn.apply(console, args); };
+      window.onerror = function(msg, src, line) { updateParentConsole('❌ Uncaught Error: ', [msg + ' (line ' + line + ')']); return false; };
+      window.addEventListener('unhandledrejection', e => { updateParentConsole('❌ Unhandled Promise Rejection: ', [e.reason]); });
+      try { ${js} } catch (e) { updateParentConsole('❌ Script Error: ', [e.message]); }
     <\/script>`;
   }
   
   iframe.srcdoc = html + css + jsWithConsole;
 }
 
-// Fixed line numbers function
-function updateLineNumbers(textarea) {
-  if (!textarea) {
-    // Find the currently active textarea
-    textarea = document.querySelector('textarea.active');
-  }
+// Line numbers function
+function updateLineNumbers(textarea = document.querySelector('textarea.active')) {
   if (!textarea) return;
-  
   const lines = textarea.value.split('\n').length;
-  let numbers = '';
-  for (let i = 1; i <= lines; i++) {
-    numbers += i + '\n';
-  }
-  lineNumbers.textContent = numbers;
+  lineNumbers.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
 }
 
 // Sync scrolling between textarea and line numbers
 function syncScroll(textarea) {
   if (!textarea) return;
-  
-  textarea.addEventListener('scroll', () => {
-    lineNumbers.scrollTop = textarea.scrollTop;
-  });
+  textarea.addEventListener('scroll', () => { lineNumbers.scrollTop = textarea.scrollTop; });
 }
 
-// Initialize line numbers and scroll sync for all editors
+// Initialize editors
 editors.forEach(editor => {
   updateLineNumbers(editor);
   syncScroll(editor);
-  
   editor.addEventListener('input', () => {
     updateLineNumbers(editor);
     if (autoRunCheckbox.checked) updatePreview();
   });
-
   editor.addEventListener('keydown', function(e) {
     if (e.key === 'Tab') {
       e.preventDefault();
-      const start = this.selectionStart;
-      const end = this.selectionEnd;
+      const start = this.selectionStart, end = this.selectionEnd;
       this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
       this.selectionStart = this.selectionEnd = start + 2;
-      updateLineNumbers(this);
       if (autoRunCheckbox.checked) updatePreview();
     }
   });
 });
 
 // Drag & Drop support
-editorContainer.addEventListener('dragover', e => { 
-  e.preventDefault(); 
-  editorContainer.classList.add('dragover'); 
+['dragover', 'dragleave', 'drop'].forEach(eventName => {
+    editorContainer.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (eventName === 'dragover') editorContainer.classList.add('dragover');
+        if (eventName === 'dragleave' || eventName === 'drop') editorContainer.classList.remove('dragover');
+    });
 });
-
-editorContainer.addEventListener('dragleave', e => { 
-  e.preventDefault(); 
-  editorContainer.classList.remove('dragover'); 
-});
-
 editorContainer.addEventListener('drop', e => {
-  e.preventDefault(); 
-  editorContainer.classList.remove('dragover');
-  const files = e.dataTransfer.files;
-  for (let file of files) {
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-      const content = ev.target.result;
-      let targetEditor = null;
-      if (file.name.endsWith('.html')) {
-        targetEditor = document.getElementById('htmlCode');
-      }
-      else if (file.name.endsWith('.css')) {
-        targetEditor = document.getElementById('cssCode');
-      }
-      else if (file.name.endsWith('.js')) {
-        targetEditor = document.getElementById('jsCode');
-      }
-      
-      if (targetEditor) {
-        targetEditor.value = content;
-        updateLineNumbers(targetEditor);
-        if (autoRunCheckbox.checked) updatePreview();
-      }
+    for (const file of e.dataTransfer.files) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const content = ev.target.result;
+            const ext = file.name.split('.').pop();
+            const targetId = {html: 'htmlCode', css: 'cssCode', js: 'jsCode'}[ext];
+            if (targetId) {
+                const editor = document.getElementById(targetId);
+                editor.value = content;
+                updateLineNumbers(editor);
+                if (autoRunCheckbox.checked) updatePreview();
+            }
+        };
+        reader.readAsText(file);
     }
-    reader.readAsText(file);
-  }
 });
 
 // Initialize preview
@@ -613,118 +552,64 @@ updatePreview();
 
 // Resizable panels
 let isResizing = false;
-divider.addEventListener('mousedown', e => { 
-  isResizing = true; 
-  document.body.style.cursor = window.innerWidth <= 768 ? 'row-resize' : 'col-resize'; 
-});
-
+divider.addEventListener('mousedown', () => { isResizing = true; });
 document.addEventListener('mousemove', e => {
   if (!isResizing) return;
-  if (window.innerWidth <= 768) {
-    const newHeight = e.clientY;
-    if (newHeight > 100 && newHeight < window.innerHeight - 100) {
-      document.querySelector('.editors').style.height = newHeight + 'px';
-    }
-  } else {
-    const newWidth = e.clientX;
-    if (newWidth > 200 && newWidth < window.innerWidth - 200) {
-      editorsPanel.style.width = newWidth + 'px';
-    }
+  const isMobile = window.innerWidth <= 768;
+  document.body.style.cursor = isMobile ? 'row-resize' : 'col-resize';
+  const newSize = isMobile ? e.clientY : e.clientX;
+  const maxSize = isMobile ? window.innerHeight : window.innerWidth;
+  if (newSize > 100 && newSize < maxSize - 100) {
+    editorsPanel.style[isMobile ? 'height' : 'width'] = newSize + 'px';
   }
 });
-
-document.addEventListener('mouseup', e => { 
+document.addEventListener('mouseup', () => { 
   isResizing = false; 
-  document.body.style.cursor = 'default'; 
+  document.body.style.cursor = 'default';
 });
 
+// ZIP functionality
 function exportAsZip() {
   const zip = new JSZip();
-  const html = document.getElementById('htmlCode').value;
-  const css = document.getElementById('cssCode').value;
-  const js = document.getElementById('jsCode').value;
-
-  zip.file("index.html", html);
-  zip.file("style.css", css);
-  zip.file("script.js", js);
-
+  zip.file("index.html", document.getElementById('htmlCode').value);
+  zip.file("style.css", document.getElementById('cssCode').value);
+  zip.file("script.js", document.getElementById('jsCode').value);
   zip.generateAsync({ type: "blob" }).then(content => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(content);
-    a.download = "code.zip";
+    a.download = "CodX-Project.zip";
     a.click();
   });
 }
 
-function importZip() {
-  document.getElementById('zipFileInput').click();
-}
+function importZip() { document.getElementById('zipFileInput').click(); }
 
 function handleZipImport(event) {
   const file = event.target.files[0];
   if (!file) return;
-
   JSZip.loadAsync(file).then(zip => {
-    // Clear current content
-    document.getElementById('htmlCode').value = '';
-    document.getElementById('cssCode').value = '';
-    document.getElementById('jsCode').value = '';
-
-    // Process each file in the ZIP
+    ['html', 'css', 'js'].forEach(lang => document.getElementById(lang + 'Code').value = '');
     const promises = [];
-    
-    zip.forEach((relativePath, zipEntry) => {
-      if (!zipEntry.dir) {
-        const promise = zipEntry.async("string").then(content => {
-          const fileName = relativePath.toLowerCase();
-          
-          if (fileName.endsWith('.html') || fileName === 'index.html') {
-            document.getElementById('htmlCode').value = content;
-            updateLineNumbers(document.getElementById('htmlCode'));
-          }
-          else if (fileName.endsWith('.css') || fileName === 'style.css') {
-            document.getElementById('cssCode').value = content;
-            updateLineNumbers(document.getElementById('cssCode'));
-          }
-          else if (fileName.endsWith('.js') || fileName === 'script.js') {
-            document.getElementById('jsCode').value = content;
-            updateLineNumbers(document.getElementById('jsCode'));
-          }
-        });
-        promises.push(promise);
-      }
+    zip.forEach((path, entry) => {
+        const ext = path.split('.').pop();
+        const targetId = {html: 'htmlCode', css: 'cssCode', js: 'jsCode'}[ext];
+        if (targetId && !entry.dir) {
+            promises.push(entry.async("string").then(content => {
+                document.getElementById(targetId).value = content;
+            }));
+        }
     });
-
-    // Wait for all files to be processed
     Promise.all(promises).then(() => {
-      // Update line numbers for the currently active editor
-      const activeEditor = document.querySelector('textarea.active');
-      if (activeEditor) {
-        updateLineNumbers(activeEditor);
-      }
-      
-      // Auto-run if enabled
-      if (autoRunCheckbox.checked) {
-        updatePreview();
-      }
-      
-      console.log('ZIP imported successfully!');
-    }).catch(error => {
-      console.error('Error processing ZIP contents:', error);
-      alert('Error processing some files in the ZIP archive.');
+        updateLineNumbers();
+        if (autoRunCheckbox.checked) updatePreview();
+        alert('ZIP project imported successfully!');
     });
-
-  }).catch(error => {
-    console.error('Error reading ZIP file:', error);
-    alert('Error reading ZIP file. Please make sure it\'s a valid ZIP archive.');
-  });
-
-  // Clear the file input for next use
+  }).catch(err => alert('Error reading ZIP file.'));
   event.target.value = '';
 }
 
+// Fullscreen
 const fullscreenBtn = document.getElementById('fullscreenBtn');
-
 fullscreenBtn.addEventListener('click', () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen();
@@ -735,8 +620,203 @@ fullscreenBtn.addEventListener('click', () => {
   }
 });
 
-// Initialize the active editor's line numbers
 updateLineNumbers();
+
+// =======================================================
+// ========= ALL NEW COLLABORATION CODE IS BELOW =========
+// =======================================================
+
+// --- Collaboration Variables and Element ---
+const collabBtn = document.getElementById('collabBtn');
+const collabModal = document.getElementById('collabModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const modalDoneBtn = document.getElementById('modalDoneBtn');
+let sessionData = {};
+const typingIndicatorEl = document.getElementById('typingIndicator');
+let typingTimer;
+let myInfo = {}; 
+
+// --- Typing Indicator Functions ---
+function announceTyping(activeEditorId) {
+    if (!myInfo.name) return;
+    clearTimeout(typingTimer);
+    const sessionId = localStorage.getItem('activeSessionId');
+    if (!sessionId) return;
+    
+    let session;
+    try { session = JSON.parse(localStorage.getItem(sessionId)); if (!session) return; } catch (e) { return; }
+
+    session.typingIndicator = { name: myInfo.name, theme: myInfo.theme, editor: activeEditorId };
+    localStorage.setItem(sessionId, JSON.stringify(session));
+
+    typingTimer = setTimeout(() => {
+        try {
+            session = JSON.parse(localStorage.getItem(sessionId));
+            if (!session) return;
+            session.typingIndicator = null;
+            localStorage.setItem(sessionId, JSON.stringify(session));
+        } catch(e) {}
+    }, 1500);
+}
+
+function updateTypingIndicatorUI(indicator) {
+    editors.forEach(editor => { editor.style.boxShadow = 'none'; });
+    if (indicator && indicator.name !== myInfo.name) {
+        const activeEditor = document.getElementById(indicator.editor);
+        if (activeEditor) {
+            activeEditor.style.boxShadow = `0 0 0 3px ${indicator.theme} inset`;
+            typingIndicatorEl.textContent = `${indicator.name} is typing...`;
+            typingIndicatorEl.style.backgroundColor = indicator.theme;
+            typingIndicatorEl.style.display = 'block';
+        }
+    } else {
+        typingIndicatorEl.style.display = 'none';
+    }
+}
+
+
+// --- Host POV Functions ---
+function startCollaboration() {
+  modalTitle.textContent = 'Start Collaboration';
+  modalBody.innerHTML = '<p>Please enter your name to start:</p><input type="text" id="userNameInput" placeholder="Your Name" style="width: 80%; padding: 8px;">';
+  collabModal.style.display = 'flex';
+
+  modalDoneBtn.onclick = () => {
+    const userName = document.getElementById('userNameInput').value;
+    if (!userName.trim()) return alert('Please enter a name.');
+    sessionData.host = userName;
+    promptForTheme();
+  };
+}
+
+function promptForTheme() {
+  modalTitle.textContent = 'Pick a Theme Color';
+  modalBody.innerHTML = `<p>This color will represent you.</p><input type="color" id="userThemeInput" value="#4CAF50">`;
+
+  modalDoneBtn.onclick = () => {
+    sessionData.theme = document.getElementById('userThemeInput').value;
+    generateSessionLink();
+  };
+}
+
+function generateSessionLink() {
+  const sessionId = 'session-' + Date.now();
+  const collabLink = window.location.href.split('#')[0] + '#' + sessionId;
+
+  const initialState = {
+    id: sessionId,
+    html: document.getElementById('htmlCode').value,
+    css: document.getElementById('cssCode').value,
+    js: document.getElementById('jsCode').value,
+    participants: [{ name: sessionData.host, theme: sessionData.theme }]
+  };
+  localStorage.setItem(sessionId, JSON.stringify(initialState));
+  localStorage.setItem('activeSessionId', sessionId);
+
+  myInfo = { name: sessionData.host, theme: sessionData.theme };
+
+  modalTitle.textContent = 'Share this link with friends!';
+  modalBody.innerHTML = `<p>Your session is ready. Copy the link below:</p><input type="text" readonly id="collabLinkInput" value="${collabLink}" style="width: 90%; padding: 8px; text-align: center;">`;
+  document.getElementById('modalActions').innerHTML = `<button class="run-button" onclick="copyLink()">Copy Link</button><button class="run-button" onclick="closeModal()">Close</button>`;
+  
+  startSyncing();
+}
+
+function copyLink() {
+  document.getElementById('collabLinkInput').select();
+  document.execCommand('copy');
+  alert('Link copied to clipboard!');
+}
+
+function closeModal() {
+  collabModal.style.display = 'none';
+  document.getElementById('modalActions').innerHTML = `<button id="modalDoneBtn" class="run-button">Done</button>`;
+}
+
+collabBtn.addEventListener('click', startCollaboration);
+
+// --- Friend POV Functions ---
+function checkForSession() {
+  const sessionId = window.location.hash.substring(1);
+  if (sessionId.startsWith('session-')) {
+    localStorage.setItem('activeSessionId', sessionId);
+    modalTitle.textContent = 'Join Collaboration';
+    modalBody.innerHTML = '<p>Please enter your name to join:</p><input type="text" id="userNameInput" placeholder="Your Name" style="width: 80%; padding: 8px;">';
+    collabModal.style.display = 'flex';
+
+    modalDoneBtn.onclick = () => {
+      const userName = document.getElementById('userNameInput').value;
+      if (!userName.trim()) return alert('Please enter a name.');
+      promptForThemeAndJoin(userName);
+    };
+  }
+}
+
+function promptForThemeAndJoin(userName) {
+    modalTitle.textContent = 'Pick Your Theme Color';
+    modalBody.innerHTML = `<input type="color" id="userThemeInput" value="#2196F3">`;
+    modalDoneBtn.onclick = () => {
+        const userTheme = document.getElementById('userThemeInput').value;
+        const sessionId = localStorage.getItem('activeSessionId');
+        const sessionStr = localStorage.getItem(sessionId);
+        if(sessionStr) {
+            myInfo = { name: userName, theme: userTheme };
+            const currentSession = JSON.parse(sessionStr);
+            currentSession.participants.push({ name: userName, theme: userTheme });
+            localStorage.setItem(sessionId, JSON.stringify(currentSession));
+
+            document.getElementById('htmlCode').value = currentSession.html;
+            document.getElementById('cssCode').value = currentSession.css;
+            document.getElementById('jsCode').value = currentSession.js;
+            updatePreview();
+            
+            alert(`Welcome, ${userName}! You've joined the session.`);
+            startSyncing();
+        } else {
+             alert("Error: Collaboration session not found.");
+        }
+        closeModal();
+    };
+}
+window.addEventListener('load', checkForSession);
+
+
+// --- Syncing Logic ---
+function handleCodeChange(event) {
+    const sessionId = localStorage.getItem('activeSessionId');
+    if (!sessionId) return;
+    const currentSessionStr = localStorage.getItem(sessionId);
+    if (!currentSessionStr) return;
+    let session = JSON.parse(currentSessionStr);
+
+    const key = event.target.id.replace('Code', ''); // 'html', 'css', or 'js'
+    session[key] = event.target.value;
+    
+    localStorage.setItem(sessionId, JSON.stringify(session));
+}
+
+function startSyncing() {
+    editors.forEach(editor => {
+        editor.addEventListener('input', handleCodeChange);
+        editor.addEventListener('input', (event) => announceTyping(event.target.id));
+    });
+}
+
+window.addEventListener('storage', (event) => {
+    const sessionId = localStorage.getItem('activeSessionId');
+    if (event.key === sessionId && event.newValue) {
+        const newValue = JSON.parse(event.newValue);
+        document.getElementById('htmlCode').value = newValue.html;
+        document.getElementById('cssCode').value = newValue.css;
+        document.getElementById('jsCode').value = newValue.js;
+        
+        updateTypingIndicatorUI(newValue.typingIndicator);
+        
+        updateLineNumbers();
+        if (autoRunCheckbox.checked) updatePreview();
+    }
+});
 </script>
 
 </body>
