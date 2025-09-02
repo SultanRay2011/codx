@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/view@6.24.0/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/theme-one-dark@6.2.0/theme.css">
+<title>CodX Editor</title>
+<style>
+  :root {
+    /* Dark mode colors (default) */
+    --bg-primary: #000000;
+    --bg-secondary: #1E1E1E;
+    --bg-tertiary: #2C2C2C;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --text-muted: #888888;
+    --accent-color: #4CAF50;
+    --accent-hover: #45a049;
+    --border-color: #333333;
+    --divider-color: #333333;
+    --console-bg: #000000;
+    --console-text: #00ff00;
+    --preview-bg: #ffffff;
+    --preview-text: #000000;
+  }
+
+  body.light {
+    /* Light mode colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --accent-color: #2196F3;
+    --accent-hover: #1976D2;
+    --border-color: #cccccc;
+    --divider-color: #cccccc;
+    --console-bg: #f8f8f8;
+    --console-text: #333333;
+    --preview-bg: #ffffff;
+    --preview-text: #000000;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  header {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    font-size: 1.2em;
+    gap: 10px;
+    transition: background-color 0.3s ease;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--text-muted);
+    transition: 0.4s;
+    border-radius: 24px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider { background-color: var(--accent-color); }
+  input:checked + .slider:before { transform: translateX(26px); }
+
+  .theme-toggle {
+    margin-left: auto;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .editor-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .editor-container.dragover {
+    border: 2px dashed var(--accent-color);
+  }
+
+  .editors {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    min-width: 200px;
+    max-width: 80%;
+    width: 50%;
+    transition: background-color 0.3s ease;
+  }
+
+  .tabs {
+    display: flex;
+    background: var(--bg-tertiary);
+    transition: background-color 0.3s ease;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    font-weight: bold;
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .tab.active {
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--accent-color);
+  }
+
+  .code-container {
+    position: relative;
+    display: flex;
+    flex: 1;
+    background: var(--bg-secondary);
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+  }
+
+  .line-numbers {
+    width: 50px;
+    padding: 10px 5px 10px 0;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    text-align: right;
+    user-select: none;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow: hidden;
+    white-space: pre;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .editor-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  textarea {
+    width: 100%;
+    height: 100%;
+    border: none;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    outline: none;
+    resize: none;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    display: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+  }
+
+  textarea.active { display: block; }
+
+  .run-button {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    margin: 3px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .run-button:hover { background: var(--accent-hover); }
+
+  .btn-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+
+  .divider {
+    width: 10px;
+    cursor: col-resize;
+    background: var(--divider-color);
+    transition: background-color 0.3s ease;
+  }
+
+  .preview {
+    flex: 1;
+    background: var(--preview-bg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.3s ease;
+  }
+
+  iframe {
+    width: 100%;
+    flex: 1;
+    border: none;
+    background: var(--preview-bg);
+    color: var(--preview-text);
+    transition: flex 0.3s ease;
+  }
+
+  .console-container {
+    flex: none;
+    height: 150px;
+    border-top: 1px solid var(--border-color);
+    display: none;
+    transition: border-color 0.3s ease;
+  }
+
+  .console-container.show {
+    display: block;
+  }
+
+  #consoleOutput {
+    width: 100%;
+    height: 100%;
+    background: var(--console-bg) !important;
+    color: var(--console-text) !important;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px;
+    border: none;
+    resize: none;
+    outline: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  @media (max-width: 768px) {
+    .editor-container { flex-direction: column; }
+    .editors { width: 100% !important; max-width: 100%; }
+    .divider { width: 100%; height: 5px; cursor: row-resize; }
+    .preview { height: 50vh; }
+    .code-container { flex-direction: row; }
+    .tabs { flex-wrap: wrap; }
+    .theme-toggle { margin-left: 10px; margin-right: 0; }
+  }
+
+  .header-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: color 0.3s ease;
+  }
+
+  .header-btn:hover {
+    color: var(--accent-color);
+  }
+
+  .theme-icon {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+  }
+
+  body.light .theme-icon {
+    transform: rotate(180deg);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <span>Auto-Run</span>
+    <label class="switch">
+      <input type="checkbox" id="autoRun" checked>
+      <span class="slider"></span>
+    </label>
+
+    <span>Console</span>
+    <label class="switch">
+      <input type="checkbox" id="showConsole">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="theme-toggle">
+    <span>🌙</span>
+    <label class="switch">
+      <input type="checkbox" id="themeToggle">
+      <span class="slider"></span>
+    </label>
+    <span>☀️</span>
+  </div>
+
+  <div>
+    <b>CodX Editor</b>
+  </div>
+</header>
+
+<div class="editor-container">
+  <div class="editors">
+    <div class="tabs">
+      <div class="tab active" data-tab="html">HTML</div>
+      <div class="tab" data-tab="css">CSS</div>
+      <div class="tab" data-tab="js">JS</div>
+      <button id="fullscreenBtn" class="header-btn">⛶ Fullscreen Mode</button>
+    </div>
+
+    <div class="code-container">
+      <div class="line-numbers" id="lineNumbers">1</div>
+      <div class="editor-wrapper">
+        <textarea id="htmlCode" class="active">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;CodX Editor&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Welcome to CodX Editor&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;</textarea>
+        <textarea id="cssCode">h1 {color: rgb(2, 255, 116);
+    text-align: center;}
+    font-family: Arial, sans-serif;</textarea>
+        <textarea id="jsCode">console.log('Hello World');</textarea>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 5px; padding: 8px; justify-content: center; background: var(--bg-tertiary); border-top: 1px solid var(--border-color);">
+      <button class="run-button" onclick="updatePreview()">
+        <svg class="btn-icon" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        Run
+      </button>
+      <button class="run-button" onclick="exportAsZip()">
+        <svg class="btn-icon" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10,9 9,9 8,9"/>
+        </svg>
+        Export ZIP File
+      </button>
+      <button class="run-button" onclick="importZip()">
+        <svg class="btn-icon" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <polyline points="9,15 12,12 15,15"/>
+        </svg>
+        Import ZIP File
+      </button>
+      <input type="file" id="zipFileInput" accept=".zip" style="display: none;" onchange="handleZipImport(event)">
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="preview">
+    <iframe id="output"></iframe>
+    <div class="console-container" id="consoleContainer">
+      <textarea id="consoleOutput" readonly placeholder="JavaScript console output will appear here..."></textarea>
+    </div>
+  </div>
+</div>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const editors = document.querySelectorAll('textarea');
+const iframe = document.getElementById('output');
+const autoRunCheckbox = document.getElementById('autoRun');
+const showConsoleCheckbox = document.getElementById('showConsole');
+const themeToggle = document.getElementById('themeToggle');
+const consoleContainer = document.querySelector('.console-container');
+const consoleOutput = document.getElementById('consoleOutput');
+const divider = document.querySelector('.divider');
+const editorsPanel = document.querySelector('.editors');
+const lineNumbers = document.getElementById('lineNumbers');
+const editorContainer = document.querySelector('.editor-container');
+
+// Theme toggle functionality
+themeToggle.addEventListener('change', () => {
+  document.body.classList.toggle('light', themeToggle.checked);
+  // Save theme preference
+  localStorage.setItem('theme', themeToggle.checked ? 'light' : 'dark');
+});
+
+// Load saved theme preference
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+  themeToggle.checked = true;
+  document.body.classList.add('light');
+}
+
+// Tab switching
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    editors.forEach(editor => editor.classList.remove('active'));
+    const activeEditor = document.getElementById(tab.dataset.tab + 'Code');
+    activeEditor.classList.add('active');
+    updateLineNumbers(activeEditor);
+    syncScroll(activeEditor);
+  });
+});
+
+// Toggle console
+showConsoleCheckbox.addEventListener('change', () => {
+  const consoleContainer = document.getElementById('consoleContainer');
+  if (showConsoleCheckbox.checked) {
+    consoleContainer.classList.add('show');
+  } else {
+    consoleContainer.classList.remove('show');
+  }
+});
+
+// Update preview with console capture
+function updatePreview() {
+  const html = document.getElementById('htmlCode').value;
+  const css = `<style>${document.getElementById('cssCode').value}</style>`;
+  const js = document.getElementById('jsCode').value;
+  
+  // Clear previous console output
+  consoleOutput.value = '';
+  
+  // Only add JavaScript console capture if there's JS code
+  let jsWithConsole = '';
+  if (js.trim()) {
+    jsWithConsole = `<script>
+      // Capture console.log
+      const originalLog = console.log;
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      
+      console.log = function(...args) {
+        parent.document.getElementById('consoleOutput').value += '> ' + args.map(arg => 
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' ') + '\\n';
+        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
+        originalLog.apply(console, args);
+      };
+      
+      console.error = function(...args) {
+        parent.document.getElementById('consoleOutput').value += '❌ ERROR: ' + args.join(' ') + '\\n';
+        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
+        originalError.apply(console, args);
+      };
+      
+      console.warn = function(...args) {
+        parent.document.getElementById('consoleOutput').value += '⚠️ WARNING: ' + args.join(' ') + '\\n';
+        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
+        originalWarn.apply(console, args);
+      };
+      
+      // Capture runtime errors
+      window.onerror = function(message, source, lineno, colno, error) {
+        parent.document.getElementById('consoleOutput').value += '❌ Runtime Error: ' + message + ' (Line ' + lineno + ')\\n';
+        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
+        return false;
+      };
+      
+      // Capture unhandled promise rejections
+      window.addEventListener('unhandledrejection', function(event) {
+        parent.document.getElementById('consoleOutput').value += '❌ Unhandled Promise Rejection: ' + event.reason + '\\n';
+        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
+      });
+      
+      try {
+        ${js}
+      } catch (error) {
+        parent.document.getElementById('consoleOutput').value += '❌ Script Error: ' + error.message + '\\n';
+        parent.document.getElementById('consoleOutput').scrollTop = parent.document.getElementById('consoleOutput').scrollHeight;
+      }
+    <\/script>`;
+  }
+  
+  iframe.srcdoc = html + css + jsWithConsole;
+}
+
+// Fixed line numbers function
+function updateLineNumbers(textarea) {
+  if (!textarea) {
+    // Find the currently active textarea
+    textarea = document.querySelector('textarea.active');
+  }
+  if (!textarea) return;
+  
+  const lines = textarea.value.split('\n').length;
+  let numbers = '';
+  for (let i = 1; i <= lines; i++) {
+    numbers += i + '\n';
+  }
+  lineNumbers.textContent = numbers;
+}
+
+// Sync scrolling between textarea and line numbers
+function syncScroll(textarea) {
+  if (!textarea) return;
+  
+  textarea.addEventListener('scroll', () => {
+    lineNumbers.scrollTop = textarea.scrollTop;
+  });
+}
+
+// Initialize line numbers and scroll sync for all editors
+editors.forEach(editor => {
+  updateLineNumbers(editor);
+  syncScroll(editor);
+  
+  editor.addEventListener('input', () => {
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) updatePreview();
+  });
+
+  editor.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
+      this.selectionStart = this.selectionEnd = start + 2;
+      updateLineNumbers(this);
+      if (autoRunCheckbox.checked) updatePreview();
+    }
+  });
+});
+
+// Drag & Drop support
+editorContainer.addEventListener('dragover', e => { 
+  e.preventDefault(); 
+  editorContainer.classList.add('dragover'); 
+});
+
+editorContainer.addEventListener('dragleave', e => { 
+  e.preventDefault(); 
+  editorContainer.classList.remove('dragover'); 
+});
+
+editorContainer.addEventListener('drop', e => {
+  e.preventDefault(); 
+  editorContainer.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  for (let file of files) {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const content = ev.target.result;
+      let targetEditor = null;
+      if (file.name.endsWith('.html')) {
+        targetEditor = document.getElementById('htmlCode');
+      }
+      else if (file.name.endsWith('.css')) {
+        targetEditor = document.getElementById('cssCode');
+      }
+      else if (file.name.endsWith('.js')) {
+        targetEditor = document.getElementById('jsCode');
+      }
+      
+      if (targetEditor) {
+        targetEditor.value = content;
+        updateLineNumbers(targetEditor);
+        if (autoRunCheckbox.checked) updatePreview();
+      }
+    }
+    reader.readAsText(file);
+  }
+});
+
+// Initialize preview
+updatePreview();
+
+// Resizable panels
+let isResizing = false;
+divider.addEventListener('mousedown', e => { 
+  isResizing = true; 
+  document.body.style.cursor = window.innerWidth <= 768 ? 'row-resize' : 'col-resize'; 
+});
+
+document.addEventListener('mousemove', e => {
+  if (!isResizing) return;
+  if (window.innerWidth <= 768) {
+    const newHeight = e.clientY;
+    if (newHeight > 100 && newHeight < window.innerHeight - 100) {
+      document.querySelector('.editors').style.height = newHeight + 'px';
+    }
+  } else {
+    const newWidth = e.clientX;
+    if (newWidth > 200 && newWidth < window.innerWidth - 200) {
+      editorsPanel.style.width = newWidth + 'px';
+    }
+  }
+});
+
+document.addEventListener('mouseup', e => { 
+  isResizing = false; 
+  document.body.style.cursor = 'default'; 
+});
+
+function exportAsZip() {
+  const zip = new JSZip();
+  const html = document.getElementById('htmlCode').value;
+  const css = document.getElementById('cssCode').value;
+  const js = document.getElementById('jsCode').value;
+
+  zip.file("index.html", html);
+  zip.file("style.css", css);
+  zip.file("script.js", js);
+
+  zip.generateAsync({ type: "blob" }).then(content => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(content);
+    a.download = "code.zip";
+    a.click();
+  });
+}
+
+function importZip() {
+  document.getElementById('zipFileInput').click();
+}
+
+function handleZipImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  JSZip.loadAsync(file).then(zip => {
+    // Clear current content
+    document.getElementById('htmlCode').value = '';
+    document.getElementById('cssCode').value = '';
+    document.getElementById('jsCode').value = '';
+
+    // Process each file in the ZIP
+    const promises = [];
+    
+    zip.forEach((relativePath, zipEntry) => {
+      if (!zipEntry.dir) {
+        const promise = zipEntry.async("string").then(content => {
+          const fileName = relativePath.toLowerCase();
+          
+          if (fileName.endsWith('.html') || fileName === 'index.html') {
+            document.getElementById('htmlCode').value = content;
+            updateLineNumbers(document.getElementById('htmlCode'));
+          }
+          else if (fileName.endsWith('.css') || fileName === 'style.css') {
+            document.getElementById('cssCode').value = content;
+            updateLineNumbers(document.getElementById('cssCode'));
+          }
+          else if (fileName.endsWith('.js') || fileName === 'script.js') {
+            document.getElementById('jsCode').value = content;
+            updateLineNumbers(document.getElementById('jsCode'));
+          }
+        });
+        promises.push(promise);
+      }
+    });
+
+    // Wait for all files to be processed
+    Promise.all(promises).then(() => {
+      // Update line numbers for the currently active editor
+      const activeEditor = document.querySelector('textarea.active');
+      if (activeEditor) {
+        updateLineNumbers(activeEditor);
+      }
+      
+      // Auto-run if enabled
+      if (autoRunCheckbox.checked) {
+        updatePreview();
+      }
+      
+      console.log('ZIP imported successfully!');
+    }).catch(error => {
+      console.error('Error processing ZIP contents:', error);
+      alert('Error processing some files in the ZIP archive.');
+    });
+
+  }).catch(error => {
+    console.error('Error reading ZIP file:', error);
+    alert('Error reading ZIP file. Please make sure it\'s a valid ZIP archive.');
+  });
+
+  // Clear the file input for next use
+  event.target.value = '';
+}
+
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+fullscreenBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+    fullscreenBtn.textContent = "⤢ Exit Fullscreen";
+  } else {
+    document.exitFullscreen();
+    fullscreenBtn.textContent = "⛶ Fullscreen Mode";
+  }
+});
+
+// Initialize the active editor's line numbers
+updateLineNumbers();
+</script>
+
+</body>
+</html>
