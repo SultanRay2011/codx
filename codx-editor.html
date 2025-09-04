@@ -256,19 +256,30 @@
     display: block;
   }
 
-  #consoleOutput {
-    width: 100%;
-    height: 100%;
-    background: var(--console-bg) !important;
-    color: var(--console-text) !important;
-    font-family: monospace;
-    font-size: 12px;
-    padding: 10px;
-    border: none;
-    resize: none;
-    outline: none;
-    transition: background-color 0.3s ease, color 0.3s ease;
-  }
+  .console-output {
+  width: 100%;
+  height: 100%;
+  background: var(--console-bg);
+  color: var(--console-text);
+  font-family: monospace;
+  font-size: 13px;
+  padding: 10px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+/* Custom scrollbar */
+.console-output::-webkit-scrollbar {
+  width: 8px;
+}
+.console-output::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+.console-output::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
 
   @media (max-width: 768px) {
     .editor-container { flex-direction: column; }
@@ -404,8 +415,9 @@
   <div class="preview">
     <iframe id="output"></iframe>
     <div class="console-container" id="consoleContainer">
-      <textarea id="consoleOutput" readonly placeholder="JavaScript console output will appear here..."></textarea>
-    </div>
+  <div id="consoleOutput" class="console-output"></div>
+</div>
+
   </div>
 </div>
 
@@ -477,22 +489,30 @@ function updatePreview() {
   consoleOutput.value = '';
   
   let jsWithConsole = '';
-  if (js.trim()) {
-    jsWithConsole = `<script>
-      const originalLog = console.log, originalError = console.error, originalWarn = console.warn;
-      const parentConsole = parent.document.getElementById('consoleOutput');
-      function updateParentConsole(prefix, args) {
-        parentConsole.value += prefix + args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ') + '\\n';
-        parentConsole.scrollTop = parentConsole.scrollHeight;
-      }
-      console.log = function(...args) { updateParentConsole('> ', args); originalLog.apply(console, args); };
-      console.error = function(...args) { updateParentConsole('❌ ERROR: ', args); originalError.apply(console, args); };
-      console.warn = function(...args) { updateParentConsole('⚠️ WARNING: ', args); originalWarn.apply(console, args); };
-      window.onerror = function(msg, src, line) { updateParentConsole('❌ Uncaught Error: ', [msg + ' (line ' + line + ')']); return false; };
-      window.addEventListener('unhandledrejection', e => { updateParentConsole('❌ Unhandled Promise Rejection: ', [e.reason]); });
-      try { ${js} } catch (e) { updateParentConsole('❌ Script Error: ', [e.message]); }
-    <\/script>`;
-  }
+if (js.trim()) {
+  jsWithConsole = `<script>
+    const parentConsole = parent.document.getElementById('consoleOutput');
+    function appendMessage(type, prefix, args) {
+      const line = document.createElement('div');
+      line.className = 'console-' + type;
+      line.textContent = prefix + args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+      parentConsole.appendChild(line);
+
+      // ✅ Auto-scroll to bottom
+      parentConsole.scrollTop = parentConsole.scrollHeight;
+    }
+    console.log = (...args) => { appendMessage('log', '> ', args); };
+    console.warn = (...args) => { appendMessage('warn', '⚠️ WARNING: ', args); };
+    console.error = (...args) => { appendMessage('error', '❌ ERROR: ', args); };
+    window.onerror = (msg, src, line) => { appendMessage('error', '❌ Uncaught: ', [msg + ' (line ' + line + ')']); return false; };
+    window.addEventListener('unhandledrejection', e => appendMessage('error', '❌ Promise: ', [e.reason]));
+    try { ${js} } catch(e) { appendMessage('error', '❌ Script Error: ', [e.message]); }
+  <\/script>`;
+}
+
+
   
   iframe.srcdoc = html + css + jsWithConsole;
 }
