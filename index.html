@@ -23,15 +23,23 @@
 
   /* Ad Container */
   .ad-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    padding: 40px 35px; /* Expanded padding */
-    border-radius: 16px; /* More rounded */
-    max-width: 750px;  /* Expanded width */
-    width: 90%; /* Responsive */
+    padding: 40px 35px;
+    border-radius: 16px;
+    max-width: 750px;
+    width: 90%;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     animation: fadeIn 1s ease-in-out forwards;
     border: 1px solid #4CAF50;
+  }
+
+  .ad-container h1,
+  .ad-container p,
+  .ad-container li,
+  .btn {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .ad-container h1 {
@@ -41,11 +49,11 @@
   }
 
   .cod {
-    color: #000; /* Black for Cod */
+    color: #000;
   }
 
   .x {
-    color: #4CAF50; /* Green for X */
+    color: #4CAF50;
   }
 
   .subtext {
@@ -87,7 +95,9 @@
   .features li:nth-child(6) { animation-delay: 1.8s; }
   .features li:nth-child(7) { animation-delay: 2.0s; }
 
+  /* Shimmering Button */
   .btn {
+    position: relative;
     display: inline-block;
     background: #4CAF50;
     color: #fff;
@@ -98,12 +108,36 @@
     transition: all 0.3s ease;
     font-size: 1.1em;
     border: none;
+    overflow: hidden;
+    cursor: pointer;
   }
 
   .btn:hover {
     background: #45a049;
     box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
     transform: scale(1.05) translateY(-2px);
+  }
+
+  /* Shimmer Effect */
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.7) 0%,
+      rgba(255, 255, 255, 0) 80%
+    );
+    transform: skewX(-25deg);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { left: -150%; }
+    100% { left: 150%; }
   }
 
   @keyframes fadeIn {
@@ -130,7 +164,8 @@
     <p class="subtext">Stop wasting time with heavy editors. Start coding instantly in your browser.</p>
     
     <p>
-      <span class="highlight">CodX</span> is a modern, browser-based code editor for <span class="highlight">HTML</span>, <span class="highlight">CSS</span>, and <span class="highlight">JavaScript</span>.  
+      <span class="highlight"><span class="cod">Cod</span><span class="x">X</span></span> is a modern, browser-based code editor for 
+      <span class="highlight">HTML</span>, <span class="highlight">CSS</span>, and <span class="highlight">JavaScript</span>.  
       No installation, no hassle – just pure coding, anytime, anywhere!
     </p>
 
@@ -144,7 +179,7 @@
       <li>✔ <span class="highlight">Works on all devices</span> – even mobile!</li>
     </ul>
 
-    <p><strong>Upgrade your workflow with <span class="highlight">CodX</span> – the future of coding is here!</strong></p>
+    <p><strong>Upgrade your workflow with <span class="highlight"><span class="cod">Cod</span><span class="x">X</span></span> – the future of coding is here!</strong></p>
     <a href="codx-editor.html" class="btn">Start Coding Now</a>
   </div>
 </body>
