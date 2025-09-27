@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="cx.png">
-<title>Code Smarter With CodX</title>
+<title>Code Instantly In Your Browser - No Installation Needed</title>
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -20,11 +20,38 @@
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
     box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Particle Background */
+  .particles {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
+  }
+  .particles::before, .particles::after {
+    content: "";
+    position: absolute;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(76,175,80,0.25) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: moveParticles 60s linear infinite;
+  }
+  .particles::after {
+    animation-duration: 90s;
+    opacity: 0.6;
+  }
+  @keyframes moveParticles {
+    from { transform: translate(0, 0); }
+    to { transform: translate(-200px, -200px); }
   }
 
   /* Ad Container */
   .ad-container {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     padding: 40px 35px;
@@ -32,35 +59,53 @@
     max-width: 750px;
     width: 90%;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    animation: fadeIn 1s ease-in-out forwards;
     border: 1px solid #4CAF50;
-  }
-
-  .ad-container h1,
-  .ad-container p,
-  .ad-container li,
-  .btn {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: floatCard 4s ease-in-out infinite alternate;
   }
 
   .ad-container h1 {
-    font-size: 2.5em;
+    font-size: 2.3em;
     margin-bottom: 8px;
-    color: #2E7D32;
+    background: linear-gradient(90deg, #4CAF50, #2E7D32, #81C784);
+    background-size: 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textGradient 5s ease-in-out infinite, bounceIn 1s ease forwards;
   }
 
-  .cod {
-    color: #000;
+  /* Wavy Heading Effect */
+  .ad-container h1 span {
+    display: inline-block;
+    animation: wave 1.5s infinite;
+  }
+  .ad-container h1 span:nth-child(odd) { animation-delay: 0.1s; }
+  .ad-container h1 span:nth-child(even) { animation-delay: 0.2s; }
+
+  @keyframes wave {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
   }
 
-  .x {
-    color: #4CAF50;
-  }
+  .cod { color: #000; }
+  .x { color: #4CAF50; }
 
+  /* Typewriter Effect */
   .subtext {
     font-size: 1.1em;
     margin-bottom: 20px;
     color: #555;
+    display: inline-block;
+    border-right: 2px solid #4CAF50;
+    white-space: nowrap;
+    overflow: hidden;
+    animation: typing 4s steps(40, end), blink 0.8s infinite;
+  }
+  @keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+  }
+  @keyframes blink {
+    50% { border-color: transparent; }
   }
 
   .highlight {
@@ -72,8 +117,10 @@
     font-size: 1.1em;
     margin-bottom: 18px;
     line-height: 1.6;
+    animation: fadeInUp 1.5s ease both;
   }
 
+  /* Animated Feature List */
   .features {
     text-align: left;
     font-size: 1em;
@@ -85,7 +132,19 @@
   .features li {
     margin-bottom: 10px;
     opacity: 0;
-    animation: slideIn 0.5s ease-out forwards;
+    animation: slideIn 0.6s ease-out forwards;
+    position: relative;
+    padding-left: 25px;
+  }
+
+  .features li::before {
+    content: "✔";
+    position: absolute;
+    left: 0;
+    color: #4CAF50;
+    font-weight: bold;
+    transform: scale(0);
+    animation: popIn 0.5s ease forwards;
   }
 
   .features li:nth-child(1) { animation-delay: 0.8s; }
@@ -96,7 +155,13 @@
   .features li:nth-child(6) { animation-delay: 1.8s; }
   .features li:nth-child(7) { animation-delay: 2.0s; }
 
-  /* Shimmering Button */
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+
+  /* Shimmering + Glow Button with Ripple */
   .btn {
     position: relative;
     display: inline-block;
@@ -111,15 +176,15 @@
     border: none;
     overflow: hidden;
     cursor: pointer;
+    animation: pulseGlow 2s infinite;
   }
 
   .btn:hover {
     background: #45a049;
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.6);
     transform: scale(1.05) translateY(-2px);
   }
 
-  /* Shimmer Effect */
   .btn::before {
     content: '';
     position: absolute;
@@ -136,16 +201,33 @@
     animation: shimmer 2s infinite;
   }
 
+  /* Ripple Effect */
+  .btn span.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.7);
+    transform: scale(0);
+    animation: rippleEffect 0.6s linear;
+    pointer-events: none;
+  }
+  @keyframes rippleEffect {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  /* Animations */
   @keyframes shimmer {
     0% { left: -150%; }
     100% { left: 150%; }
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  
+
   @keyframes slideIn {
     from { opacity: 0; transform: translateX(-20px); }
     to { opacity: 1; transform: translateX(0); }
@@ -156,12 +238,39 @@
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+
+  @keyframes textGradient {
+    0% { background-position: 0%; }
+    50% { background-position: 100%; }
+    100% { background-position: 0%; }
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0.5) translateY(-200px); opacity: 0; }
+    60% { transform: scale(1.2) translateY(30px); opacity: 1; }
+    80% { transform: scale(0.95) translateY(-10px); }
+    100% { transform: scale(1) translateY(0); }
+  }
+
+  @keyframes floatCard {
+    from { transform: translateY(0px); }
+    to { transform: translateY(-15px); }
+  }
+
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.6); }
+    50% { box-shadow: 0 0 20px rgba(76, 175, 80, 1); }
+    100% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.6); }
+  }
 </style>
 </head>
 <body>
+  <!-- Particle Background -->
+  <div class="particles"></div>
+
   <!-- Ad Container -->
   <div class="ad-container">
-    <h1>Code Smarter with <span class="cod">Cod</span><span class="x">X</span></h1>
+    <h1>Code Instantly In Your Browser – No Installation Needed</h1>
     <p class="subtext">Stop wasting time with heavy editors. Start coding instantly in your browser.</p>
     
     <p>
@@ -171,17 +280,37 @@
     </p>
 
     <ul class="features">
-      <li>✔ <span class="highlight">Free to Use</span> – No Payment Required.</li>
-      <li>✔ <span class="highlight">Auto-Run</span> live preview</li>
-      <li>✔ Built-in <span class="highlight">Console</span> for debugging</li>
-      <li>✔ <span class="highlight">Dark & Light Mode</span> toggle</li>
-      <li>✔ <span class="highlight">Export & Import</span> projects as ZIP</li>
-      <li>✔ <span class="highlight">Collaborative Editing</span> with friends</li>
-      <li>✔ <span class="highlight">Works on all devices</span> – even mobile!</li>
+      <li><span class="highlight">Free to Use</span> – No Payment Required.</li>
+      <li><span class="highlight">Auto-Run</span> live preview</li>
+      <li>Built-in <span class="highlight">Console</span> for debugging</li>
+      <li><span class="highlight">Dark & Light Mode</span> toggle</li>
+      <li><span class="highlight">Export & Import</span> projects as ZIP</li>
+      <li><span class="highlight">Collaborative Editing</span> with friends</li>
+      <li><span class="highlight">Works on all devices</span> – even mobile!</li>
     </ul>
 
     <p><strong>Upgrade your workflow with <span class="highlight"><span class="cod">Cod</span><span class="x">X</span></span> – the future of coding is here!</strong></p>
     <a href="codx-editor.html" class="btn">Start Coding Now</a>
   </div>
+
+  <script>
+    // Ripple Effect Script
+    document.querySelectorAll(".btn").forEach(btn => {
+      btn.addEventListener("click", function(e) {
+        const ripple = document.createElement("span");
+        const rect = this.getBoundingClientRect();
+        ripple.className = "ripple";
+        ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + "px";
+        ripple.style.left = (e.clientX - rect.left - rect.width/2) + "px";
+        ripple.style.top = (e.clientY - rect.top - rect.height/2) + "px";
+        this.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+      });
+    });
+
+    // Apply wavy span effect to heading
+    const h1 = document.querySelector(".ad-container h1");
+    h1.innerHTML = h1.textContent.split("").map(ch => `<span>${ch}</span>`).join("");
+  </script>
 </body>
 </html>
