@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -305,6 +306,55 @@
 
   .header-btn:hover {
     color: var(--accent-color);
+
+#settingsModal > div::-webkit-scrollbar {
+  width: 8px;
+}
+
+#settingsModal > div::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+#settingsModal > div::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* Settings input hover effects */
+#settingsModal input[type="color"]:hover,
+#settingsModal input[type="range"]:hover,
+#settingsModal select:hover {
+  opacity: 0.8;
+}
+
+/* Custom range slider styling */
+#editorTextSize {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+  outline: none;
+}
+
+#editorTextSize::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+#editorTextSize::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+}
   }
 </style>
 </head>
@@ -336,6 +386,95 @@
     </svg>
     <strong>FULLSCREEN PREVIEW</strong>
   </button>
+
+<button id="settingsBtn" class="run-button" title="Editor Settings">
+  <svg class="btn-icon" viewBox="0 0 24 24">
+    <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+  </svg>
+  <strong>SETTINGS</strong>
+</button>
+
+<!-- Settings Modal -->
+<div id="settingsModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+  <div style="position: relative; background-color: var(--bg-secondary); margin: auto; padding: 25px; border: 1px solid var(--border-color); width: 90%; max-width: 500px; border-radius: 8px; max-height: 80vh; overflow-y: auto;">
+    
+    <span id="closeSettingsBtn" style="position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</span>
+
+    <h2 style="margin-top: 0; color: var(--text-primary);">⚙️ Editor Settings</h2>
+    
+    <div style="margin: 20px 0;">
+      <!-- Editor Background Color -->
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-primary);">
+          Editor Background Color:
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="color" id="editorBgColor" style="width: 60px; height: 40px; cursor: pointer; border: 2px solid var(--border-color); border-radius: 4px;">
+          <input type="text" id="editorBgColorText" readonly style="flex: 1; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px;">
+        </div>
+      </div>
+
+      <!-- Text Color -->
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-primary);">
+          Text Color:
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="color" id="editorTextColor" style="width: 60px; height: 40px; cursor: pointer; border: 2px solid var(--border-color); border-radius: 4px;">
+          <input type="text" id="editorTextColorText" readonly style="flex: 1; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px;">
+        </div>
+      </div>
+
+      <!-- Text Size -->
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-primary);">
+          Text Size: <span id="textSizeValue" style="color: var(--accent-color);">14px</span>
+        </label>
+        <input type="range" id="editorTextSize" min="10" max="24" value="14" style="width: 100%; cursor: pointer;">
+      </div>
+
+      <!-- Font Family -->
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-primary);">
+          Font Family:
+        </label>
+        <select id="editorFontFamily" style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; cursor: pointer; font-size: 14px;">
+          <option value="monospace">Monospace (Default)</option>
+          <option value="'Courier New', monospace">Courier New</option>
+          <option value="'Consolas', monospace">Consolas</option>
+          <option value="'Monaco', monospace">Monaco</option>
+          <option value="'Lucida Console', monospace">Lucida Console</option>
+          <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
+          <option value="'Roboto Mono', monospace">Roboto Mono</option>
+          <option value="'Source Code Pro', monospace">Source Code Pro</option>
+          <option value="'Fira Code', monospace">Fira Code</option>
+        </select>
+      </div>
+
+      <!-- Preview Box -->
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-primary);">
+          Preview:
+        </label>
+        <div id="settingsPreview" style="padding: 15px; border: 2px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 14px;">
+          function helloWorld() {<br>
+          &nbsp;&nbsp;console.log("Hello, World!");<br>
+          }
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap;">
+        <button id="applySettings" class="run-button" style="flex: 1;">
+          <strong>APPLY</strong>
+        </button>
+        <button id="resetSettings" class="run-button" style="flex: 1; background: #ff5722;">
+          <strong>RESET TO DEFAULT</strong>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <div class="theme-toggle">
     <span><strong>🌙</strong></span>
@@ -440,7 +579,148 @@ const divider = document.querySelector('.divider');
 const editorsPanel = document.querySelector('.editors');
 const lineNumbers = document.getElementById('lineNumbers');
 const editorContainer = document.querySelector('.editor-container');
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsModal = document.getElementById('settingsModal');
+const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+const applySettingsBtn = document.getElementById('applySettings');
+const resetSettingsBtn = document.getElementById('resetSettings');
+
+const editorBgColorInput = document.getElementById('editorBgColor');
+const editorBgColorText = document.getElementById('editorBgColorText');
+const editorTextColorInput = document.getElementById('editorTextColor');
+const editorTextColorText = document.getElementById('editorTextColorText');
+const editorTextSizeInput = document.getElementById('editorTextSize');
+const textSizeValue = document.getElementById('textSizeValue');
+const editorFontFamilySelect = document.getElementById('editorFontFamily');
+const settingsPreview = document.getElementById('settingsPreview');
 let hasUnsavedChanges = false; // Flag to track changes
+
+// Default settings
+const defaultSettings = {
+  bgColor: '#1E1E1E',
+  textColor: '#ffffff',
+  textSize: '14',
+  fontFamily: 'monospace'
+};
+
+// Load saved settings or use defaults
+function loadSettings() {
+  const savedSettings = localStorage.getItem('editorSettings');
+  if (savedSettings) {
+    const settings = JSON.parse(savedSettings);
+    editorBgColorInput.value = settings.bgColor;
+    editorBgColorText.value = settings.bgColor;
+    editorTextColorInput.value = settings.textColor;
+    editorTextColorText.value = settings.textColor;
+    editorTextSizeInput.value = settings.textSize;
+    textSizeValue.textContent = settings.textSize + 'px';
+    editorFontFamilySelect.value = settings.fontFamily;
+  } else {
+    editorBgColorInput.value = defaultSettings.bgColor;
+    editorBgColorText.value = defaultSettings.bgColor;
+    editorTextColorInput.value = defaultSettings.textColor;
+    editorTextColorText.value = defaultSettings.textColor;
+    editorTextSizeInput.value = defaultSettings.textSize;
+    textSizeValue.textContent = defaultSettings.textSize + 'px';
+    editorFontFamilySelect.value = defaultSettings.fontFamily;
+  }
+  updatePreviewBox();
+  applySettingsToEditors();
+}
+
+// Update preview box
+function updatePreviewBox() {
+  settingsPreview.style.backgroundColor = editorBgColorInput.value;
+  settingsPreview.style.color = editorTextColorInput.value;
+  settingsPreview.style.fontSize = editorTextSizeInput.value + 'px';
+  settingsPreview.style.fontFamily = editorFontFamilySelect.value;
+}
+
+// Apply settings to all editors
+function applySettingsToEditors() {
+  editors.forEach(editor => {
+    editor.style.backgroundColor = editorBgColorInput.value;
+    editor.style.color = editorTextColorInput.value;
+    editor.style.fontSize = editorTextSizeInput.value + 'px';
+    editor.style.fontFamily = editorFontFamilySelect.value;
+  });
+  
+  // Also update line numbers
+  lineNumbers.style.fontSize = editorTextSizeInput.value + 'px';
+}
+
+// Event listeners for real-time preview
+editorBgColorInput.addEventListener('input', (e) => {
+  editorBgColorText.value = e.target.value;
+  updatePreviewBox();
+});
+
+editorTextColorInput.addEventListener('input', (e) => {
+  editorTextColorText.value = e.target.value;
+  updatePreviewBox();
+});
+
+editorTextSizeInput.addEventListener('input', (e) => {
+  textSizeValue.textContent = e.target.value + 'px';
+  updatePreviewBox();
+});
+
+editorFontFamilySelect.addEventListener('change', updatePreviewBox);
+
+// Open settings modal
+settingsBtn.addEventListener('click', () => {
+  loadSettings();
+  settingsModal.style.display = 'flex';
+});
+
+// Close settings modal
+closeSettingsBtn.addEventListener('click', () => {
+  settingsModal.style.display = 'none';
+});
+
+// Close modal when clicking outside
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) {
+    settingsModal.style.display = 'none';
+  }
+});
+
+// Apply settings
+applySettingsBtn.addEventListener('click', () => {
+  const settings = {
+    bgColor: editorBgColorInput.value,
+    textColor: editorTextColorInput.value,
+    textSize: editorTextSizeInput.value,
+    fontFamily: editorFontFamilySelect.value
+  };
+  
+  localStorage.setItem('editorSettings', JSON.stringify(settings));
+  applySettingsToEditors();
+  alert('Settings applied successfully!');
+  settingsModal.style.display = 'none';
+});
+
+// Reset settings to default
+resetSettingsBtn.addEventListener('click', () => {
+  if (confirm('Are you sure you want to reset all settings to default?')) {
+    localStorage.removeItem('editorSettings');
+    editorBgColorInput.value = defaultSettings.bgColor;
+    editorBgColorText.value = defaultSettings.bgColor;
+    editorTextColorInput.value = defaultSettings.textColor;
+    editorTextColorText.value = defaultSettings.textColor;
+    editorTextSizeInput.value = defaultSettings.textSize;
+    textSizeValue.textContent = defaultSettings.textSize + 'px';
+    editorFontFamilySelect.value = defaultSettings.fontFamily;
+    updatePreviewBox();
+    applySettingsToEditors();
+    alert('Settings reset to default!');
+  }
+});
+
+// Load settings on page load
+window.addEventListener('load', () => {
+  loadSettings();
+});
 
 // Theme toggle functionality
 themeToggle.addEventListener('change', () => {
