@@ -3,56 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CodX Editor - Free browser-based code editor for HTML, CSS, and JavaScript. No installation required. Code instantly anywhere!">
+<meta name="keywords" content="online code editor, html css js editor, browser editor, free code editor, web development">
+<meta name="theme-color" content="#4CAF50">
 <link rel="icon" type="image/png" href="cx.png">
-<title>Code Instantly In Your Browser</title>
+<title>CodX Editor - Code Instantly In Your Browser</title>
 <style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
     color: #333;
     text-align: center;
     background: linear-gradient(45deg, #e6fff2, #ffffff, #f0fff0);
     background-size: 400% 400%;
     animation: gradientBG 15s ease infinite;
-    box-sizing: border-box;
+    padding: 20px;
+    overflow-x: hidden;
   }
 
-  /* Ad Container */
+  .particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(76, 175, 80, 0.3);
+    border-radius: 50%;
+    animation: float 15s infinite;
+  }
+
+  .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+  .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+  .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+  .particle:nth-child(4) { left: 40%; animation-delay: 6s; }
+  .particle:nth-child(5) { left: 50%; animation-delay: 8s; }
+  .particle:nth-child(6) { left: 60%; animation-delay: 10s; }
+  .particle:nth-child(7) { left: 70%; animation-delay: 12s; }
+  .particle:nth-child(8) { left: 80%; animation-delay: 14s; }
+
+  @keyframes float {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px;
+  }
+
   .ad-container {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    padding: 40px 35px;
-    border-radius: 16px;
-    max-width: 750px;
-    width: 90%;
+    padding: 50px 40px;
+    border-radius: 20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    border: 1px solid #4CAF50;
+    border: 2px solid rgba(76, 175, 80, 0.3);
     animation: floatCard 4s ease-in-out infinite alternate;
   }
 
+  .logo-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #4CAF50, #81C784);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 20px;
+    animation: fadeIn 0.8s ease;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  }
+
   .ad-container h1 {
-    font-size: 2.3em;
-    margin-bottom: 8px;
+    font-size: 2.8em;
+    margin-bottom: 15px;
     background: linear-gradient(90deg, #4CAF50, #2E7D32, #81C784);
     background-size: 300%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
     animation: textGradient 5s ease-in-out infinite, bounceIn 1s ease forwards;
+    line-height: 1.2;
   }
 
   .cod { color: #000; }
   .x { color: #4CAF50; }
 
   .subtext {
-    font-size: 1.1em;
-    margin-bottom: 20px;
+    font-size: 1.3em;
+    margin-bottom: 30px;
     color: #555;
     animation: fadeIn 1.5s ease-in-out forwards;
+    font-weight: 500;
   }
 
   .highlight {
@@ -60,25 +124,37 @@
     font-weight: bold;
   }
 
-  .ad-container p {
+  .description {
     font-size: 1.1em;
-    margin-bottom: 18px;
-    line-height: 1.6;
+    margin-bottom: 35px;
+    line-height: 1.8;
     animation: fadeInUp 1.5s ease both;
+    color: #444;
   }
 
   .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
     text-align: left;
-    font-size: 1em;
-    margin: 25px 0;
-    list-style-type: none;
-    padding-left: 0;
+    margin: 35px 0;
+    list-style: none;
   }
 
   .features li {
-    margin-bottom: 10px;
+    background: rgba(76, 175, 80, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #4CAF50;
     opacity: 0;
     animation: slideIn 0.6s ease-out forwards;
+    transition: all 0.3s ease;
+  }
+
+  .features li:hover {
+    background: rgba(76, 175, 80, 0.1);
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
   }
 
   .features li:nth-child(1) { animation-delay: 0.8s; }
@@ -89,28 +165,50 @@
   .features li:nth-child(6) { animation-delay: 1.8s; }
   .features li:nth-child(7) { animation-delay: 2.0s; }
 
-  /* Shimmering + Glow Button */
+  .feature-icon {
+    font-size: 1.4em;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  .cta-section {
+    margin: 40px 0 20px;
+    animation: fadeInUp 2s ease both;
+  }
+
+  .cta-text {
+    font-size: 1.2em;
+    margin-bottom: 25px;
+    font-weight: 600;
+    color: #333;
+  }
+
   .btn {
     position: relative;
     display: inline-block;
-    background: #4CAF50;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
     color: #fff;
     text-decoration: none;
-    padding: 12px 25px;
+    padding: 16px 40px;
     font-weight: bold;
-    border-radius: 6px;
+    border-radius: 50px;
     transition: all 0.3s ease;
-    font-size: 1.1em;
+    font-size: 1.2em;
     border: none;
     overflow: hidden;
     cursor: pointer;
     animation: pulseGlow 2s infinite;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
   }
 
   .btn:hover {
-    background: #45a049;
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.6);
-    transform: scale(1.05) translateY(-2px);
+    background: linear-gradient(135deg, #45a049, #388E3C);
+    box-shadow: 0 6px 25px rgba(76, 175, 80, 0.6);
+    transform: scale(1.08) translateY(-3px);
+  }
+
+  .btn:active {
+    transform: scale(1.02) translateY(-1px);
   }
 
   .btn::before {
@@ -122,14 +220,38 @@
     height: 100%;
     background: linear-gradient(
       120deg,
-      rgba(255, 255, 255, 0.7) 0%,
+      rgba(255, 255, 255, 0.8) 0%,
       rgba(255, 255, 255, 0) 80%
     );
     transform: skewX(-25deg);
-    animation: shimmer 2s infinite;
+    animation: shimmer 3s infinite;
   }
 
-  /* Animations */
+  .secondary-info {
+    margin-top: 25px;
+    font-size: 0.95em;
+    color: #666;
+    animation: fadeIn 2.5s ease;
+  }
+
+  .tech-badges {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    background: rgba(76, 175, 80, 0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #4CAF50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+  }
+
   @keyframes shimmer {
     0% { left: -150%; }
     100% { left: 150%; }
@@ -164,51 +286,122 @@
 
   @keyframes bounceIn {
     0% { transform: scale(0.5) translateY(-200px); opacity: 0; }
-    60% { transform: scale(1.2) translateY(30px); opacity: 1; }
-    80% { transform: scale(0.95) translateY(-10px); }
+    60% { transform: scale(1.1) translateY(20px); opacity: 1; }
+    80% { transform: scale(0.98) translateY(-8px); }
     100% { transform: scale(1) translateY(0); }
   }
 
   @keyframes floatCard {
     from { transform: translateY(0px); }
-    to { transform: translateY(-15px); }
+    to { transform: translateY(-12px); }
   }
 
   @keyframes pulseGlow {
-    0% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.6); }
-    50% { box-shadow: 0 0 20px rgba(76, 175, 80, 1); }
-    100% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.6); }
+    0% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); }
+    50% { box-shadow: 0 6px 25px rgba(76, 175, 80, 0.8); }
+    100% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); }
+  }
+
+  @media (max-width: 768px) {
+    .ad-container {
+      padding: 35px 25px;
+    }
+
+    .ad-container h1 {
+      font-size: 2em;
+    }
+
+    .subtext {
+      font-size: 1.1em;
+    }
+
+    .description {
+      font-size: 1em;
+    }
+
+    .features {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 14px 30px;
+      font-size: 1.1em;
+    }
+
+    .tech-badges {
+      gap: 10px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    body {
+      padding: 15px;
+    }
+
+    .ad-container h1 {
+      font-size: 1.6em;
+    }
+
+    .logo-badge {
+      font-size: 0.85em;
+      padding: 6px 16px;
+    }
   }
 </style>
 </head>
 <body>
-  <!-- Ad Container -->
-  <div class="ad-container">
-    <h1>Code Instantly In Your Browser – No Installation Needed</h1>
-    <p class="subtext">Stop wasting time with heavy editors. Start coding instantly in your browser.</p>
-    
-   <p>
-  <span class="highlight"><span class="cod">Cod</span><span class="x">X</span></span> <strong style="color:#000;">Editor</strong> is a free, browser-based 
-  <strong style="color:#000;">Editor</strong> that lets you instantly write, run and debug
-  <span class="highlight">HTML</span>, <span class="highlight">CSS</span>, and <span class="highlight">JavaScript</span> without any installation.  
-  No installation, no hassle – just pure coding, anytime, anywhere!
-</p>
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
 
+  <div class="container">
+    <div class="ad-container">
+      <div class="logo-badge">100% FREE & OPEN SOURCE</div>
+      
+      <h1>Code Instantly In Your Browser<br>No Installation Needed</h1>
+      
+      <p class="subtext">Stop wasting time with heavy editors. Start coding instantly in your browser.</p>
+      
+      <p class="description">
+        <span class="highlight"><span class="cod">Cod</span><span class="x">X</span> Editor</span> is a powerful, 
+        browser-based code editor that lets you instantly write, run, and debug
+        <span class="highlight">HTML</span>, <span class="highlight">CSS</span>, and <span class="highlight">JavaScript</span> 
+        without any installation. No setup, no hassle – just pure coding, anytime, anywhere!
+      </p>
 
+      <ul class="features">
+        <li><span class="highlight">100% Free</span> – No payment or signup required</li>
+        <li><span class="highlight">Auto-Run</span> with live preview</li>
+        <li>Built-in <span class="highlight">Console</span> for debugging</li>
+        <li><span class="highlight">Dark & Light Mode</span> themes</li>
+        <li><span class="highlight">Export & Import</span> projects as ZIP</li>
+        <li><span class="highlight">Real-time Collaboration</span> with friends</li>
+        <li><span class="highlight">Cross-platform</span> – works on all devices!</li>
+      </ul>
 
+      <div class="cta-section">
+        <p class="cta-text">Ready to revolutionize your coding workflow?</p>
+        <a href="codx-editor.html" class="btn">Start Coding Now</a>
+      </div>
 
-    <ul class="features">
-      <li>✔ <span class="highlight">Free to Use</span> – No Payment Required.</li>
-      <li>✔ <span class="highlight">Auto-Run</span> live preview</li>
-      <li>✔ Built-in <span class="highlight">Console</span> for debugging</li>
-      <li>✔ <span class="highlight">Dark & Light Mode</span> toggle</li>
-      <li>✔ <span class="highlight">Export & Import</span> projects as ZIP</li>
-      <li>✔ <span class="highlight">Collaborative Editing</span> with friends</li>
-      <li>✔ <span class="highlight">Works on all devices</span> – even mobile!</li>
-    </ul>
-
-    <p><strong>Upgrade your workflow with <span class="highlight"><span class="cod">Cod</span><span class="x">X</span></span> – the future of coding is here!</strong></p>
-    <a href="codx-editor.html" class="btn">Start Coding Now</a>
+      <div class="secondary-info">
+        <p>No downloads • No installations • No account needed</p>
+        <div class="tech-badges">
+          <span class="badge">HTML5</span>
+          <span class="badge">CSS3</span>
+          <span class="badge">JavaScript</span>
+          <span class="badge">Real-time</span>
+        </div>
+      </div>
+    </div>
   </div>
 </body>
 </html>
