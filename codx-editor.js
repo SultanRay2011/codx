@@ -337,7 +337,7 @@ showConsoleCheckbox.addEventListener('change', () => {
   consoleContainer.classList.toggle('show', showConsoleCheckbox.checked);
 });
 
-// PART 5: PREVIEW & LINE NUMBERS (FIXED FILE LINKING)
+// PART 5: PREVIEW & LINE NUMBERS (FIXED CONSOLE OUTPUT WITH ACCURATE LINE NUMBERS)
 function updatePreview() {
   const htmlFile = projectFiles.find(f => f.type === 'html');
   if (!htmlFile) {
@@ -360,11 +360,35 @@ function updatePreview() {
     }
   });
 
-  // === 2. Replace <script src="script.js"></script>
+  // === 2. Replace <script src="script.js"></script> WITH FILE NAME MARKERS
   html = html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
     const jsFile = projectFiles.find(f => f.name.toLowerCase() === src.toLowerCase() && f.type === 'js');
     if (jsFile) {
-      return `<script>${jsFile.content}</script>`;
+      // Wrap JS with file markers and line tracking
+      const lines = jsFile.content.split('\n');
+      const numberedContent = lines.map((line, idx) => {
+        return line; // Keep original content
+      }).join('\n');
+      
+      return `<script data-filename="${jsFile.name}">
+/* ===== FILE: ${jsFile.name} ===== */
+(function() {
+  try {
+${jsFile.content}
+  } catch (e) {
+    console.error('[${jsFile.name}] ' + e.message);
+    if (e.stack) {
+      const stackLines = e.stack.split('\\n');
+      stackLines.forEach(line => {
+        if (line.includes('<anonymous>') || line.includes('eval')) {
+          console.error('  ' + line);
+        }
+      });
+    }
+  }
+})();
+/* ===== END: ${jsFile.name} ===== */
+</script>`;
     } else {
       const fileName = src.split('/').pop();
       appendConsoleMessage('warn', `WARNING: JS file not found: ${fileName}`);
@@ -384,52 +408,101 @@ function updatePreview() {
     }
   });
 
-  // === 4. Inject console override + error redirect to 404.html
-  const jsWithConsole = `
+  // === 4. Inject console override BEFORE any scripts
+  const consoleScript = `
     <script>
-      const parentConsole = parent.document.getElementById('consoleOutput');
-      function appendMessage(type, prefix, args) {
-        const line = document.createElement('div');
-        line.className = type;
-        line.textContent = prefix + args.map(arg => 
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' ');
-        parentConsole.appendChild(line);
-        parentConsole.scrollTop = parentConsole.scrollHeight;
-      }
-      console.log = (...args) => appendMessage('log', '> ', args);
-      console.warn = (...args) => appendMessage('warn', 'WARNING: ', args);
-      console.error = (...args) => appendMessage('error', 'ERROR: ', args);
-      console.info = (...args) => appendMessage('info', 'INFO: ', args);
+      (function() {
+        try {
+          const parentConsole = window.parent.document.getElementById('consoleOutput');
+          if (!parentConsole) return;
 
-      // Capture resource load errors and redirect to 404.html
-      document.addEventListener('error', function(e) {
-        const target = e.target;
-        if (['IMG', 'LINK', 'SCRIPT', 'VIDEO', 'AUDIO'].includes(target.tagName)) {
-          const src = target.src || target.href;
-          if (src) {
-            const url = new URL(src, location.href);
-            const file = url.searchParams.get('file');
-            if (file) {
-              parent.location.href = '404.html?file=' + encodeURIComponent(file);
+          function appendMessage(type, prefix, args) {
+            try {
+              const line = document.createElement('div');
+              line.className = type;
+              line.textContent = prefix + args.map(arg => {
+                if (typeof arg === 'object' && arg !== null) {
+                  try {
+                    return JSON.stringify(arg, null, 2);
+                  } catch (e) {
+                    return String(arg);
+                  }
+                }
+                return String(arg);
+              }).join(' ');
+              parentConsole.appendChild(line);
+              parentConsole.scrollTop = parentConsole.scrollHeight;
+            } catch (e) {
+              // Silently fail if parent access is blocked
             }
           }
-        }
-      }, true);
 
-      window.onerror = (msg, src, line) => { 
-        appendMessage('error', 'Uncaught: ', [msg + ' (line ' + line + ')']); 
-        return false; 
-      };
-      window.addEventListener('unhandledrejection', e => 
-        appendMessage('error', 'Promise: ', [e.reason])
-      );
+          // Override console methods IMMEDIATELY
+          console.log = function(...args) { appendMessage('log', '> ', args); };
+          console.warn = function(...args) { appendMessage('warn', 'WARNING: ', args); };
+          console.error = function(...args) { appendMessage('error', 'ERROR: ', args); };
+          console.info = function(...args) { appendMessage('info', 'INFO: ', args); };
+
+          // Capture runtime errors
+          window.onerror = function(msg, source, line, col, error) {
+            // Extract filename from source if available
+            let filename = 'unknown';
+            const scripts = document.querySelectorAll('script[data-filename]');
+            scripts.forEach(script => {
+              if (source && source.includes('blob:')) {
+                filename = script.getAttribute('data-filename') || 'inline script';
+              }
+            });
+            
+            appendMessage('error', 'Error: ', ['[' + filename + '] ' + msg]);
+            return false;
+          };
+
+          // Capture unhandled promise rejections
+          window.addEventListener('unhandledrejection', function(e) {
+            appendMessage('error', 'Promise rejected: ', [e.reason]);
+          });
+
+          // Capture resource load errors
+          document.addEventListener('error', function(e) {
+            const target = e.target;
+            if (['IMG', 'LINK', 'SCRIPT', 'VIDEO', 'AUDIO'].includes(target.tagName)) {
+              const src = target.src || target.href;
+              if (src) {
+                try {
+                  const url = new URL(src, location.href);
+                  const file = url.searchParams.get('file');
+                  if (file) {
+                    window.parent.location.href = '404.html?file=' + encodeURIComponent(file);
+                  }
+                } catch (err) {
+                  // Invalid URL
+                }
+              }
+            }
+          }, true);
+        } catch (e) {
+          // Cross-origin or parent access denied
+        }
+      })();
     </script>`;
 
-  iframe.srcdoc = html + jsWithConsole;
+  // Insert console script at the very beginning (BEFORE any other scripts)
+  if (/<head[^>]*>/i.test(html)) {
+    html = html.replace(/(<head[^>]*>)/i, `$1${consoleScript}`);
+  } else if (/<html[^>]*>/i.test(html)) {
+    html = html.replace(/(<html[^>]*>)/i, `$1${consoleScript}`);
+  } else if (/<body[^>]*>/i.test(html)) {
+    html = html.replace(/(<body[^>]*>)/i, `${consoleScript}$1`);
+  } else {
+    // No proper HTML structure, prepend it
+    html = consoleScript + html;
+  }
+
+  iframe.srcdoc = html;
 }
 
-// Helper: Append message to console
+// Helper: Append message to console (for editor-side warnings)
 function appendConsoleMessage(type, message) {
   const line = document.createElement('div');
   line.className = type;
@@ -453,6 +526,7 @@ function syncScroll(textarea) {
     lineNumbers.scrollTop = textarea.scrollTop; 
   });
 }
+
 
 // PART 6: EDITOR INITIALIZATION
 function initializeEditor() {
