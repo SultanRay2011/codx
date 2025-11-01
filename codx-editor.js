@@ -127,7 +127,7 @@ function clearConsole() {
 
 function debouncedUpdatePreview() {
   clearTimeout(autoRunTimeout);
-  autoRunTimeout = setTimeout(updatePreview, 0); // Instant update
+  autoRunTimeout = setTimeout(updatePreview, 0);
 }
 
 function renderFileList() {
