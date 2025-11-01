@@ -346,31 +346,45 @@ function updatePreview() {
   }
 
   let html = htmlFile.content;
-  consoleOutput.innerHTML = '';
+  consoleOutput.innerHTML = ''; // Clear console
 
-  // Replace <link rel="stylesheet" href="style.css">
+  // === 1. Replace <link rel="stylesheet" href="style.css">
   html = html.replace(/<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi, (match, href) => {
     const cssFile = projectFiles.find(f => f.name.toLowerCase() === href.toLowerCase() && f.type === 'css');
     if (cssFile) {
       return `<style>${cssFile.content}</style>`;
     } else {
-      appendConsoleMessage('warn', `WARNING: CSS file not found: ${href}`);
-      return match;
+      const fileName = href.split('/').pop();
+      appendConsoleMessage('warn', `WARNING: CSS file not found: ${fileName}`);
+      return `<link rel="stylesheet" href="${href}?file=${encodeURIComponent(fileName)}">`;
     }
   });
 
-  // Replace <script src="script.js"></script>
+  // === 2. Replace <script src="script.js"></script>
   html = html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
     const jsFile = projectFiles.find(f => f.name.toLowerCase() === src.toLowerCase() && f.type === 'js');
     if (jsFile) {
       return `<script>${jsFile.content}</script>`;
     } else {
-      appendConsoleMessage('warn', `WARNING: JS file not found: ${src}`);
-      return match;
+      const fileName = src.split('/').pop();
+      appendConsoleMessage('warn', `WARNING: JS file not found: ${fileName}`);
+      return `<script src="${src}?file=${encodeURIComponent(fileName)}"></script>`;
     }
   });
 
-  // Inject console override
+  // === 3. Handle media: <img>, <video>, <audio> src attributes
+  html = html.replace(/<(img|video|audio)[^>]*src=["']([^"']+)["'][^>]*>/gi, (match, tag, src) => {
+    const mediaFile = projectFiles.find(f => f.name.toLowerCase() === src.toLowerCase() && f.type === 'media');
+    if (mediaFile && mediaFile.content) {
+      return `<${tag} src="${mediaFile.content}">`;
+    } else {
+      const fileName = src.split('/').pop();
+      appendConsoleMessage('warn', `WARNING: Media file not found: ${fileName}`);
+      return `<${tag} src="${src}?file=${encodeURIComponent(fileName)}">`;
+    }
+  });
+
+  // === 4. Inject console override + error redirect to 404.html
   const jsWithConsole = `
     <script>
       const parentConsole = parent.document.getElementById('consoleOutput');
@@ -387,6 +401,22 @@ function updatePreview() {
       console.warn = (...args) => appendMessage('warn', 'WARNING: ', args);
       console.error = (...args) => appendMessage('error', 'ERROR: ', args);
       console.info = (...args) => appendMessage('info', 'INFO: ', args);
+
+      // Capture resource load errors and redirect to 404.html
+      document.addEventListener('error', function(e) {
+        const target = e.target;
+        if (['IMG', 'LINK', 'SCRIPT', 'VIDEO', 'AUDIO'].includes(target.tagName)) {
+          const src = target.src || target.href;
+          if (src) {
+            const url = new URL(src, location.href);
+            const file = url.searchParams.get('file');
+            if (file) {
+              parent.location.href = '404.html?file=' + encodeURIComponent(file);
+            }
+          }
+        }
+      }, true);
+
       window.onerror = (msg, src, line) => { 
         appendMessage('error', 'Uncaught: ', [msg + ' (line ' + line + ')']); 
         return false; 
@@ -399,7 +429,7 @@ function updatePreview() {
   iframe.srcdoc = html + jsWithConsole;
 }
 
-// Helper to append to console from iframe
+// Helper: Append message to console
 function appendConsoleMessage(type, message) {
   const line = document.createElement('div');
   line.className = type;
@@ -408,6 +438,7 @@ function appendConsoleMessage(type, message) {
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
 }
 
+// Line numbers
 function updateLineNumbers(textarea) {
   if (!textarea) textarea = document.getElementById('activeEditor');
   if (!textarea) return;
@@ -415,6 +446,7 @@ function updateLineNumbers(textarea) {
   lineNumbers.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
 }
 
+// Sync scroll
 function syncScroll(textarea) {
   if (!textarea) return;
   textarea.addEventListener('scroll', () => { 
@@ -913,7 +945,7 @@ function handleStorageChange(e) {
   }
 }
 
-// PART: MEDIA FILE HANDLER
+// 10: MEDIA FILE HANDLER
 const addMediaBtn = document.getElementById('addMediaBtn');
 const mediaInput = document.createElement('input');
 mediaInput.type = 'file';
@@ -959,7 +991,79 @@ mediaInput.addEventListener('change', (e) => {
   mediaInput.value = '';
 });
 
-// PART 13: INITIALIZATION
+// 11 === SEAMLESS & FULL-RANGE DIVIDER DRAG ===
+let isDragging = false;
+let startX, startEditorWidth, containerWidth;
+
+divider.addEventListener('mousedown', startDragging);
+divider.addEventListener('touchstart', startDragging, { passive: true });
+
+function startDragging(e) {
+  isDragging = true;
+  divider.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+
+  startX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+  startEditorWidth = editorsPanel.getBoundingClientRect().width;
+  containerWidth = editorContainer.getBoundingClientRect().width; // Full container
+
+  e.preventDefault();
+
+  document.addEventListener('mousemove', doDrag);
+  document.addEventListener('touchmove', doDrag, { passive: false });
+  document.addEventListener('mouseup', stopDragging);
+  document.addEventListener('touchend', stopDragging);
+}
+
+function doDrag(e) {
+  if (!isDragging) return;
+
+  const currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+  const diff = currentX - startX;
+  let newWidth = startEditorWidth + diff;
+
+  // === MIN / MAX BOUNDS ===
+  const minWidth = 200;
+  const maxWidth = containerWidth - 100; // Leave 100px for preview
+  newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+
+  // Apply instantly
+  editorsPanel.style.width = `${newWidth}px`;
+  editorsPanel.style.flex = 'none'; // Prevent flex from overriding
+
+  if (e.type === 'touchmove') e.preventDefault();
+}
+
+function stopDragging() {
+  if (!isDragging) return;
+  isDragging = false;
+  divider.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+
+  // Restore flex after drag (optional smooth reset)
+  editorsPanel.style.flex = '';
+  editorsPanel.style.maxWidth = '80%';
+
+  document.removeEventListener('mousemove', doDrag);
+  document.removeEventListener('touchmove', doDrag);
+  document.removeEventListener('mouseup', stopDragging);
+  document.removeEventListener('touchend', stopDragging);
+}
+
+// Reset on window resize
+window.addEventListener('resize', () => {
+  if (!isDragging) {
+    const current = editorsPanel.getBoundingClientRect().width;
+    const max = window.innerWidth * 0.8;
+    if (current > max) {
+      editorsPanel.style.width = '50%';
+    }
+  }
+});
+
+// PART 12: INITIALIZATION
 window.addEventListener('load', () => {
   loadSettings();
   renderFileList();
@@ -978,3 +1082,4 @@ window.addEventListener('beforeunload', function (e) {
 newFileBtn.addEventListener('click', createNewFile);
 
 console.log('CodX Editor loaded with file linking!');
+

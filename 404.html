@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 – File Not Found – CodX Editor</title>
+    <link rel="icon" type="image/png" href="cx.png">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --card-bg: #ffffff;
+            --text: #222222;
+            --accent: #4CAF50;
+            --accent-hover: #388E3C;
+            --border: #e0e0e0;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .container {
+            max-width: 560px;
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px var(--shadow);
+            border: 1px solid var(--border);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        h1 {
+            font-size: 5rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+            font-weight: 800;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+            opacity: 0.9;
+        }
+
+        .missing-file {
+            background: #f0fff0;
+            color: var(--accent);
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            margin: 1.5rem 0;
+            border: 1px dashed var(--accent);
+            word-break: break-all;
+        }
+
+        .tip {
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            opacity: 0.8;
+            line-height: 1.7;
+        }
+
+        .tip code {
+            background: #e8f5e9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+        }
+
+        .back-btn {
+            margin-top: 2rem;
+            padding: 0.8rem 2rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .back-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+        }
+
+        .back-btn:active {
+            transform: translateY(0);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 2rem; }
+            h1 { font-size: 3.8rem; }
+            .logo { width: 60px; height: 60px; }
+        }
+    </style>
+</head>
+<body>
+    <img src="cx.png" alt="CodX Logo" class="logo">
+
+    <div class="container">
+        <h1>404</h1>
+        <p class="subtitle">File Not Found</p>
+
+        <div class="missing-file" id="missingFile">
+            Loading...
+        </div>
+
+        <div class="tip">
+            <p>Check the file name in your <code>&lt;img&gt;</code>, <code>&lt;link&gt;</code>, or <code>&lt;script&gt;</code> tag.</p>
+            <p>Make sure the file exists in the <strong>Files</strong> panel and the path is correct.</p>
+        </div>
+
+        <button class="back-btn" onclick="window.parent.focus()">Back to Editor</button>
+    </div>
+
+    <script>
+        // Show missing file name
+        const params = new URLSearchParams(window.location.search);
+        const file = params.get('file');
+        const missingEl = document.getElementById('missingFile');
+
+        if (file) {
+            missingEl.textContent = `"${decodeURIComponent(file)}" could not be found`;
+        } else {
+            missingEl.textContent = 'The requested resource is missing';
+        }
+    </script>
+</body>
+</html>

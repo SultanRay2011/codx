@@ -267,14 +267,38 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 .divider {
-  width: 10px;
-  cursor: col-resize;
+  width: 10px !important;           /* Thick divider */
   background: var(--divider-color);
-  transition: background-color 0.3s ease;
+  cursor: col-resize;
+  position: relative;
+  user-select: none;
+  z-index: 10;
+  transition: background 0.2s ease;
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
 }
 
-.divider:hover {
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  width: 4px; height: 100%;
   background: var(--accent-color);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.divider:hover::before,
+.divider.dragging::before {
+  opacity: 1;
+}
+
+/* Active dragging state */
+.divider.dragging {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-hover);
 }
 
 .preview {
