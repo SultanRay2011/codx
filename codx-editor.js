@@ -1,3 +1,4 @@
+
 // PART 1: INITIALIZATION & CONSTANTS
 const iframe = document.getElementById('output');
 const autoRunCheckbox = document.getElementById('autoRun');
@@ -473,7 +474,7 @@ ${jsFile.content}
                   const url = new URL(src, location.href);
                   const file = url.searchParams.get('file');
                   if (file) {
-                    window.parent.location.href = '404.html?file=' + encodeURIComponent(file);
+                    appendMessage('error', 'File not found: ', [decodeURIComponent(file)]);
                   }
                 } catch (err) {
                   // Invalid URL
