@@ -1158,3 +1158,102 @@ newFileBtn.addEventListener('click', createNewFile);
 
 console.log('CodX Editor loaded with file linking!');
 
+// FONT PICKER
+const fontPickerBtn = document.getElementById('fontPickerBtn');
+const fontPickerModal = document.getElementById('fontPickerModal');
+const closeFontPickerBtn = document.getElementById('closeFontPickerBtn');
+const fontGrid = document.getElementById('fontGrid');
+
+const fonts = [
+  { name: 'Arial', family: 'Arial, sans-serif' },
+  { name: 'Helvetica', family: 'Helvetica, sans-serif' },
+  { name: 'Times New Roman', family: "'Times New Roman', serif" },
+  { name: 'Georgia', family: 'Georgia, serif' },
+  { name: 'Courier New', family: "'Courier New', monospace" },
+  { name: 'Verdana', family: 'Verdana, sans-serif' },
+  { name: 'Trebuchet MS', family: "'Trebuchet MS', sans-serif" },
+  { name: 'Comic Sans MS', family: "'Comic Sans MS', cursive" },
+  { name: 'Impact', family: 'Impact, fantasy' },
+  { name: 'Lucida Console', family: "'Lucida Console', monospace" },
+  { name: 'Tahoma', family: 'Tahoma, sans-serif' },
+  { name: 'Palatino', family: "'Palatino Linotype', serif" },
+  { name: 'Garamond', family: 'Garamond, serif' },
+  { name: 'Bookman', family: "'Bookman Old Style', serif" },
+  { name: 'Brush Script MT', family: "'Brush Script MT', cursive" },
+  { name: 'Consolas', family: 'Consolas, monospace' },
+  { name: 'Monaco', family: 'Monaco, monospace' },
+  { name: 'Roboto', family: "'Roboto', sans-serif" },
+  { name: 'Open Sans', family: "'Open Sans', sans-serif" },
+  { name: 'Lato', family: "'Lato', sans-serif" },
+  { name: 'Montserrat', family: "'Montserrat', sans-serif" },
+  { name: 'Poppins', family: "'Poppins', sans-serif" },
+  { name: 'Source Sans Pro', family: "'Source Sans Pro', sans-serif" },
+  { name: 'Raleway', family: "'Raleway', sans-serif" },
+  { name: 'Ubuntu', family: "'Ubuntu', sans-serif" },
+  { name: 'Playfair Display', family: "'Playfair Display', serif" },
+  { name: 'Merriweather', family: "'Merriweather', serif" },
+  { name: 'Fira Sans', family: "'Fira Sans', sans-serif" },
+  { name: 'Nunito', family: "'Nunito', sans-serif" },
+  { name: 'Quicksand', family: "'Quicksand', sans-serif" }
+];
+
+function renderFonts() {
+  fontGrid.innerHTML = '';
+  fonts.forEach(font => {
+    const card = document.createElement('div');
+    card.className = 'font-card';
+    card.innerHTML = `
+      <div class="font-name">${font.name}</div>
+      <div class="font-preview" style="font-family: ${font.family};">The quick brown fox</div>
+      <div class="font-code">${font.family}</div>
+    `;
+    card.addEventListener('click', () => copyFontCode(font.family, font.name));
+    fontGrid.appendChild(card);
+  });
+}
+
+function copyFontCode(fontFamily, fontName) {
+  const code = `font-family: ${fontFamily};`;
+  
+  // Try modern clipboard API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(() => {
+      showNotification(`Copied: ${fontName}`, 'success');
+    }).catch(() => {
+      fallbackCopy(code, fontName);
+    });
+  } else {
+    fallbackCopy(code, fontName);
+  }
+}
+
+function fallbackCopy(text, fontName) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showNotification(`Copied: ${fontName}`, 'success');
+  } catch (err) {
+    showNotification('Failed to copy', 'error');
+  }
+  document.body.removeChild(textarea);
+}
+
+fontPickerBtn.addEventListener('click', () => {
+  renderFonts();
+  fontPickerModal.style.display = 'flex';
+});
+
+closeFontPickerBtn.addEventListener('click', () => {
+  fontPickerModal.style.display = 'none';
+});
+
+fontPickerModal.addEventListener('click', (e) => {
+  if (e.target === fontPickerModal) {
+    fontPickerModal.style.display = 'none';
+  }
+});

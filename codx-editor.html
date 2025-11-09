@@ -53,6 +53,12 @@
   <strong>ADD MEDIA</strong>
 </button>
 
+  <button id="fontPickerBtn" class="run-button" title="Browse and copy fonts" aria-label="Font picker">
+  <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M9.93 13.5h4.14L12 7.98zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/>
+  </svg>
+  <strong>FONTS</strong>
+</button>
 
     <div class="theme-toggle">
       <span><strong>🌙</strong></span>
@@ -210,6 +216,25 @@
       </div>
     </div>
   </div>
+
+  <!-- Font Picker Modal -->
+<div id="fontPickerModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; overflow-y: auto; padding: 20px;">
+  <div style="position: relative; background-color: var(--bg-secondary); margin: auto; padding: 25px; border: 1px solid var(--border-color); width: 90%; max-width: 800px; border-radius: 8px; max-height: 85vh; overflow-y: auto;">
+    <span id="closeFontPickerBtn" style="position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; color: var(--text-muted); cursor: pointer; line-height: 1;" aria-label="Close font picker">&times;</span>
+    
+    <h2 style="margin-top: 0; color: var(--text-primary); margin-bottom: 10px;">🔤 Font Picker</h2>
+    
+    <div style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--accent-color);">
+      <p style="margin: 0; color: var(--text-primary); font-size: 14px;">
+        <strong>Instructions:</strong> Click on any font below to copy its <code>font-family</code> code to your clipboard. Then paste it in your CSS!
+      </p>
+    </div>
+
+    <div id="fontGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+      <!-- Fonts will be inserted here -->
+    </div>
+  </div>
+</div>
 
   <script src="codx-editor.js"></script>
 </body>
