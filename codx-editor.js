@@ -1,4 +1,3 @@
-
 // PART 1: INITIALIZATION & CONSTANTS
 const iframe = document.getElementById('output');
 const autoRunCheckbox = document.getElementById('autoRun');
@@ -35,6 +34,25 @@ const typingIndicatorEl = document.getElementById('typingIndicator');
 const previewFullscreenBtn = document.getElementById('previewFullscreenBtn');
 const previewIframe = document.getElementById('output');
 const errorMsgEl = document.getElementById('errorMsg');
+
+// ADDED: Tag suggestion elements
+const suggestionPopup = document.getElementById('suggestionPopup');
+let activeSuggestion = -1;
+
+const selfClosingTags = ['img', 'br', 'hr', 'input', 'meta', 'link', 'area', 'base', 'col', 'embed', 'param', 'source', 'track', 'wbr'];
+const htmlTags = [
+  'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 
+  'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 
+  'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 
+  'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hr', 'html', 'i', 'iframe', 'img', 'input', 
+  'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'meta', 'meter', 'nav', 'noscript', 
+  'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 
+  'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strong', 'style', 'sub', 
+  'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 
+  'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr'
+];
+// END: Tag suggestion elements
+
 
 let hasUnsavedChanges = false;
 let autoRunTimeout;
@@ -160,6 +178,8 @@ function switchFile(fileName) {
       editor.value = file.content;
       updateLineNumbers(editor);
       syncScroll(editor);
+      // Hide suggestions when switching files
+      if (suggestionPopup) suggestionPopup.style.display = 'none';
     }
   });
   renderFileList();
@@ -528,37 +548,247 @@ function syncScroll(textarea) {
   });
 }
 
-
-// PART 6: EDITOR INITIALIZATION
+// PART 6: EDITOR INITIALIZATION (MODIFIED)
 function initializeEditor() {
   const editor = document.getElementById('activeEditor');
   editor.value = activeFile.content;
   updateLineNumbers(editor);
   syncScroll(editor);
-  editor.addEventListener('input', () => {
+
+  // MODIFIED: Combined input listener
+  editor.addEventListener('input', (e) => {
     hasUnsavedChanges = true;
     activeFile.content = editor.value;
     updateLineNumbers(editor);
     if (autoRunCheckbox.checked) debouncedUpdatePreview();
     handleCodeChange({ target: { id: activeFile.type + 'Code', value: editor.value } });
     announceTyping(activeFile.type + 'Code');
+    
+    // ADDED: Handle suggestions
+    handleSuggestions(e);
   });
-  editor.addEventListener('keydown', function(e) {
-    if (e.key === 'Tab') {
+
+  // MODIFIED: Replaced Tab logic with comprehensive keydown handler
+  editor.addEventListener('keydown', handleEditorKeyDown);
+}
+
+// PART 6.5: TAG SUGGESTIONS & AUTO-CLOSING LOGIC (NEW)
+
+/**
+ * Handles auto-closing of HTML tags when '>' is typed.
+ */
+function handleTagClosing(e) {
+  if (e.key !== '>') return;
+  if (activeFile.type !== 'html') return;
+
+  const editor = e.target;
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  
+  // Regex: Find the last opening tag <tagname just before the cursor
+  // It avoids matching </tagname> or <tagname/>
+  const tagMatch = textBefore.match(/<([a-zA-Z0-9]+)(?![^>]*\/?>)\s*$/);
+
+  if (tagMatch) {
+    const tagName = tagMatch[1];
+    if (selfClosingTags.includes(tagName.toLowerCase())) {
+      // It's a self-closing tag, just allow the '>'
+      return; 
+    }
+
+    // It's a regular tag, auto-close it
+    e.preventDefault();
+    const closingTag = `</${tagName}>`;
+    const textAfter = editor.value.substring(editor.selectionEnd);
+    
+    // Insert the > and the closing tag
+    editor.value = textBefore + '>' + closingTag + textAfter;
+    
+    // Place cursor between the tags
+    editor.selectionStart = editor.selectionEnd = pos + 1; 
+    
+    // Update content
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) debouncedUpdatePreview();
+    handleCodeChange();
+  }
+}
+
+/**
+ * Handles the editor's 'input' event to show/hide suggestions.
+ */
+function handleSuggestions(e) {
+  if (activeFile.type !== 'html') {
+    suggestionPopup.style.display = 'none';
+    return;
+  }
+
+  const editor = e.target;
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  
+  // Regex: Check if cursor is right after <tagprefix
+  const triggerMatch = textBefore.match(/<([a-zA-Z0-9]*)$/);
+
+  if (triggerMatch) {
+    const prefix = triggerMatch[1];
+    const suggestions = htmlTags.filter(tag => tag.startsWith(prefix));
+    
+    if (suggestions.length > 0) {
+      showSuggestions(suggestions, prefix);
+    } else {
+      suggestionPopup.style.display = 'none';
+    }
+  } else {
+    suggestionPopup.style.display = 'none';
+  }
+}
+
+/**
+ * Displays the suggestion popup with filtered tags.
+ */
+function showSuggestions(suggestions, prefix) {
+  suggestionPopup.innerHTML = '';
+  suggestions.forEach((tag, index) => {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    // Highlight the part that was typed
+    item.innerHTML = `<strong>${tag.substring(0, prefix.length)}</strong>${tag.substring(prefix.length)}`;
+    item.dataset.tag = tag;
+    // Use mousedown instead of click to fire before blur
+    item.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      const start = this.selectionStart, end = this.selectionEnd;
-      this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
-      this.selectionStart = this.selectionEnd = start + 2;
-      activeFile.content = this.value;
-      updateLineNumbers(this);
-      if (autoRunCheckbox.checked) debouncedUpdatePreview();
-      handleCodeChange({ target: { id: activeFile.type + 'Code', value: this.value } });
+      selectSuggestion(tag);
+    });
+    suggestionPopup.appendChild(item);
+  });
+  suggestionPopup.style.display = 'block';
+  activeSuggestion = -1; // Reset active suggestion
+}
+
+/**
+ * Inserts the selected suggestion into the editor.
+ */
+function selectSuggestion(tag) {
+  const editor = document.getElementById('activeEditor');
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  
+  // Find the trigger point again
+  const triggerMatch = textBefore.match(/<([a-zA-Z0-9]*)$/);
+  
+  if (triggerMatch) {
+    const prefix = triggerMatch[1];
+    const textBeforeTrigger = textBefore.substring(0, textBefore.length - prefix.length);
+    const textAfter = editor.value.substring(editor.selectionEnd);
+    
+    const openingTag = `${tag}>`;
+    const closingTag = selfClosingTags.includes(tag) ? '' : `</${tag}>`;
+    
+    editor.value = textBeforeTrigger + openingTag + closingTag + textAfter;
+    
+    // Place cursor inside the tags (or after if self-closing)
+    editor.selectionStart = editor.selectionEnd = textBeforeTrigger.length + openingTag.length;
+    
+    // Hide popup and update state
+    suggestionPopup.style.display = 'none';
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) debouncedUpdatePreview();
+    handleCodeChange();
+    editor.focus();
+  }
+}
+
+/**
+ * Highlights the active suggestion item during keyboard navigation.
+ */
+function updateSuggestionHighlight(items) {
+  items.forEach((item, index) => {
+    if (index === activeSuggestion) {
+      item.classList.add('active');
+      // Ensure the active item is visible
+      item.scrollIntoView({ block: 'nearest' });
+    } else {
+      item.classList.remove('active');
     }
   });
 }
 
+/**
+ * Handles all keydown events in the editor for suggestions, tab, and auto-closing.
+ */
+function handleEditorKeyDown(e) {
+  const editor = e.target;
+  
+  // --- 1. Suggestion Popup Navigation ---
+  if (suggestionPopup.style.display === 'block') {
+    const items = suggestionPopup.querySelectorAll('.suggestion-item');
+    if (!items.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeSuggestion = (activeSuggestion + 1) % items.length;
+      updateSuggestionHighlight(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeSuggestion = (activeSuggestion - 1 + items.length) % items.length;
+      updateSuggestionHighlight(items);
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      if (activeSuggestion > -1) {
+        // Select the highlighted suggestion
+        e.preventDefault();
+        selectSuggestion(items[activeSuggestion].dataset.tag);
+      } else {
+        // Allow default behavior (like new line) if no suggestion is active
+        suggestionPopup.style.display = 'none';
+        if(e.key === 'Tab') e.preventDefault(); // Prevent tabbing out
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      suggestionPopup.style.display = 'none';
+    } else if (e.key === '>') {
+      // Handle tag closing, then hide popup
+      handleTagClosing(e);
+      suggestionPopup.style.display = 'none';
+    }
+    
+  } else {
+    // --- 2. No Popup Visible: Handle Tab and Tag Closing ---
+    
+    if (e.key === '>') {
+      // Handle tag closing
+      handleTagClosing(e);
+    } else if (e.key === 'Tab') {
+      // Handle Tab for indentation
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      // Insert 2 spaces
+      editor.value = editor.value.substring(0, start) + "  " + editor.value.substring(end);
+      editor.selectionStart = editor.selectionEnd = start + 2;
+      
+      // Update state
+      activeFile.content = editor.value;
+      updateLineNumbers(editor);
+      if (autoRunCheckbox.checked) debouncedUpdatePreview();
+      handleCodeChange({ target: { id: activeFile.type + 'Code', value: editor.value } });
+    }
+  }
+}
+
+
 // PART 7: KEYBOARD SHORTCUTS
 document.addEventListener('keydown', (e) => {
+  // Prevent shortcuts from firing while suggestion box is open
+  if (suggestionPopup.style.display === 'block') {
+    if (e.ctrlKey && (e.key === 's' || e.key === 'Enter' || e.key === 'n')) {
+      e.preventDefault();
+    }
+    return;
+  }
+
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
     exportAsZip();
@@ -996,8 +1226,8 @@ function syncProjectWithSession() {
 
 function startSyncing() {
   const ed = document.getElementById('activeEditor');
-  ed.addEventListener('input', handleCodeChange);
-  ed.addEventListener('input', () => announceTyping(activeFile.type + 'Code'));
+  // The 'input' listener in initializeEditor already calls handleCodeChange
+  // and announceTyping, so no need to add duplicate listeners.
 }
 
 function handleStorageChange(e) {
@@ -1009,8 +1239,12 @@ function handleStorageChange(e) {
         projectFiles = nv.files;
         activeFile = projectFiles.find(f => f.active) || projectFiles[0];
         projectFiles.forEach(f => f.active = f === activeFile);
+        
         const ed = document.getElementById('activeEditor');
+        const currentPos = ed.selectionStart; // Try to save cursor
         ed.value = activeFile.content;
+        ed.selectionStart = ed.selectionEnd = currentPos; // Restore cursor
+        
         updateLineNumbers(ed);
         renderFileList();
         if (autoRunCheckbox.checked) updatePreview();
@@ -1156,7 +1390,7 @@ window.addEventListener('beforeunload', function (e) {
 
 newFileBtn.addEventListener('click', createNewFile);
 
-console.log('CodX Editor loaded with file linking!');
+console.log('CodX Editor loaded with file linking and tag suggestions!');
 
 // FONT PICKER
 const fontPickerBtn = document.getElementById('fontPickerBtn');

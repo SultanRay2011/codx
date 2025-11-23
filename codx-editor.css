@@ -240,6 +240,53 @@ textarea::-webkit-scrollbar-thumb:hover {
   background: var(--accent-color);
 }
 
+/* ADDED: Suggestion Popup Styles */
+#suggestionPopup {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 20;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  max-height: 200px;
+  min-width: 180px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.suggestion-item {
+  padding: 6px 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.suggestion-item:hover {
+  background-color: var(--accent-hover);
+  color: white;
+}
+
+.suggestion-item.active {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.suggestion-item strong {
+  color: var(--accent-color);
+}
+
+.suggestion-item.active strong,
+.suggestion-item:hover strong {
+  color: white;
+  font-weight: bold;
+}
+/* END: Suggestion Popup Styles */
+
+
 .run-button {
   background: var(--accent-color);
   color: white;
