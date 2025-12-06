@@ -1,58 +1,172 @@
 // PART 1: INITIALIZATION & CONSTANTS
-const iframe = document.getElementById('output');
-const autoRunCheckbox = document.getElementById('autoRun');
-const showConsoleCheckbox = document.getElementById('showConsole');
-const themeToggle = document.getElementById('themeToggle');
-const consoleContainer = document.querySelector('.console-container');
-const consoleOutput = document.getElementById('consoleOutput');
-const divider = document.querySelector('.divider');
-const editorsPanel = document.querySelector('.editors');
-const lineNumbers = document.getElementById('lineNumbers');
-const editorContainer = document.querySelector('.editor-container');
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsModal = document.getElementById('settingsModal');
-const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-const applySettingsBtn = document.getElementById('applySettings');
-const resetSettingsBtn = document.getElementById('resetSettings');
-const editorBgColorInput = document.getElementById('editorBgColor');
-const editorBgColorText = document.getElementById('editorBgColorText');
-const editorTextColorInput = document.getElementById('editorTextColor');
-const editorTextColorText = document.getElementById('editorTextColorText');
-const editorTextSizeInput = document.getElementById('editorTextSize');
-const textSizeValue = document.getElementById('textSizeValue');
-const editorFontFamilySelect = document.getElementById('editorFontFamily');
-const settingsPreview = document.getElementById('settingsPreview');
-const newFileBtn = document.getElementById('newFileBtn');
-const fileList = document.getElementById('fileList');
-const collabBtn = document.getElementById('collabBtn');
-const collabModal = document.getElementById('collabModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalBody = document.getElementById('modalBody');
-const modalDoneBtn = document.getElementById('modalDoneBtn');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const typingIndicatorEl = document.getElementById('typingIndicator');
-const previewFullscreenBtn = document.getElementById('previewFullscreenBtn');
-const previewIframe = document.getElementById('output');
-const errorMsgEl = document.getElementById('errorMsg');
+const iframe = document.getElementById("output");
+const autoRunCheckbox = document.getElementById("autoRun");
+const showConsoleCheckbox = document.getElementById("showConsole");
+const themeToggle = document.getElementById("themeToggle");
+const consoleContainer = document.querySelector(".console-container");
+const consoleOutput = document.getElementById("consoleOutput");
+const divider = document.querySelector(".divider");
+const editorsPanel = document.querySelector(".editors");
+const lineNumbers = document.getElementById("lineNumbers");
+const editorContainer = document.querySelector(".editor-container");
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsModal = document.getElementById("settingsModal");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+const applySettingsBtn = document.getElementById("applySettings");
+const resetSettingsBtn = document.getElementById("resetSettings");
+const editorBgColorInput = document.getElementById("editorBgColor");
+const editorBgColorText = document.getElementById("editorBgColorText");
+const editorTextColorInput = document.getElementById("editorTextColor");
+const editorTextColorText = document.getElementById("editorTextColorText");
+const editorTextSizeInput = document.getElementById("editorTextSize");
+const textSizeValue = document.getElementById("textSizeValue");
+const editorFontFamilySelect = document.getElementById("editorFontFamily");
+const settingsPreview = document.getElementById("settingsPreview");
+const newFileBtn = document.getElementById("newFileBtn");
+const fileList = document.getElementById("fileList");
+const collabBtn = document.getElementById("collabBtn");
+const collabModal = document.getElementById("collabModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+const modalDoneBtn = document.getElementById("modalDoneBtn");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const typingIndicatorEl = document.getElementById("typingIndicator");
+const previewFullscreenBtn = document.getElementById("previewFullscreenBtn");
+const previewIframe = document.getElementById("output");
+const errorMsgEl = document.getElementById("errorMsg");
 
 // ADDED: Tag suggestion elements
-const suggestionPopup = document.getElementById('suggestionPopup');
+const suggestionPopup = document.getElementById("suggestionPopup");
 let activeSuggestion = -1;
 
-const selfClosingTags = ['img', 'br', 'hr', 'input', 'meta', 'link', 'area', 'base', 'col', 'embed', 'param', 'source', 'track', 'wbr'];
+const selfClosingTags = [
+  "img",
+  "br",
+  "hr",
+  "input",
+  "meta",
+  "link",
+  "area",
+  "base",
+  "col",
+  "embed",
+  "param",
+  "source",
+  "track",
+  "wbr",
+];
 const htmlTags = [
-  'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 
-  'br', 'button', 'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'data', 'datalist', 'dd', 'del', 
-  'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 
-  'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hr', 'html', 'i', 'iframe', 'img', 'input', 
-  'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'meta', 'meter', 'nav', 'noscript', 
-  'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'picture', 'pre', 'progress', 'q', 'rp', 'rt', 
-  'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strong', 'style', 'sub', 
-  'summary', 'sup', 'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 
-  'tr', 'track', 'u', 'ul', 'var', 'video', 'wbr'
+  "a",
+  "abbr",
+  "address",
+  "area",
+  "article",
+  "aside",
+  "audio",
+  "b",
+  "base",
+  "bdi",
+  "bdo",
+  "blockquote",
+  "body",
+  "br",
+  "button",
+  "canvas",
+  "caption",
+  "cite",
+  "code",
+  "col",
+  "colgroup",
+  "data",
+  "datalist",
+  "dd",
+  "del",
+  "details",
+  "dfn",
+  "dialog",
+  "div",
+  "dl",
+  "dt",
+  "em",
+  "embed",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "head",
+  "header",
+  "hr",
+  "html",
+  "i",
+  "iframe",
+  "img",
+  "input",
+  "ins",
+  "kbd",
+  "label",
+  "legend",
+  "li",
+  "link",
+  "main",
+  "map",
+  "mark",
+  "meta",
+  "meter",
+  "nav",
+  "noscript",
+  "object",
+  "ol",
+  "optgroup",
+  "option",
+  "output",
+  "p",
+  "param",
+  "picture",
+  "pre",
+  "progress",
+  "q",
+  "rp",
+  "rt",
+  "ruby",
+  "s",
+  "samp",
+  "script",
+  "section",
+  "select",
+  "small",
+  "source",
+  "span",
+  "strong",
+  "style",
+  "sub",
+  "summary",
+  "sup",
+  "table",
+  "tbody",
+  "td",
+  "template",
+  "textarea",
+  "tfoot",
+  "th",
+  "thead",
+  "time",
+  "title",
+  "tr",
+  "track",
+  "u",
+  "ul",
+  "var",
+  "video",
+  "wbr",
 ];
 // END: Tag suggestion elements
-
 
 let hasUnsavedChanges = false;
 let autoRunTimeout;
@@ -61,8 +175,8 @@ let typingTimer;
 let myInfo = {};
 let projectFiles = [
   {
-    name: 'index.html',
-    type: 'html',
+    name: "index.html",
+    type: "html",
     content: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,63 +190,70 @@ let projectFiles = [
     <script src="script.js"></script>
 </body>
 </html>`,
-    active: true
+    active: true,
   },
   {
-    name: 'style.css',
-    type: 'css',
+    name: "style.css",
+    type: "css",
     content: `h1 {
     color: rgb(2, 255, 116);
     text-align: center;
     font-family: Arial, sans-serif;
 }`,
-    active: false
+    active: false,
   },
   {
-    name: 'script.js',
-    type: 'js',
+    name: "script.js",
+    type: "js",
     content: `console.log('Hello World from CodX!');`,
-    active: false
-  }
+    active: false,
+  },
 ];
 let activeFile = projectFiles[0];
 
 const defaultSettings = {
-  bgColor: '#1E1E1E',
-  textColor: '#ffffff',
-  textSize: '14',
-  fontFamily: 'monospace'
+  bgColor: "#1E1E1E",
+  textColor: "#ffffff",
+  textSize: "14",
+  fontFamily: "monospace",
 };
 
 // PART 2: UTILITY FUNCTIONS
 function safeLocalStorage(method, key, value = null) {
   try {
-    if (method === 'get') return localStorage.getItem(key);
-    else if (method === 'set') { localStorage.setItem(key, value); return true; }
-    else if (method === 'remove') { localStorage.removeItem(key); return true; }
+    if (method === "get") return localStorage.getItem(key);
+    else if (method === "set") {
+      localStorage.setItem(key, value);
+      return true;
+    } else if (method === "remove") {
+      localStorage.removeItem(key);
+      return true;
+    }
   } catch (e) {
-    console.warn('localStorage not available:', e);
+    console.warn("localStorage not available:", e);
     return null;
   }
 }
 
-function showNotification(message, type = 'info') {
-  const notification = document.createElement('div');
+function showNotification(message, type = "info") {
+  const notification = document.createElement("div");
   notification.textContent = message;
   notification.style.cssText = `
     position: fixed; top: 80px; right: 20px; padding: 15px 20px;
-    background: ${type === 'error' ? '#ff5555' : type === 'success' ? '#4CAF50' : '#2196F3'};
+    background: ${
+      type === "error" ? "#ff5555" : type === "success" ? "#4CAF50" : "#2196F3"
+    };
     color: white; border-radius: 4px; z-index: 10000; font-weight: bold;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3); animation: slideIn 0.3s ease;
   `;
   document.body.appendChild(notification);
   setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease';
+    notification.style.animation = "slideOut 0.3s ease";
     setTimeout(() => notification.remove(), 300);
   }, 3000);
 }
 
-const style = document.createElement('style');
+const style = document.createElement("style");
 style.textContent = `
   @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
@@ -140,8 +261,8 @@ style.textContent = `
 document.head.appendChild(style);
 
 function clearConsole() {
-  consoleOutput.innerHTML = '';
-  showNotification('Console cleared', 'info');
+  consoleOutput.innerHTML = "";
+  showNotification("Console cleared", "info");
 }
 
 function debouncedUpdatePreview() {
@@ -150,36 +271,38 @@ function debouncedUpdatePreview() {
 }
 
 function renderFileList() {
-  fileList.innerHTML = '';
-  projectFiles.forEach(file => {
-    const fileItem = document.createElement('div');
-    fileItem.className = `file-item ${file.active ? 'active' : ''}`;
+  fileList.innerHTML = "";
+  projectFiles.forEach((file) => {
+    const fileItem = document.createElement("div");
+    fileItem.className = `file-item ${file.active ? "active" : ""}`;
     fileItem.innerHTML = `
       <span>${file.name}</span>
       <button class="delete-file" data-file="${file.name}" aria-label="Delete ${file.name}">
         <i class="fa-solid fa-trash"></i>
       </button>
     `;
-    fileItem.addEventListener('click', (e) => {
-      if (e.target.closest('.delete-file')) return;
+    fileItem.addEventListener("click", (e) => {
+      if (e.target.closest(".delete-file")) return;
       switchFile(file.name);
     });
-    fileItem.querySelector('.delete-file').addEventListener('click', () => deleteFile(file.name));
+    fileItem
+      .querySelector(".delete-file")
+      .addEventListener("click", () => deleteFile(file.name));
     fileList.appendChild(fileItem);
   });
 }
 
 function switchFile(fileName) {
-  projectFiles.forEach(file => {
+  projectFiles.forEach((file) => {
     file.active = file.name === fileName;
     if (file.active) {
       activeFile = file;
-      const editor = document.getElementById('activeEditor');
+      const editor = document.getElementById("activeEditor");
       editor.value = file.content;
       updateLineNumbers(editor);
       syncScroll(editor);
       // Hide suggestions when switching files
-      if (suggestionPopup) suggestionPopup.style.display = 'none';
+      if (suggestionPopup) suggestionPopup.style.display = "none";
     }
   });
   renderFileList();
@@ -187,58 +310,58 @@ function switchFile(fileName) {
 }
 
 function createNewFile() {
-  const name = prompt('Enter file name (e.g., newfile.html):');
+  const name = prompt("Enter file name (e.g., newfile.html):");
   if (!name) return;
-  const ext = name.split('.').pop().toLowerCase();
-  if (!['html', 'css', 'js'].includes(ext)) {
-    showNotification('File must be .html, .css, or .js', 'error');
+  const ext = name.split(".").pop().toLowerCase();
+  if (!["html", "css", "js"].includes(ext)) {
+    showNotification("File must be .html, .css, or .js", "error");
     return;
   }
-  if (projectFiles.some(file => file.name === name)) {
-    showNotification('File name already exists', 'error');
+  if (projectFiles.some((file) => file.name === name)) {
+    showNotification("File name already exists", "error");
     return;
   }
   const newFile = {
     name,
     type: ext,
-    content: '',
-    active: true
+    content: "",
+    active: true,
   };
-  projectFiles.forEach(file => (file.active = false));
+  projectFiles.forEach((file) => (file.active = false));
   projectFiles.push(newFile);
   activeFile = newFile;
-  const editor = document.getElementById('activeEditor');
-  editor.value = '';
+  const editor = document.getElementById("activeEditor");
+  editor.value = "";
   updateLineNumbers(editor);
   renderFileList();
   syncProjectWithSession();
-  showNotification(`File ${name} created`, 'success');
+  showNotification(`File ${name} created`, "success");
 }
 
 function deleteFile(fileName) {
   if (projectFiles.length <= 1) {
-    showNotification('Cannot delete the last file', 'error');
+    showNotification("Cannot delete the last file", "error");
     return;
   }
   if (confirm(`Delete ${fileName}?`)) {
-    projectFiles = projectFiles.filter(file => file.name !== fileName);
+    projectFiles = projectFiles.filter((file) => file.name !== fileName);
     if (activeFile.name === fileName) {
       activeFile = projectFiles[0];
       activeFile.active = true;
-      const editor = document.getElementById('activeEditor');
+      const editor = document.getElementById("activeEditor");
       editor.value = activeFile.content;
       updateLineNumbers(editor);
       syncScroll(editor);
     }
     renderFileList();
     syncProjectWithSession();
-    showNotification(`File ${fileName} deleted`, 'success');
+    showNotification(`File ${fileName} deleted`, "success");
   }
 }
 
 // PART 3: SETTINGS MANAGEMENT
 function loadSettings() {
-  const savedSettings = safeLocalStorage('get', 'editorSettings');
+  const savedSettings = safeLocalStorage("get", "editorSettings");
   if (savedSettings) {
     try {
       const settings = JSON.parse(savedSettings);
@@ -247,10 +370,10 @@ function loadSettings() {
       editorTextColorInput.value = settings.textColor;
       editorTextColorText.value = settings.textColor;
       editorTextSizeInput.value = settings.textSize;
-      textSizeValue.textContent = settings.textSize + 'px';
+      textSizeValue.textContent = settings.textSize + "px";
       editorFontFamilySelect.value = settings.fontFamily;
     } catch (e) {
-      console.error('Error loading settings:', e);
+      console.error("Error loading settings:", e);
       resetToDefaultSettings();
     }
   } else {
@@ -266,132 +389,149 @@ function resetToDefaultSettings() {
   editorTextColorInput.value = defaultSettings.textColor;
   editorTextColorText.value = defaultSettings.textColor;
   editorTextSizeInput.value = defaultSettings.textSize;
-  textSizeValue.textContent = defaultSettings.textSize + 'px';
+  textSizeValue.textContent = defaultSettings.textSize + "px";
   editorFontFamilySelect.value = defaultSettings.fontFamily;
 }
 
 function updatePreviewBox() {
   settingsPreview.style.backgroundColor = editorBgColorInput.value;
   settingsPreview.style.color = editorTextColorInput.value;
-  settingsPreview.style.fontSize = editorTextSizeInput.value + 'px';
+  settingsPreview.style.fontSize = editorTextSizeInput.value + "px";
   settingsPreview.style.fontFamily = editorFontFamilySelect.value;
 }
 
 function applySettingsToEditors() {
-  const editor = document.getElementById('activeEditor');
+  const editor = document.getElementById("activeEditor");
   editor.style.backgroundColor = editorBgColorInput.value;
   editor.style.color = editorTextColorInput.value;
-  editor.style.fontSize = editorTextSizeInput.value + 'px';
+  editor.style.fontSize = editorTextSizeInput.value + "px";
   editor.style.fontFamily = editorFontFamilySelect.value;
-  lineNumbers.style.fontSize = editorTextSizeInput.value + 'px';
+  lineNumbers.style.fontSize = editorTextSizeInput.value + "px";
 }
 
-editorBgColorInput.addEventListener('input', (e) => {
+editorBgColorInput.addEventListener("input", (e) => {
   editorBgColorText.value = e.target.value;
   updatePreviewBox();
 });
 
-editorTextColorInput.addEventListener('input', (e) => {
+editorTextColorInput.addEventListener("input", (e) => {
   editorTextColorText.value = e.target.value;
   updatePreviewBox();
 });
 
-editorTextSizeInput.addEventListener('input', (e) => {
-  textSizeValue.textContent = e.target.value + 'px';
+editorTextSizeInput.addEventListener("input", (e) => {
+  textSizeValue.textContent = e.target.value + "px";
   updatePreviewBox();
 });
 
-editorFontFamilySelect.addEventListener('change', updatePreviewBox);
+editorFontFamilySelect.addEventListener("change", updatePreviewBox);
 
-settingsBtn.addEventListener('click', () => {
+settingsBtn.addEventListener("click", () => {
   loadSettings();
-  settingsModal.style.display = 'flex';
+  settingsModal.style.display = "flex";
 });
 
-closeSettingsBtn.addEventListener('click', () => {
-  settingsModal.style.display = 'none';
+closeSettingsBtn.addEventListener("click", () => {
+  settingsModal.style.display = "none";
 });
 
-settingsModal.addEventListener('click', (e) => {
-  if (e.target === settingsModal) settingsModal.style.display = 'none';
+settingsModal.addEventListener("click", (e) => {
+  if (e.target === settingsModal) settingsModal.style.display = "none";
 });
 
-applySettingsBtn.addEventListener('click', () => {
+applySettingsBtn.addEventListener("click", () => {
   const settings = {
     bgColor: editorBgColorInput.value,
     textColor: editorTextColorInput.value,
     textSize: editorTextSizeInput.value,
-    fontFamily: editorFontFamilySelect.value
+    fontFamily: editorFontFamilySelect.value,
   };
-  if (safeLocalStorage('set', 'editorSettings', JSON.stringify(settings))) {
+  if (safeLocalStorage("set", "editorSettings", JSON.stringify(settings))) {
     applySettingsToEditors();
-    showNotification('Settings applied successfully!', 'success');
-    settingsModal.style.display = 'none';
+    showNotification("Settings applied successfully!", "success");
+    settingsModal.style.display = "none";
   } else {
-    showNotification('Error saving settings', 'error');
+    showNotification("Error saving settings", "error");
   }
 });
 
-resetSettingsBtn.addEventListener('click', () => {
-  if (confirm('Are you sure you want to reset all settings to default?')) {
-    safeLocalStorage('remove', 'editorSettings');
+resetSettingsBtn.addEventListener("click", () => {
+  if (confirm("Are you sure you want to reset all settings to default?")) {
+    safeLocalStorage("remove", "editorSettings");
     resetToDefaultSettings();
     updatePreviewBox();
     applySettingsToEditors();
-    showNotification('Settings reset to default!', 'success');
+    showNotification("Settings reset to default!", "success");
   }
 });
 
 // PART 4: THEME & UI CONTROLS
-themeToggle.addEventListener('change', () => {
-  document.body.classList.toggle('light', themeToggle.checked);
-  safeLocalStorage('set', 'theme', themeToggle.checked ? 'light' : 'dark');
+themeToggle.addEventListener("change", () => {
+  document.body.classList.toggle("light", themeToggle.checked);
+  safeLocalStorage("set", "theme", themeToggle.checked ? "light" : "dark");
 });
 
-const savedTheme = safeLocalStorage('get', 'theme');
-if (savedTheme === 'light') {
+const savedTheme = safeLocalStorage("get", "theme");
+if (savedTheme === "light") {
   themeToggle.checked = true;
-  document.body.classList.add('light');
+  document.body.classList.add("light");
 }
 
-showConsoleCheckbox.addEventListener('change', () => {
-  consoleContainer.classList.toggle('show', showConsoleCheckbox.checked);
+showConsoleCheckbox.addEventListener("change", () => {
+  consoleContainer.classList.toggle("show", showConsoleCheckbox.checked);
 });
 
 // PART 5: PREVIEW & LINE NUMBERS (FIXED CONSOLE OUTPUT WITH ACCURATE LINE NUMBERS)
 function updatePreview() {
-  const htmlFile = projectFiles.find(f => f.type === 'html');
+  const htmlFile = projectFiles.find((f) => f.type === "html");
   if (!htmlFile) {
-    iframe.srcdoc = '<h3 style="text-align:center;color:#aaa;">No HTML file found</h3>';
+    iframe.srcdoc =
+      '<h3 style="text-align:center;color:#aaa;">No HTML file found</h3>';
     return;
   }
 
   let html = htmlFile.content;
-  consoleOutput.innerHTML = ''; // Clear console
+  consoleOutput.innerHTML = ""; // Clear console
 
   // === 1. Replace <link rel="stylesheet" href="style.css">
-  html = html.replace(/<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi, (match, href) => {
-    const cssFile = projectFiles.find(f => f.name.toLowerCase() === href.toLowerCase() && f.type === 'css');
-    if (cssFile) {
-      return `<style>${cssFile.content}</style>`;
-    } else {
-      const fileName = href.split('/').pop();
-      appendConsoleMessage('warn', `WARNING: CSS file not found: ${fileName}`);
-      return `<link rel="stylesheet" href="${href}?file=${encodeURIComponent(fileName)}">`;
+  html = html.replace(
+    /<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi,
+    (match, href) => {
+      const cssFile = projectFiles.find(
+        (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "css"
+      );
+      if (cssFile) {
+        return `<style>${cssFile.content}</style>`;
+      } else {
+        const fileName = href.split("/").pop();
+        appendConsoleMessage(
+          "warn",
+          `WARNING: CSS file not found: ${fileName}`
+        );
+        return `<link rel="stylesheet" href="${href}?file=${encodeURIComponent(
+          fileName
+        )}">`;
+      }
     }
-  });
+  );
 
   // === 2. Replace <script src="script.js"></script> WITH FILE NAME MARKERS
-  html = html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
-    const jsFile = projectFiles.find(f => f.name.toLowerCase() === src.toLowerCase() && f.type === 'js');
-    if (jsFile) {
-      // Wrap JS with file markers and line tracking
-      const lines = jsFile.content.split('\n');
-      const numberedContent = lines.map((line, idx) => {
-        return line; // Keep original content
-      }).join('\n');
-      
-      return `<script data-filename="${jsFile.name}">
+  html = html.replace(
+    /<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,
+    (match, src) => {
+      const jsFile = projectFiles.find(
+        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "js"
+      );
+      if (jsFile) {
+        // Wrap JS with file markers and line tracking
+        const lines = jsFile.content.split("\n");
+        const numberedContent = lines
+          .map((line, idx) => {
+            return line; // Keep original content
+          })
+          .join("\n");
+
+        return `<script data-filename="${jsFile.name}">
 /* ===== FILE: ${jsFile.name} ===== */
 (function() {
   try {
@@ -410,24 +550,35 @@ ${jsFile.content}
 })();
 /* ===== END: ${jsFile.name} ===== */
 </script>`;
-    } else {
-      const fileName = src.split('/').pop();
-      appendConsoleMessage('warn', `WARNING: JS file not found: ${fileName}`);
-      return `<script src="${src}?file=${encodeURIComponent(fileName)}"></script>`;
+      } else {
+        const fileName = src.split("/").pop();
+        appendConsoleMessage("warn", `WARNING: JS file not found: ${fileName}`);
+        return `<script src="${src}?file=${encodeURIComponent(
+          fileName
+        )}"></script>`;
+      }
     }
-  });
+  );
 
   // === 3. Handle media: <img>, <video>, <audio> src attributes
-  html = html.replace(/<(img|video|audio)[^>]*src=["']([^"']+)["'][^>]*>/gi, (match, tag, src) => {
-    const mediaFile = projectFiles.find(f => f.name.toLowerCase() === src.toLowerCase() && f.type === 'media');
-    if (mediaFile && mediaFile.content) {
-      return `<${tag} src="${mediaFile.content}">`;
-    } else {
-      const fileName = src.split('/').pop();
-      appendConsoleMessage('warn', `WARNING: Media file not found: ${fileName}`);
-      return `<${tag} src="${src}?file=${encodeURIComponent(fileName)}">`;
+  html = html.replace(
+    /<(img|video|audio)[^>]*src=["']([^"']+)["'][^>]*>/gi,
+    (match, tag, src) => {
+      const mediaFile = projectFiles.find(
+        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "media"
+      );
+      if (mediaFile && mediaFile.content) {
+        return `<${tag} src="${mediaFile.content}">`;
+      } else {
+        const fileName = src.split("/").pop();
+        appendConsoleMessage(
+          "warn",
+          `WARNING: Media file not found: ${fileName}`
+        );
+        return `<${tag} src="${src}?file=${encodeURIComponent(fileName)}">`;
+      }
     }
-  });
+  );
 
   // === 4. Inject console override BEFORE any scripts
   const consoleScript = `
@@ -525,7 +676,7 @@ ${jsFile.content}
 
 // Helper: Append message to console (for editor-side warnings)
 function appendConsoleMessage(type, message) {
-  const line = document.createElement('div');
+  const line = document.createElement("div");
   line.className = type;
   line.textContent = message;
   consoleOutput.appendChild(line);
@@ -534,42 +685,46 @@ function appendConsoleMessage(type, message) {
 
 // Line numbers
 function updateLineNumbers(textarea) {
-  if (!textarea) textarea = document.getElementById('activeEditor');
+  if (!textarea) textarea = document.getElementById("activeEditor");
   if (!textarea) return;
-  const lines = textarea.value.split('\n').length;
-  lineNumbers.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+  const lines = textarea.value.split("\n").length;
+  lineNumbers.textContent = Array.from({ length: lines }, (_, i) => i + 1).join(
+    "\n"
+  );
 }
 
 // Sync scroll
 function syncScroll(textarea) {
   if (!textarea) return;
-  textarea.addEventListener('scroll', () => { 
-    lineNumbers.scrollTop = textarea.scrollTop; 
+  textarea.addEventListener("scroll", () => {
+    lineNumbers.scrollTop = textarea.scrollTop;
   });
 }
 
 // PART 6: EDITOR INITIALIZATION (MODIFIED)
 function initializeEditor() {
-  const editor = document.getElementById('activeEditor');
+  const editor = document.getElementById("activeEditor");
   editor.value = activeFile.content;
   updateLineNumbers(editor);
   syncScroll(editor);
 
   // MODIFIED: Combined input listener
-  editor.addEventListener('input', (e) => {
+  editor.addEventListener("input", (e) => {
     hasUnsavedChanges = true;
     activeFile.content = editor.value;
     updateLineNumbers(editor);
     if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange({ target: { id: activeFile.type + 'Code', value: editor.value } });
-    announceTyping(activeFile.type + 'Code');
-    
+    handleCodeChange({
+      target: { id: activeFile.type + "Code", value: editor.value },
+    });
+    announceTyping(activeFile.type + "Code");
+
     // ADDED: Handle suggestions
     handleSuggestions(e);
   });
 
   // MODIFIED: Replaced Tab logic with comprehensive keydown handler
-  editor.addEventListener('keydown', handleEditorKeyDown);
+  editor.addEventListener("keydown", handleEditorKeyDown);
 }
 
 // PART 6.5: TAG SUGGESTIONS & AUTO-CLOSING LOGIC (NEW)
@@ -578,13 +733,13 @@ function initializeEditor() {
  * Handles auto-closing of HTML tags when '>' is typed.
  */
 function handleTagClosing(e) {
-  if (e.key !== '>') return;
-  if (activeFile.type !== 'html') return;
+  if (e.key !== ">") return;
+  if (activeFile.type !== "html") return;
 
   const editor = e.target;
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
-  
+
   // Regex: Find the last opening tag <tagname just before the cursor
   // It avoids matching </tagname> or <tagname/>
   const tagMatch = textBefore.match(/<([a-zA-Z0-9]+)(?![^>]*\/?>)\s*$/);
@@ -593,20 +748,20 @@ function handleTagClosing(e) {
     const tagName = tagMatch[1];
     if (selfClosingTags.includes(tagName.toLowerCase())) {
       // It's a self-closing tag, just allow the '>'
-      return; 
+      return;
     }
 
     // It's a regular tag, auto-close it
     e.preventDefault();
     const closingTag = `</${tagName}>`;
     const textAfter = editor.value.substring(editor.selectionEnd);
-    
+
     // Insert the > and the closing tag
-    editor.value = textBefore + '>' + closingTag + textAfter;
-    
+    editor.value = textBefore + ">" + closingTag + textAfter;
+
     // Place cursor between the tags
-    editor.selectionStart = editor.selectionEnd = pos + 1; 
-    
+    editor.selectionStart = editor.selectionEnd = pos + 1;
+
     // Update content
     activeFile.content = editor.value;
     updateLineNumbers(editor);
@@ -619,29 +774,29 @@ function handleTagClosing(e) {
  * Handles the editor's 'input' event to show/hide suggestions.
  */
 function handleSuggestions(e) {
-  if (activeFile.type !== 'html') {
-    suggestionPopup.style.display = 'none';
+  if (activeFile.type !== "html") {
+    suggestionPopup.style.display = "none";
     return;
   }
 
   const editor = e.target;
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
-  
+
   // Regex: Check if cursor is right after <tagprefix
   const triggerMatch = textBefore.match(/<([a-zA-Z0-9]*)$/);
 
   if (triggerMatch) {
     const prefix = triggerMatch[1];
-    const suggestions = htmlTags.filter(tag => tag.startsWith(prefix));
-    
+    const suggestions = htmlTags.filter((tag) => tag.startsWith(prefix));
+
     if (suggestions.length > 0) {
       showSuggestions(suggestions, prefix);
     } else {
-      suggestionPopup.style.display = 'none';
+      suggestionPopup.style.display = "none";
     }
   } else {
-    suggestionPopup.style.display = 'none';
+    suggestionPopup.style.display = "none";
   }
 }
 
@@ -649,21 +804,24 @@ function handleSuggestions(e) {
  * Displays the suggestion popup with filtered tags.
  */
 function showSuggestions(suggestions, prefix) {
-  suggestionPopup.innerHTML = '';
+  suggestionPopup.innerHTML = "";
   suggestions.forEach((tag, index) => {
-    const item = document.createElement('div');
-    item.className = 'suggestion-item';
+    const item = document.createElement("div");
+    item.className = "suggestion-item";
     // Highlight the part that was typed
-    item.innerHTML = `<strong>${tag.substring(0, prefix.length)}</strong>${tag.substring(prefix.length)}`;
+    item.innerHTML = `<strong>${tag.substring(
+      0,
+      prefix.length
+    )}</strong>${tag.substring(prefix.length)}`;
     item.dataset.tag = tag;
     // Use mousedown instead of click to fire before blur
-    item.addEventListener('mousedown', (e) => {
+    item.addEventListener("mousedown", (e) => {
       e.preventDefault();
       selectSuggestion(tag);
     });
     suggestionPopup.appendChild(item);
   });
-  suggestionPopup.style.display = 'block';
+  suggestionPopup.style.display = "block";
   activeSuggestion = -1; // Reset active suggestion
 }
 
@@ -671,28 +829,32 @@ function showSuggestions(suggestions, prefix) {
  * Inserts the selected suggestion into the editor.
  */
 function selectSuggestion(tag) {
-  const editor = document.getElementById('activeEditor');
+  const editor = document.getElementById("activeEditor");
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
-  
+
   // Find the trigger point again
   const triggerMatch = textBefore.match(/<([a-zA-Z0-9]*)$/);
-  
+
   if (triggerMatch) {
     const prefix = triggerMatch[1];
-    const textBeforeTrigger = textBefore.substring(0, textBefore.length - prefix.length);
+    const textBeforeTrigger = textBefore.substring(
+      0,
+      textBefore.length - prefix.length
+    );
     const textAfter = editor.value.substring(editor.selectionEnd);
-    
+
     const openingTag = `${tag}>`;
-    const closingTag = selfClosingTags.includes(tag) ? '' : `</${tag}>`;
-    
+    const closingTag = selfClosingTags.includes(tag) ? "" : `</${tag}>`;
+
     editor.value = textBeforeTrigger + openingTag + closingTag + textAfter;
-    
+
     // Place cursor inside the tags (or after if self-closing)
-    editor.selectionStart = editor.selectionEnd = textBeforeTrigger.length + openingTag.length;
-    
+    editor.selectionStart = editor.selectionEnd =
+      textBeforeTrigger.length + openingTag.length;
+
     // Hide popup and update state
-    suggestionPopup.style.display = 'none';
+    suggestionPopup.style.display = "none";
     activeFile.content = editor.value;
     updateLineNumbers(editor);
     if (autoRunCheckbox.checked) debouncedUpdatePreview();
@@ -707,11 +869,11 @@ function selectSuggestion(tag) {
 function updateSuggestionHighlight(items) {
   items.forEach((item, index) => {
     if (index === activeSuggestion) {
-      item.classList.add('active');
+      item.classList.add("active");
       // Ensure the active item is visible
-      item.scrollIntoView({ block: 'nearest' });
+      item.scrollIntoView({ block: "nearest" });
     } else {
-      item.classList.remove('active');
+      item.classList.remove("active");
     }
   });
 }
@@ -721,112 +883,114 @@ function updateSuggestionHighlight(items) {
  */
 function handleEditorKeyDown(e) {
   const editor = e.target;
-  
+
   // --- 1. Suggestion Popup Navigation ---
-  if (suggestionPopup.style.display === 'block') {
-    const items = suggestionPopup.querySelectorAll('.suggestion-item');
+  if (suggestionPopup.style.display === "block") {
+    const items = suggestionPopup.querySelectorAll(".suggestion-item");
     if (!items.length) return;
 
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       activeSuggestion = (activeSuggestion + 1) % items.length;
       updateSuggestionHighlight(items);
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
       activeSuggestion = (activeSuggestion - 1 + items.length) % items.length;
       updateSuggestionHighlight(items);
-    } else if (e.key === 'Enter' || e.key === 'Tab') {
+    } else if (e.key === "Enter" || e.key === "Tab") {
       if (activeSuggestion > -1) {
         // Select the highlighted suggestion
         e.preventDefault();
         selectSuggestion(items[activeSuggestion].dataset.tag);
       } else {
         // Allow default behavior (like new line) if no suggestion is active
-        suggestionPopup.style.display = 'none';
-        if(e.key === 'Tab') e.preventDefault(); // Prevent tabbing out
+        suggestionPopup.style.display = "none";
+        if (e.key === "Tab") e.preventDefault(); // Prevent tabbing out
       }
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       e.preventDefault();
-      suggestionPopup.style.display = 'none';
-    } else if (e.key === '>') {
+      suggestionPopup.style.display = "none";
+    } else if (e.key === ">") {
       // Handle tag closing, then hide popup
       handleTagClosing(e);
-      suggestionPopup.style.display = 'none';
+      suggestionPopup.style.display = "none";
     }
-    
   } else {
     // --- 2. No Popup Visible: Handle Tab and Tag Closing ---
-    
-    if (e.key === '>') {
+
+    if (e.key === ">") {
       // Handle tag closing
       handleTagClosing(e);
-    } else if (e.key === 'Tab') {
+    } else if (e.key === "Tab") {
       // Handle Tab for indentation
       e.preventDefault();
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
       // Insert 2 spaces
-      editor.value = editor.value.substring(0, start) + "  " + editor.value.substring(end);
+      editor.value =
+        editor.value.substring(0, start) + "  " + editor.value.substring(end);
       editor.selectionStart = editor.selectionEnd = start + 2;
-      
+
       // Update state
       activeFile.content = editor.value;
       updateLineNumbers(editor);
       if (autoRunCheckbox.checked) debouncedUpdatePreview();
-      handleCodeChange({ target: { id: activeFile.type + 'Code', value: editor.value } });
+      handleCodeChange({
+        target: { id: activeFile.type + "Code", value: editor.value },
+      });
     }
   }
 }
 
-
 // PART 7: KEYBOARD SHORTCUTS
-document.addEventListener('keydown', (e) => {
+document.addEventListener("keydown", (e) => {
   // Prevent shortcuts from firing while suggestion box is open
-  if (suggestionPopup.style.display === 'block') {
-    if (e.ctrlKey && (e.key === 's' || e.key === 'Enter' || e.key === 'n')) {
+  if (suggestionPopup.style.display === "block") {
+    if (e.ctrlKey && (e.key === "s" || e.key === "Enter" || e.key === "n")) {
       e.preventDefault();
     }
     return;
   }
 
-  if (e.ctrlKey && e.key === 's') {
+  if (e.ctrlKey && e.key === "s") {
     e.preventDefault();
     exportAsZip();
   }
-  if (e.ctrlKey && e.key === 'Enter') {
+  if (e.ctrlKey && e.key === "Enter") {
     e.preventDefault();
     updatePreview();
   }
-  if (e.ctrlKey && e.key === 'n') {
+  if (e.ctrlKey && e.key === "n") {
     e.preventDefault();
     createNewFile();
   }
-  if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+  if (e.ctrlKey && e.shiftKey && e.key === "C") {
     e.preventDefault();
     showConsoleCheckbox.checked = !showConsoleCheckbox.checked;
-    showConsoleCheckbox.dispatchEvent(new Event('change'));
+    showConsoleCheckbox.dispatchEvent(new Event("change"));
   }
 });
 
 // PART 8: DRAG & DROP
-['dragover', 'dragleave', 'drop'].forEach(eventName => {
-  editorContainer.addEventListener(eventName, e => {
+["dragover", "dragleave", "drop"].forEach((eventName) => {
+  editorContainer.addEventListener(eventName, (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (eventName === 'dragover') editorContainer.classList.add('dragover');
-    if (eventName === 'dragleave' || eventName === 'drop') editorContainer.classList.remove('dragover');
+    if (eventName === "dragover") editorContainer.classList.add("dragover");
+    if (eventName === "dragleave" || eventName === "drop")
+      editorContainer.classList.remove("dragover");
   });
 });
 
-editorContainer.addEventListener('drop', e => {
+editorContainer.addEventListener("drop", (e) => {
   for (const file of e.dataTransfer.files) {
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = (ev) => {
       const content = ev.target.result;
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (['html', 'css', 'js'].includes(ext)) {
-        if (projectFiles.some(f => f.name === file.name)) {
-          showNotification(`File ${file.name} already exists`, 'error');
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (["html", "css", "js"].includes(ext)) {
+        if (projectFiles.some((f) => f.name === file.name)) {
+          showNotification(`File ${file.name} already exists`, "error");
           return;
         }
         const newFile = { name: file.name, type: ext, content, active: false };
@@ -834,12 +998,12 @@ editorContainer.addEventListener('drop', e => {
         if (projectFiles.length === 1) {
           newFile.active = true;
           activeFile = newFile;
-          document.getElementById('activeEditor').value = content;
+          document.getElementById("activeEditor").value = content;
           updateLineNumbers();
         }
         renderFileList();
         syncProjectWithSession();
-        showNotification(`Imported: ${file.name}`, 'success');
+        showNotification(`Imported: ${file.name}`, "success");
       }
     };
     reader.readAsText(file);
@@ -849,83 +1013,90 @@ editorContainer.addEventListener('drop', e => {
 // PART 9: ZIP EXPORT
 async function exportAsZip() {
   const zip = new JSZip();
-  projectFiles.forEach(file => {
+  projectFiles.forEach((file) => {
     zip.file(file.name, file.content);
   });
   try {
-    const content = await zip.generateAsync({ type: 'blob' });
+    const content = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(content);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'codx-project.zip';
+    a.download = "codx-project.zip";
     a.click();
     URL.revokeObjectURL(url);
-    showNotification('Project exported as ZIP!', 'success');
+    showNotification("Project exported as ZIP!", "success");
   } catch (err) {
-    console.error('Export error:', err);
-    showNotification('Error creating ZIP file', 'error');
+    console.error("Export error:", err);
+    showNotification("Error creating ZIP file", "error");
   }
 }
 
 // PART 10: ZIP IMPORT
-function importZip() { 
-  document.getElementById('zipFileInput').click(); 
+function importZip() {
+  document.getElementById("zipFileInput").click();
 }
 
 function handleZipImport(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
-  if (!file.name.endsWith('.zip')) {
-    showNotification('Please select a valid ZIP file', 'error');
+
+  if (!file.name.endsWith(".zip")) {
+    showNotification("Please select a valid ZIP file", "error");
     return;
   }
-  
-  JSZip.loadAsync(file).then(zip => {
-    const promises = [];
-    projectFiles = [];
-    const foundFiles = [];
-    
-    zip.forEach((path, entry) => {
-      const ext = path.split('.').pop().toLowerCase();
-      if (['html', 'css', 'js'].includes(ext) && !entry.dir) {
-        foundFiles.push(path);
-        promises.push(entry.async("string").then(content => {
-          projectFiles.push({
-            name: path,
-            type: ext,
-            content,
-            active: false
-          });
-        }));
-      }
+
+  JSZip.loadAsync(file)
+    .then((zip) => {
+      const promises = [];
+      projectFiles = [];
+      const foundFiles = [];
+
+      zip.forEach((path, entry) => {
+        const ext = path.split(".").pop().toLowerCase();
+        if (["html", "css", "js"].includes(ext) && !entry.dir) {
+          foundFiles.push(path);
+          promises.push(
+            entry.async("string").then((content) => {
+              projectFiles.push({
+                name: path,
+                type: ext,
+                content,
+                active: false,
+              });
+            })
+          );
+        }
+      });
+
+      Promise.all(promises).then(() => {
+        if (projectFiles.length === 0) {
+          showNotification("No valid files found in ZIP", "error");
+          return;
+        }
+        projectFiles[0].active = true;
+        activeFile = projectFiles[0];
+        const editor = document.getElementById("activeEditor");
+        editor.value = activeFile.content;
+        updateLineNumbers(editor);
+        renderFileList();
+        if (autoRunCheckbox.checked) updatePreview();
+        syncProjectWithSession();
+        showNotification(
+          `Project imported! Files: ${foundFiles.join(", ")}`,
+          "success"
+        );
+      });
+    })
+    .catch((err) => {
+      console.error("Import error:", err);
+      showNotification("Error reading ZIP file.", "error");
     });
-    
-    Promise.all(promises).then(() => {
-      if (projectFiles.length === 0) {
-        showNotification('No valid files found in ZIP', 'error');
-        return;
-      }
-      projectFiles[0].active = true;
-      activeFile = projectFiles[0];
-      const editor = document.getElementById('activeEditor');
-      editor.value = activeFile.content;
-      updateLineNumbers(editor);
-      renderFileList();
-      if (autoRunCheckbox.checked) updatePreview();
-      syncProjectWithSession();
-      showNotification(`Project imported! Files: ${foundFiles.join(', ')}`, 'success');
-    });
-  }).catch(err => {
-    console.error('Import error:', err);
-    showNotification('Error reading ZIP file.', 'error');
-  });
-  event.target.value = '';
+  event.target.value = "";
 }
 
 // PART 11: FULLSCREEN
-previewFullscreenBtn.addEventListener('click', togglePreviewFullscreen);
-document.addEventListener('fullscreenchange', updateFullscreenButtonState);
+previewFullscreenBtn.addEventListener("click", togglePreviewFullscreen);
+document.addEventListener("fullscreenchange", updateFullscreenButtonState);
 
 function togglePreviewFullscreen() {
   if (!document.fullscreenElement) {
@@ -960,74 +1131,85 @@ function updateFullscreenButtonState() {
 }
 
 // PART 12: COLLABORATION FEATURES (NUMERIC-ONLY SESSION IDs)
-closeModalBtn.addEventListener('click', closeModal);
-collabBtn.addEventListener('click', startCollaboration);
-window.addEventListener('load', checkForSession);
-window.addEventListener('storage', handleStorageChange);
+closeModalBtn.addEventListener("click", closeModal);
+collabBtn.addEventListener("click", startCollaboration);
+window.addEventListener("load", checkForSession);
+window.addEventListener("storage", handleStorageChange);
 
 // ---- 1. Generate a numeric-only unique ID ----
 function generateNumericSessionId() {
-  const ts = Date.now();                     // 13-digit timestamp
+  const ts = Date.now(); // 13-digit timestamp
   const rnd = Math.floor(Math.random() * 1000); // 0-999
-  return `${ts}${rnd}`;                      // e.g. 17234567890123
+  return `${ts}${rnd}`; // e.g. 17234567890123
 }
 
 // ---- 2. Typing indicator (unchanged) ----
 function announceTyping(activeEditorId) {
   if (!myInfo.name) return;
   clearTimeout(typingTimer);
-  const sessionId = safeLocalStorage('get', 'activeSessionId');
+  const sessionId = safeLocalStorage("get", "activeSessionId");
   if (!sessionId) return;
 
   let session;
   try {
-    const s = safeLocalStorage('get', sessionId);
+    const s = safeLocalStorage("get", sessionId);
     session = s ? JSON.parse(s) : null;
-  } catch { return; }
+  } catch {
+    return;
+  }
 
   if (session) {
-    session.typingIndicator = { name: myInfo.name, theme: myInfo.theme, editor: activeEditorId };
-    safeLocalStorage('set', sessionId, JSON.stringify(session));
+    session.typingIndicator = {
+      name: myInfo.name,
+      theme: myInfo.theme,
+      editor: activeEditorId,
+    };
+    safeLocalStorage("set", sessionId, JSON.stringify(session));
   }
 
   typingTimer = setTimeout(() => {
     try {
-      const s = safeLocalStorage('get', sessionId);
+      const s = safeLocalStorage("get", sessionId);
       if (s) {
         const sess = JSON.parse(s);
         sess.typingIndicator = null;
-        safeLocalStorage('set', sessionId, JSON.stringify(sess));
+        safeLocalStorage("set", sessionId, JSON.stringify(sess));
       }
     } catch {}
   }, 1500);
 }
 
 function updateTypingIndicatorUI(ind) {
-  const ed = document.getElementById('activeEditor');
-  ed.style.boxShadow = 'none';
-  if (ind && ind.name !== myInfo.name && ind.editor === activeFile.type + 'Code') {
+  const ed = document.getElementById("activeEditor");
+  ed.style.boxShadow = "none";
+  if (
+    ind &&
+    ind.name !== myInfo.name &&
+    ind.editor === activeFile.type + "Code"
+  ) {
     ed.style.boxShadow = `0 0 0 3px ${ind.theme} inset`;
     typingIndicatorEl.textContent = `${ind.name} is typing...`;
     typingIndicatorEl.style.backgroundColor = ind.theme;
-    typingIndicatorEl.style.display = 'block';
+    typingIndicatorEl.style.display = "block";
   } else {
-    typingIndicatorEl.style.display = 'none';
+    typingIndicatorEl.style.display = "none";
   }
 }
 
 // ---- 3. Username validation (unchanged) ----
 function validateUsername(u) {
-  if (!u || !u.trim()) return { valid: false, error: 'Enter a name.' };
-  if (u.length < 2) return { valid: false, error: 'At least 2 characters.' };
-  if (u.length > 20) return { valid: false, error: 'Max 20 characters.' };
-  if (!/^[a-zA-Z0-9\s_-]+$/.test(u)) return { valid: false, error: 'Only letters, numbers, space, _ , -.' };
+  if (!u || !u.trim()) return { valid: false, error: "Enter a name." };
+  if (u.length < 2) return { valid: false, error: "At least 2 characters." };
+  if (u.length > 20) return { valid: false, error: "Max 20 characters." };
+  if (!/^[a-zA-Z0-9\s_-]+$/.test(u))
+    return { valid: false, error: "Only letters, numbers, space, _ , -." };
   return { valid: true };
 }
 
 // ---- 4. Start a new session (host) ----
 function startCollaboration() {
-  const sid = safeLocalStorage('get', 'activeSessionId');
-  const data = sid ? safeLocalStorage('get', sid) : null;
+  const sid = safeLocalStorage("get", "activeSessionId");
+  const data = sid ? safeLocalStorage("get", sid) : null;
 
   // Already in a session → show details
   if (data && myInfo.name) {
@@ -1036,53 +1218,58 @@ function startCollaboration() {
   }
 
   // Fresh session
-  modalTitle.innerHTML = '<strong>START COLLAB</strong>';
-  modalBody.innerHTML = '<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20">';
-  collabModal.style.display = 'flex';
-  errorMsgEl.style.display = 'none';
+  modalTitle.innerHTML = "<strong>START COLLAB</strong>";
+  modalBody.innerHTML =
+    '<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20">';
+  collabModal.style.display = "flex";
+  errorMsgEl.style.display = "none";
 
   modalDoneBtn.onclick = () => {
-    const name = document.getElementById('userNameInput').value.trim();
+    const name = document.getElementById("userNameInput").value.trim();
     const v = validateUsername(name);
-    if (!v.valid) { errorMsgEl.textContent = v.error; errorMsgEl.style.display = 'block'; return; }
-    errorMsgEl.style.display = 'none';
+    if (!v.valid) {
+      errorMsgEl.textContent = v.error;
+      errorMsgEl.style.display = "block";
+      return;
+    }
+    errorMsgEl.style.display = "none";
     sessionData.host = name;
     promptForTheme();
   };
 }
 
 function promptForTheme() {
-  modalTitle.innerHTML = '<strong>PICK COLOR</strong>';
+  modalTitle.innerHTML = "<strong>PICK COLOR</strong>";
   modalBody.innerHTML = `<p><strong>Your color:</strong></p><input type="color" id="userThemeInput" value="#4CAF50">`;
-  errorMsgEl.style.display = 'none';
+  errorMsgEl.style.display = "none";
 
   modalDoneBtn.onclick = () => {
-    sessionData.theme = document.getElementById('userThemeInput').value;
+    sessionData.theme = document.getElementById("userThemeInput").value;
     createNumericSession();
   };
 }
 
 function createNumericSession() {
-  const sid = generateNumericSessionId();               // numeric only
-  const link = window.location.href.split('#')[0] + '#' + sid;
+  const sid = generateNumericSessionId(); // numeric only
+  const link = window.location.href.split("#")[0] + "#" + sid;
 
   const init = {
     id: sid,
     files: projectFiles,
-    participants: [{ name: sessionData.host, theme: sessionData.theme }]
+    participants: [{ name: sessionData.host, theme: sessionData.theme }],
   };
 
-  if (!safeLocalStorage('set', sid, JSON.stringify(init))) {
-    showNotification('Storage full – cannot create session', 'error');
+  if (!safeLocalStorage("set", sid, JSON.stringify(init))) {
+    showNotification("Storage full – cannot create session", "error");
     return;
   }
 
-  safeLocalStorage('set', 'activeSessionId', sid);
+  safeLocalStorage("set", "activeSessionId", sid);
   myInfo = { name: sessionData.host, theme: sessionData.theme };
 
-  modalTitle.innerHTML = '<strong>SHARE LINK</strong>';
+  modalTitle.innerHTML = "<strong>SHARE LINK</strong>";
   modalBody.innerHTML = `<input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">`;
-  document.getElementById('modalActions').innerHTML = `
+  document.getElementById("modalActions").innerHTML = `
     <button class="run-button" onclick="copyLink()"><strong>COPY</strong></button>
     <button class="run-button" onclick="closeModal()"><strong>DONE</strong></button>`;
   startSyncing();
@@ -1090,18 +1277,19 @@ function createNumericSession() {
 
 // ---- 5. Show existing session details (for host or participants) ----
 function showSessionDetails(sid) {
-  const data = safeLocalStorage('get', sid);
+  const data = safeLocalStorage("get", sid);
   if (!data) return;
 
   const sess = JSON.parse(data);
-  const link = window.location.href.split('#')[0] + '#' + sid;
+  const link = window.location.href.split("#")[0] + "#" + sid;
 
-  modalTitle.innerHTML = '<strong>SESSION INFO</strong>';
-  let list = '<h4>Participants:</h4><ul style="list-style:none;padding:0;text-align:left;">';
-  sess.participants.forEach(p => {
+  modalTitle.innerHTML = "<strong>SESSION INFO</strong>";
+  let list =
+    '<h4>Participants:</h4><ul style="list-style:none;padding:0;text-align:left;">';
+  sess.participants.forEach((p) => {
     list += `<li style="padding:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${p.name}</li>`;
   });
-  list += '</ul>';
+  list += "</ul>";
 
   modalBody.innerHTML = `
     <p><strong>Share:</strong></p>
@@ -1110,90 +1298,114 @@ function showSessionDetails(sid) {
     ${list}
   `;
 
-  document.getElementById('modalActions').innerHTML = `
+  document.getElementById("modalActions").innerHTML = `
     <button class="run-button" onclick="copyLink()"><strong>COPY LINK</strong></button>
     <button class="run-button" onclick="closeModal()"><strong>CLOSE</strong></button>`;
-  collabModal.style.display = 'flex';
+  collabModal.style.display = "flex";
 }
 
 // ---- 6. Copy link helper ----
 function copyLink() {
-  const el = document.getElementById('collabLinkInput');
-  el.select(); el.setSelectionRange(0, 99999);
-  try { document.execCommand('copy'); showNotification('Copied!', 'success'); }
-  catch { navigator.clipboard.writeText(el.value).then(() => showNotification('Copied!', 'success')); }
+  const el = document.getElementById("collabLinkInput");
+  el.select();
+  el.setSelectionRange(0, 99999);
+  try {
+    document.execCommand("copy");
+    showNotification("Copied!", "success");
+  } catch {
+    navigator.clipboard
+      .writeText(el.value)
+      .then(() => showNotification("Copied!", "success"));
+  }
 }
 
 // ---- 7. Close modal (reset button) ----
 function closeModal() {
-  collabModal.style.display = 'none';
-  document.getElementById('modalActions').innerHTML = `<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`;
+  collabModal.style.display = "none";
+  document.getElementById(
+    "modalActions"
+  ).innerHTML = `<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`;
 }
 
 // ---- 8. Check URL hash on load (join or error) ----
 function checkForSession() {
   const hash = window.location.hash.substring(1);
-  if (!/^\d+$/.test(hash)) return;   // only digits allowed
+  if (!/^\d+$/.test(hash)) return; // only digits allowed
 
-  const stored = safeLocalStorage('get', hash);
+  const stored = safeLocalStorage("get", hash);
   if (!stored) {
     // ---- INVALID / EXPIRED LINK ----
-    modalTitle.innerHTML = '<strong>SESSION NOT FOUND</strong>';
+    modalTitle.innerHTML = "<strong>SESSION NOT FOUND</strong>";
     modalBody.innerHTML = `
       <p style="color:#ff5555;"><strong>This link is invalid or the session has expired.</strong></p>
       <p>Ask the host for a new link.</p>`;
-    document.getElementById('modalActions').innerHTML = `
+    document.getElementById("modalActions").innerHTML = `
       <button class="run-button" onclick="closeModal()" style="background:#ff5555;"><strong>CLOSE</strong></button>`;
-    collabModal.style.display = 'flex';
+    collabModal.style.display = "flex";
     return;
   }
 
-  safeLocalStorage('set', 'activeSessionId', hash);
-  modalTitle.innerHTML = '<strong>JOIN SESSION</strong>';
-  modalBody.innerHTML = '<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20">';
-  collabModal.style.display = 'flex';
-  errorMsgEl.style.display = 'none';
+  safeLocalStorage("set", "activeSessionId", hash);
+  modalTitle.innerHTML = "<strong>JOIN SESSION</strong>";
+  modalBody.innerHTML =
+    '<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20">';
+  collabModal.style.display = "flex";
+  errorMsgEl.style.display = "none";
 
   modalDoneBtn.onclick = () => {
-    const name = document.getElementById('userNameInput').value.trim();
+    const name = document.getElementById("userNameInput").value.trim();
     const v = validateUsername(name);
-    if (!v.valid) { errorMsgEl.textContent = v.error; errorMsgEl.style.display = 'block'; return; }
+    if (!v.valid) {
+      errorMsgEl.textContent = v.error;
+      errorMsgEl.style.display = "block";
+      return;
+    }
 
     const sess = JSON.parse(stored);
-    const taken = sess.participants.some(p => p.name.toLowerCase() === name.toLowerCase());
-    if (taken) { errorMsgEl.textContent = 'Name already taken.'; errorMsgEl.style.display = 'block'; return; }
+    const taken = sess.participants.some(
+      (p) => p.name.toLowerCase() === name.toLowerCase()
+    );
+    if (taken) {
+      errorMsgEl.textContent = "Name already taken.";
+      errorMsgEl.style.display = "block";
+      return;
+    }
 
-    errorMsgEl.style.display = 'none';
+    errorMsgEl.style.display = "none";
     promptJoinTheme(name, hash);
   };
 }
 
 // ---- 9. Choose color & join ----
 function promptJoinTheme(name, sid) {
-  modalTitle.innerHTML = '<strong>PICK COLOR</strong>';
+  modalTitle.innerHTML = "<strong>PICK COLOR</strong>";
   modalBody.innerHTML = `<p><strong>Your color:</strong></p><input type="color" id="userThemeInput" value="#2196F3">`;
-  errorMsgEl.style.display = 'none';
+  errorMsgEl.style.display = "none";
 
   modalDoneBtn.onclick = () => {
-    const theme = document.getElementById('userThemeInput').value;
-    const data = safeLocalStorage('get', sid);
-    if (!data) { showNotification('Session gone.', 'error'); closeModal(); return; }
+    const theme = document.getElementById("userThemeInput").value;
+    const data = safeLocalStorage("get", sid);
+    if (!data) {
+      showNotification("Session gone.", "error");
+      closeModal();
+      return;
+    }
 
     myInfo = { name, theme };
     const sess = JSON.parse(data);
     sess.participants.push({ name, theme });
     projectFiles = sess.files;
-    activeFile = projectFiles.find(f => f.active) || projectFiles[0];
-    projectFiles.forEach(f => f.active = f === activeFile);
+    activeFile = projectFiles.find((f) => f.active) || projectFiles[0];
+    projectFiles.forEach((f) => (f.active = f === activeFile));
 
-    const ed = document.getElementById('activeEditor');
+    const ed = document.getElementById("activeEditor");
     ed.value = activeFile.content;
     updateLineNumbers(ed);
     renderFileList();
     updatePreview();
-    safeLocalStorage('set', sid, JSON.stringify(sess));
+    safeLocalStorage("set", sid, JSON.stringify(sess));
 
-    showNotification(`Welcome, ${name}!`, 'success');
+    showNotification(`Welcome, ${name}!`, "success");
     startSyncing();
     closeModal();
   };
@@ -1201,134 +1413,143 @@ function promptJoinTheme(name, sid) {
 
 // ---- 10. Sync helpers (unchanged) ----
 function handleCodeChange() {
-  const sid = safeLocalStorage('get', 'activeSessionId');
+  const sid = safeLocalStorage("get", "activeSessionId");
   if (!sid) return;
-  const s = safeLocalStorage('get', sid);
+  const s = safeLocalStorage("get", sid);
   if (!s) return;
   try {
     const sess = JSON.parse(s);
     sess.files = projectFiles;
-    safeLocalStorage('set', sid, JSON.stringify(sess));
-  } catch (e) { console.error('sync err', e); }
+    safeLocalStorage("set", sid, JSON.stringify(sess));
+  } catch (e) {
+    console.error("sync err", e);
+  }
 }
 
 function syncProjectWithSession() {
-  const sid = safeLocalStorage('get', 'activeSessionId');
+  const sid = safeLocalStorage("get", "activeSessionId");
   if (!sid) return;
-  const s = safeLocalStorage('get', sid);
+  const s = safeLocalStorage("get", sid);
   if (!s) return;
   try {
     const sess = JSON.parse(s);
     sess.files = projectFiles;
-    safeLocalStorage('set', sid, JSON.stringify(sess));
-  } catch (e) { console.error('sync err', e); }
+    safeLocalStorage("set", sid, JSON.stringify(sess));
+  } catch (e) {
+    console.error("sync err", e);
+  }
 }
 
 function startSyncing() {
-  const ed = document.getElementById('activeEditor');
+  const ed = document.getElementById("activeEditor");
   // The 'input' listener in initializeEditor already calls handleCodeChange
   // and announceTyping, so no need to add duplicate listeners.
 }
 
 function handleStorageChange(e) {
-  const sid = safeLocalStorage('get', 'activeSessionId');
+  const sid = safeLocalStorage("get", "activeSessionId");
   if (e.key === sid && e.newValue) {
     try {
       const nv = JSON.parse(e.newValue);
       if (JSON.stringify(projectFiles) !== JSON.stringify(nv.files)) {
         projectFiles = nv.files;
-        activeFile = projectFiles.find(f => f.active) || projectFiles[0];
-        projectFiles.forEach(f => f.active = f === activeFile);
-        
-        const ed = document.getElementById('activeEditor');
+        activeFile = projectFiles.find((f) => f.active) || projectFiles[0];
+        projectFiles.forEach((f) => (f.active = f === activeFile));
+
+        const ed = document.getElementById("activeEditor");
         const currentPos = ed.selectionStart; // Try to save cursor
         ed.value = activeFile.content;
         ed.selectionStart = ed.selectionEnd = currentPos; // Restore cursor
-        
+
         updateLineNumbers(ed);
         renderFileList();
         if (autoRunCheckbox.checked) updatePreview();
       }
       updateTypingIndicatorUI(nv.typingIndicator);
-    } catch (er) { console.error('storage sync err', er); }
+    } catch (er) {
+      console.error("storage sync err", er);
+    }
   }
 }
 
 // 10: MEDIA FILE HANDLER
-const addMediaBtn = document.getElementById('addMediaBtn');
-const mediaInput = document.createElement('input');
-mediaInput.type = 'file';
-mediaInput.accept = 'image/*,video/mp4,audio/mp3';
+const addMediaBtn = document.getElementById("addMediaBtn");
+const mediaInput = document.createElement("input");
+mediaInput.type = "file";
+mediaInput.accept = "image/*,video/mp4,audio/mp3";
 mediaInput.multiple = true;
-mediaInput.style.display = 'none';
+mediaInput.style.display = "none";
 document.body.appendChild(mediaInput);
 
-addMediaBtn.addEventListener('click', () => mediaInput.click());
+addMediaBtn.addEventListener("click", () => mediaInput.click());
 
-mediaInput.addEventListener('change', (e) => {
+mediaInput.addEventListener("change", (e) => {
   const files = Array.from(e.target.files);
   if (!files.length) return;
 
-  files.forEach(file => {
+  files.forEach((file) => {
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = (ev) => {
       const base64 = ev.target.result;
       const name = file.name;
-      const ext = name.split('.').pop().toLowerCase();
-      const type = ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'img' :
-                   ext === 'mp4' ? 'video' : 'audio';
+      const ext = name.split(".").pop().toLowerCase();
+      const type = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)
+        ? "img"
+        : ext === "mp4"
+        ? "video"
+        : "audio";
 
       const newFile = {
         name,
-        type: 'media',
+        type: "media",
         mediaType: type,
         content: base64,
-        active: false
+        active: false,
       };
 
-      if (!projectFiles.some(f => f.name === name)) {
+      if (!projectFiles.some((f) => f.name === name)) {
         projectFiles.push(newFile);
-        showNotification(`Added: ${name}`, 'success');
+        showNotification(`Added: ${name}`, "success");
       } else {
-        showNotification(`${name} already exists`, 'warn');
+        showNotification(`${name} already exists`, "warn");
       }
       renderFileList();
       syncProjectWithSession();
     };
     reader.readAsDataURL(file);
   });
-  mediaInput.value = '';
+  mediaInput.value = "";
 });
 
 // 11 === SEAMLESS & FULL-RANGE DIVIDER DRAG ===
 let isDragging = false;
 let startX, startEditorWidth, containerWidth;
 
-divider.addEventListener('mousedown', startDragging);
-divider.addEventListener('touchstart', startDragging, { passive: true });
+divider.addEventListener("mousedown", startDragging);
+divider.addEventListener("touchstart", startDragging, { passive: true });
 
 function startDragging(e) {
   isDragging = true;
-  divider.classList.add('dragging');
-  document.body.style.cursor = 'col-resize';
-  document.body.style.userSelect = 'none';
+  divider.classList.add("dragging");
+  document.body.style.cursor = "col-resize";
+  document.body.style.userSelect = "none";
 
-  startX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+  startX = e.type.includes("mouse") ? e.pageX : e.touches[0].pageX;
   startEditorWidth = editorsPanel.getBoundingClientRect().width;
   containerWidth = editorContainer.getBoundingClientRect().width; // Full container
 
   e.preventDefault();
 
-  document.addEventListener('mousemove', doDrag);
-  document.addEventListener('touchmove', doDrag, { passive: false });
-  document.addEventListener('mouseup', stopDragging);
-  document.addEventListener('touchend', stopDragging);
+  document.addEventListener("mousemove", doDrag);
+  document.addEventListener("touchmove", doDrag, { passive: false });
+  document.addEventListener("mouseup", stopDragging);
+  document.addEventListener("touchend", stopDragging);
 }
 
 function doDrag(e) {
   if (!isDragging) return;
 
-  const currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+  const currentX = e.type.includes("mouse") ? e.pageX : e.touches[0].pageX;
   const diff = currentX - startX;
   let newWidth = startEditorWidth + diff;
 
@@ -1339,155 +1560,234 @@ function doDrag(e) {
 
   // Apply instantly
   editorsPanel.style.width = `${newWidth}px`;
-  editorsPanel.style.flex = 'none'; // Prevent flex from overriding
+  editorsPanel.style.flex = "none"; // Prevent flex from overriding
 
-  if (e.type === 'touchmove') e.preventDefault();
+  if (e.type === "touchmove") e.preventDefault();
 }
 
 function stopDragging() {
   if (!isDragging) return;
   isDragging = false;
-  divider.classList.remove('dragging');
-  document.body.style.cursor = '';
-  document.body.style.userSelect = '';
+  divider.classList.remove("dragging");
+  document.body.style.cursor = "";
+  document.body.style.userSelect = "";
 
   // Restore flex after drag (optional smooth reset)
-  editorsPanel.style.flex = '';
-  editorsPanel.style.maxWidth = '80%';
+  editorsPanel.style.flex = "";
+  editorsPanel.style.maxWidth = "80%";
 
-  document.removeEventListener('mousemove', doDrag);
-  document.removeEventListener('touchmove', doDrag);
-  document.removeEventListener('mouseup', stopDragging);
-  document.removeEventListener('touchend', stopDragging);
+  document.removeEventListener("mousemove", doDrag);
+  document.removeEventListener("touchmove", doDrag);
+  document.removeEventListener("mouseup", stopDragging);
+  document.removeEventListener("touchend", stopDragging);
 }
 
 // Reset on window resize
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
   if (!isDragging) {
     const current = editorsPanel.getBoundingClientRect().width;
     const max = window.innerWidth * 0.8;
     if (current > max) {
-      editorsPanel.style.width = '50%';
+      editorsPanel.style.width = "50%";
     }
   }
 });
 
 // PART 12: INITIALIZATION
-window.addEventListener('load', () => {
+window.addEventListener("load", () => {
   loadSettings();
   renderFileList();
   initializeEditor();
   updatePreview();
 });
 
-window.addEventListener('beforeunload', function (e) {
+window.addEventListener("beforeunload", function (e) {
   if (hasUnsavedChanges) {
     e.preventDefault();
-    e.returnValue = '';
-    return 'Are you sure you want to leave? Your changes may not be saved.';
+    e.returnValue = "";
+    return "Are you sure you want to leave? Your changes may not be saved.";
   }
 });
 
-newFileBtn.addEventListener('click', createNewFile);
+newFileBtn.addEventListener("click", createNewFile);
 
-console.log('CodX Editor loaded with file linking and tag suggestions!');
+console.log("CodX Editor loaded with file linking and tag suggestions!");
 
 // FONT PICKER
-const fontPickerBtn = document.getElementById('fontPickerBtn');
-const fontPickerModal = document.getElementById('fontPickerModal');
-const closeFontPickerBtn = document.getElementById('closeFontPickerBtn');
-const fontGrid = document.getElementById('fontGrid');
+const fontPickerBtn = document.getElementById("fontPickerBtn");
+const fontPickerModal = document.getElementById("fontPickerModal");
+const closeFontPickerBtn = document.getElementById("closeFontPickerBtn");
+const fontGrid = document.getElementById("fontGrid");
 
 const fonts = [
-  { name: 'Arial', family: 'Arial, sans-serif' },
-  { name: 'Helvetica', family: 'Helvetica, sans-serif' },
-  { name: 'Times New Roman', family: "'Times New Roman', serif" },
-  { name: 'Georgia', family: 'Georgia, serif' },
-  { name: 'Courier New', family: "'Courier New', monospace" },
-  { name: 'Verdana', family: 'Verdana, sans-serif' },
-  { name: 'Trebuchet MS', family: "'Trebuchet MS', sans-serif" },
-  { name: 'Comic Sans MS', family: "'Comic Sans MS', cursive" },
-  { name: 'Impact', family: 'Impact, fantasy' },
-  { name: 'Lucida Console', family: "'Lucida Console', monospace" },
-  { name: 'Tahoma', family: 'Tahoma, sans-serif' },
-  { name: 'Palatino', family: "'Palatino Linotype', serif" },
-  { name: 'Garamond', family: 'Garamond, serif' },
-  { name: 'Bookman', family: "'Bookman Old Style', serif" },
-  { name: 'Brush Script MT', family: "'Brush Script MT', cursive" },
-  { name: 'Consolas', family: 'Consolas, monospace' },
-  { name: 'Monaco', family: 'Monaco, monospace' },
-  { name: 'Roboto', family: "'Roboto', sans-serif" },
-  { name: 'Open Sans', family: "'Open Sans', sans-serif" },
-  { name: 'Lato', family: "'Lato', sans-serif" },
-  { name: 'Montserrat', family: "'Montserrat', sans-serif" },
-  { name: 'Poppins', family: "'Poppins', sans-serif" },
-  { name: 'Source Sans Pro', family: "'Source Sans Pro', sans-serif" },
-  { name: 'Raleway', family: "'Raleway', sans-serif" },
-  { name: 'Ubuntu', family: "'Ubuntu', sans-serif" },
-  { name: 'Playfair Display', family: "'Playfair Display', serif" },
-  { name: 'Merriweather', family: "'Merriweather', serif" },
-  { name: 'Fira Sans', family: "'Fira Sans', sans-serif" },
-  { name: 'Nunito', family: "'Nunito', sans-serif" },
-  { name: 'Quicksand', family: "'Quicksand', sans-serif" }
+  { name: "Arial", family: "Arial, sans-serif" },
+  { name: "Helvetica", family: "Helvetica, sans-serif" },
+  { name: "Times New Roman", family: "'Times New Roman', serif" },
+  { name: "Georgia", family: "Georgia, serif" },
+  { name: "Courier New", family: "'Courier New', monospace" },
+  { name: "Verdana", family: "Verdana, sans-serif" },
+  { name: "Trebuchet MS", family: "'Trebuchet MS', sans-serif" },
+  { name: "Comic Sans MS", family: "'Comic Sans MS', cursive" },
+  { name: "Impact", family: "Impact, fantasy" },
+  { name: "Lucida Console", family: "'Lucida Console', monospace" },
+  { name: "Tahoma", family: "Tahoma, sans-serif" },
+  { name: "Palatino", family: "'Palatino Linotype', serif" },
+  { name: "Garamond", family: "Garamond, serif" },
+  { name: "Bookman", family: "'Bookman Old Style', serif" },
+  { name: "Brush Script MT", family: "'Brush Script MT', cursive" },
+  { name: "Consolas", family: "Consolas, monospace" },
+  { name: "Monaco", family: "Monaco, monospace" },
+  { name: "Roboto", family: "'Roboto', sans-serif" },
+  { name: "Open Sans", family: "'Open Sans', sans-serif" },
+  { name: "Lato", family: "'Lato', sans-serif" },
+  { name: "Montserrat", family: "'Montserrat', sans-serif" },
+  { name: "Poppins", family: "'Poppins', sans-serif" },
+  { name: "Source Sans Pro", family: "'Source Sans Pro', sans-serif" },
+  { name: "Raleway", family: "'Raleway', sans-serif" },
+  { name: "Ubuntu", family: "'Ubuntu', sans-serif" },
+  { name: "Playfair Display", family: "'Playfair Display', serif" },
+  { name: "Merriweather", family: "'Merriweather', serif" },
+  { name: "Fira Sans", family: "'Fira Sans', sans-serif" },
+  { name: "Nunito", family: "'Nunito', sans-serif" },
+  { name: "Quicksand", family: "'Quicksand', sans-serif" },
 ];
 
 function renderFonts() {
-  fontGrid.innerHTML = '';
-  fonts.forEach(font => {
-    const card = document.createElement('div');
-    card.className = 'font-card';
+  fontGrid.innerHTML = "";
+  fonts.forEach((font) => {
+    const card = document.createElement("div");
+    card.className = "font-card";
     card.innerHTML = `
       <div class="font-name">${font.name}</div>
       <div class="font-preview" style="font-family: ${font.family};">The quick brown fox</div>
       <div class="font-code">${font.family}</div>
     `;
-    card.addEventListener('click', () => copyFontCode(font.family, font.name));
+    card.addEventListener("click", () => copyFontCode(font.family, font.name));
     fontGrid.appendChild(card);
   });
 }
 
 function copyFontCode(fontFamily, fontName) {
   const code = `font-family: ${fontFamily};`;
-  
+
   // Try modern clipboard API first
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(code).then(() => {
-      showNotification(`Copied: ${fontName}`, 'success');
-    }).catch(() => {
-      fallbackCopy(code, fontName);
-    });
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        showNotification(`Copied: ${fontName}`, "success");
+      })
+      .catch(() => {
+        fallbackCopy(code, fontName);
+      });
   } else {
     fallbackCopy(code, fontName);
   }
 }
 
 function fallbackCopy(text, fontName) {
-  const textarea = document.createElement('textarea');
+  const textarea = document.createElement("textarea");
   textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
   document.body.appendChild(textarea);
   textarea.select();
   try {
-    document.execCommand('copy');
-    showNotification(`Copied: ${fontName}`, 'success');
+    document.execCommand("copy");
+    showNotification(`Copied: ${fontName}`, "success");
   } catch (err) {
-    showNotification('Failed to copy', 'error');
+    showNotification("Failed to copy", "error");
   }
   document.body.removeChild(textarea);
 }
 
-fontPickerBtn.addEventListener('click', () => {
+fontPickerBtn.addEventListener("click", () => {
   renderFonts();
-  fontPickerModal.style.display = 'flex';
+  fontPickerModal.style.display = "flex";
 });
 
-closeFontPickerBtn.addEventListener('click', () => {
-  fontPickerModal.style.display = 'none';
+closeFontPickerBtn.addEventListener("click", () => {
+  fontPickerModal.style.display = "none";
 });
 
-fontPickerModal.addEventListener('click', (e) => {
+fontPickerModal.addEventListener("click", (e) => {
   if (e.target === fontPickerModal) {
-    fontPickerModal.style.display = 'none';
+    fontPickerModal.style.display = "none";
   }
 });
+
+// PART 1: INITIALIZATION & CONSTANTS (Keep your existing constants here)
+// ...
+
+// --- NEW SESSION MANAGEMENT LOGIC ---
+
+function generateSessionId() {
+  // Generates a random session ID like 37DV-564V-G2NN-453N
+  const pattern = "XXXX-XXXX-XXXX-XXXX";
+  return pattern.replace(/X/g, function () {
+    const charType = Math.random() > 0.5 ? "letter" : "number";
+    if (charType === "letter") {
+      // A-Z
+      return String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    } else {
+      // 0-9
+      return Math.floor(Math.random() * 10).toString();
+    }
+  });
+}
+
+// Get the unique session ID from the URL path
+let sessionId = window.location.hash.substring(1);
+
+// Check if a session ID is present in the URL hash (after the #)
+if (!sessionId) {
+  // If no session ID is found, generate one and redirect
+  sessionId = generateSessionId();
+  // Use window.location.replace to prevent the original URL from being in the history
+  window.location.replace(window.location.href + "#" + sessionId);
+  // Stop execution of the rest of the script until the new page loads
+  throw new Error("Redirecting to unique session URL...");
+}
+
+// Utility to get the unique localStorage key for a specific editor
+function getStorageKey(editorId) {
+  // The key now includes the session ID from the URL, making it unique to this tab
+  // (and shareable via the URL).
+  return `codx_editor_${sessionId}_${editorId}`;
+}
+
+// --- END NEW SESSION MANAGEMENT LOGIC ---
+
+// ... existing code ...
+
+// PART 4: SAVE & LOAD FUNCTIONS
+function saveCode(html, css, js) {
+  try {
+    // Use the unique keys
+    localStorage.setItem(getStorageKey("html"), html);
+    localStorage.setItem(getStorageKey("css"), css);
+    localStorage.setItem(getStorageKey("js"), js);
+    // ... (The rest of your existing saveCode logic can remain)
+  } catch (e) {
+    console.error("Could not save to localStorage", e);
+  }
+}
+
+function loadCode() {
+  try {
+    // Use the unique keys
+    const html = localStorage.getItem(getStorageKey("html"));
+    const css = localStorage.getItem(getStorageKey("css"));
+    const js = localStorage.getItem(getStorageKey("js"));
+
+    if (html !== null) htmlEditor.setValue(html);
+    if (css !== null) cssEditor.setValue(css);
+    if (js !== null) jsEditor.setValue(js);
+
+    // ... (The rest of your existing loadCode logic can remain)
+  } catch (e) {
+    console.error("Could not load from localStorage", e);
+  }
+}
+
+// ... existing code ...

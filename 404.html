@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Page Not Found | CodX Editor</title>
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/png" href="cx.png" />
+    <style>
+      :root {
+        /* Light theme variables */
+        --bg-primary: #ffffff;
+        --text-primary: #333333;
+        --text-secondary: #666666;
+        --accent-color: #4caf50; /* Green accent from your original design */
+        --box-bg: #f5f5f5;
+      }
+
+      /* Basic Reset */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        padding: 40px;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background-color: var(--box-bg); /* Light grey box background */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .logo {
+        margin-bottom: 20px;
+      }
+
+      .logo img {
+        width: 70px; /* Adjust size as needed */
+        height: 70px;
+      }
+
+      .error-code {
+        font-size: 6rem;
+        font-weight: 700;
+        color: var(--accent-color);
+        margin-bottom: 5px;
+        line-height: 1;
+      }
+
+      .error-message {
+        font-size: 1.6rem;
+        margin-bottom: 15px;
+        color: var(--text-primary);
+      }
+
+      .description {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin-bottom: 30px;
+        line-height: 1.6;
+      }
+
+      .home-link,
+      .editor-link {
+        display: inline-block;
+        text-decoration: none;
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+        margin: 5px;
+      }
+
+      /* Link to Code Editor */
+      .editor-link {
+        background-color: var(--accent-color);
+        color: var(--bg-primary);
+        border: 2px solid var(--accent-color);
+      }
+
+      .editor-link:hover {
+        background-color: #45a049;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Link to Homepage (Optional Secondary Button) */
+      .home-link {
+        background-color: transparent;
+        color: var(--text-primary);
+        border: 2px solid var(--text-secondary);
+      }
+
+      .home-link:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+      }
+
+      .editor-link:active,
+      .home-link:active {
+        transform: scale(0.98);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <img src="cx.png" alt="CodX Logo" />
+      </div>
+      <div class="error-code">404</div>
+      <h1 class="error-message">Oops! Page Not Found</h1>
+      <p class="description">
+        It looks like you've followed a broken link or entered a URL that
+        doesn't exist. Don't worry, you can get back to coding right away!
+      </p>
+      <div>
+        <a href="codx-editor.html" class="editor-link"> Go to Code Editor </a>
+        <a href="index.html" class="home-link"> View Homepage </a>
+      </div>
+    </div>
+  </body>
+</html>
