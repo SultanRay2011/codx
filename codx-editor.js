@@ -1721,6 +1721,8 @@ fontPickerModal.addEventListener("click", (e) => {
 
 // --- NEW SESSION MANAGEMENT LOGIC ---
 
+// --- NEW SESSION MANAGEMENT LOGIC (Enhanced for Validation) ---
+
 function generateSessionId() {
   // Generates a random session ID like 37DV-564V-G2NN-453N
   const pattern = "XXXX-XXXX-XXXX-XXXX";
@@ -1736,25 +1738,50 @@ function generateSessionId() {
   });
 }
 
+function isValidSessionId(id) {
+  // Regex to check for the exact format: four alphanumeric characters, hyphen, repeated three times.
+  const sessionRegex = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+  return sessionRegex.test(id);
+}
+
 // Get the unique session ID from the URL path
 let sessionId = window.location.hash.substring(1);
+const baseUrl = window.location.href.split("#")[0];
 
-// Check if a session ID is present in the URL hash (after the #)
-if (!sessionId) {
-  // If no session ID is found, generate one and redirect
+// Check if a session ID is present AND if it's valid
+if (!sessionId || !isValidSessionId(sessionId)) {
+  // 1. Log the issue for debugging
+  if (sessionId) {
+    console.warn(
+      `Invalid or corrupted session ID detected: ${sessionId}. Generating new session.`
+    );
+  } else {
+    console.log("No session ID found. Generating new session.");
+  }
+
+  // 2. Generate a valid session ID
   sessionId = generateSessionId();
-  // Use window.location.replace to prevent the original URL from being in the history
-  window.location.replace(window.location.href + "#" + sessionId);
-  // Stop execution of the rest of the script until the new page loads
-  throw new Error("Redirecting to unique session URL...");
+
+  // 3. Redirect to the new, valid, unique URL
+  // We use replace() so the bad URL isn't stuck in the user's history
+  window.location.replace(baseUrl + "#" + sessionId);
+
+  // 4. Halt execution of the script
+  throw new Error(
+    "Redirecting to unique session URL. Script execution halted."
+  );
 }
+
+// NOTE: If the script reaches this point, 'sessionId' is guaranteed to be valid and available.
 
 // Utility to get the unique localStorage key for a specific editor
 function getStorageKey(editorId) {
-  // The key now includes the session ID from the URL, making it unique to this tab
-  // (and shareable via the URL).
+  // The key now includes the valid session ID from the URL.
   return `codx_editor_${sessionId}_${editorId}`;
 }
+
+// ... the rest of your codx-editor.js file continues from here,
+// including your loadCode() and saveCode() functions which use getStorageKey(editorId)
 
 // --- END NEW SESSION MANAGEMENT LOGIC ---
 
