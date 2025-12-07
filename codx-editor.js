@@ -560,6 +560,23 @@ ${jsFile.content}
     }
   );
 
+  // === 3. Handle <a href> links to other HTML files
+  html = html.replace(
+    /<a([^>]*)href=["']([^"']+)["']([^>]*)>/gi,
+    (match, before, href, after) => {
+      // Check if it's a link to another HTML file in the project
+      const linkedFile = projectFiles.find(
+        (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "html"
+      );
+      if (linkedFile) {
+        // Create onclick handler to switch files and update preview
+        return `<a${before}href="#" onclick="event.preventDefault(); window.parent.postMessage({type: 'switchFile', fileName: '${linkedFile.name}'}, '*');"${after}>`;
+      }
+      // If not found, keep the original link
+      return match;
+    }
+  );
+
   // === 3. Handle media: <img>, <video>, <audio> src attributes
   html = html.replace(
     /<(img|video|audio)[^>]*src=["']([^"']+)["'][^>]*>/gi,
