@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Learn more about CodX Editor - a free, browser-based code editor for HTML, CSS, and JavaScript."
+    />
+    <meta name="theme-color" content="#4CAF50" />
+    <link rel="icon" type="image/png" href="cx.png" />
+    <title>About - CodX Editor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        color: #333;
+        background: linear-gradient(45deg, #e6fff2, #ffffff, #f0fff0);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        padding-top: 80px;
+        overflow-x: hidden;
+      }
+
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        padding: 15px 40px;
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .logo-container img {
+        height: 45px;
+        width: auto;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      .nav-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .nav-btn.active {
+        background: #4caf50;
+        color: white;
+      }
+
+      .nav-btn:not(.active) {
+        background: transparent;
+        color: #333;
+      }
+
+      .nav-btn:not(.active):hover {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+      }
+
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(76, 175, 80, 0.3);
+        border-radius: 50%;
+        animation: float 15s infinite;
+      }
+
+      .particle:nth-child(1) {
+        left: 10%;
+        animation-delay: 0s;
+      }
+      .particle:nth-child(2) {
+        left: 20%;
+        animation-delay: 2s;
+      }
+      .particle:nth-child(3) {
+        left: 30%;
+        animation-delay: 4s;
+      }
+      .particle:nth-child(4) {
+        left: 40%;
+        animation-delay: 6s;
+      }
+      .particle:nth-child(5) {
+        left: 50%;
+        animation-delay: 8s;
+      }
+      .particle:nth-child(6) {
+        left: 60%;
+        animation-delay: 10s;
+      }
+      .particle:nth-child(7) {
+        left: 70%;
+        animation-delay: 12s;
+      }
+      .particle:nth-child(8) {
+        left: 80%;
+        animation-delay: 14s;
+      }
+
+      @keyframes float {
+        0% {
+          transform: translateY(100vh) scale(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100vh) scale(1);
+          opacity: 0;
+        }
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      .about-header {
+        text-align: center;
+        margin-bottom: 60px;
+        animation: fadeInDown 0.8s ease;
+      }
+
+      .about-header h1 {
+        font-size: 3em;
+        margin-bottom: 15px;
+        background: linear-gradient(90deg, #4caf50, #2e7d32, #81c784);
+        background-size: 300%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: textGradient 5s ease-in-out infinite;
+      }
+
+      .about-header p {
+        font-size: 1.3em;
+        color: #555;
+        font-weight: 500;
+      }
+
+      .content-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        margin-bottom: 30px;
+        animation: fadeInUp 0.8s ease;
+      }
+
+      .content-section h2 {
+        font-size: 2em;
+        color: #4caf50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .content-section p {
+        font-size: 1.1em;
+        line-height: 1.8;
+        color: #444;
+        margin-bottom: 15px;
+      }
+
+      .mission-vision {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin: 40px 0;
+      }
+
+      .card {
+        background: rgba(76, 175, 80, 0.05);
+        padding: 30px;
+        border-radius: 15px;
+        border-left: 5px solid #4caf50;
+        transition: all 0.3s ease;
+        animation: fadeInUp 1s ease;
+      }
+
+      .card:hover {
+        background: rgba(76, 175, 80, 0.1);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(76, 175, 80, 0.2);
+      }
+
+      .card h3 {
+        font-size: 1.5em;
+        color: #4caf50;
+        margin-bottom: 15px;
+      }
+
+      .card p {
+        font-size: 1.05em;
+        line-height: 1.7;
+        color: #555;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+      }
+
+      .feature-item {
+        background: rgba(255, 255, 255, 0.8);
+        padding: 25px;
+        border-radius: 12px;
+        border: 2px solid rgba(76, 175, 80, 0.2);
+        transition: all 0.3s ease;
+        animation: fadeIn 1.2s ease;
+      }
+
+      .feature-item:hover {
+        border-color: #4caf50;
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.15);
+      }
+
+      .feature-item h4 {
+        color: #4caf50;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+      }
+
+      .feature-item p {
+        font-size: 1em;
+        color: #666;
+      }
+
+      .highlight {
+        color: #4caf50;
+        font-weight: bold;
+      }
+
+      .team-section {
+        text-align: center;
+        padding: 30px;
+      }
+
+      .team-section p {
+        font-size: 1.15em;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      @keyframes textGradient {
+        0% {
+          background-position: 0%;
+        }
+        50% {
+          background-position: 100%;
+        }
+        100% {
+          background-position: 0%;
+        }
+      }
+
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(40px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        header {
+          padding: 12px 20px;
+        }
+
+        .logo-container img {
+          height: 35px;
+        }
+
+        .nav-buttons {
+          gap: 6px;
+        }
+
+        .nav-btn {
+          padding: 8px 14px;
+          font-size: 0.85em;
+        }
+
+        body {
+          padding-top: 70px;
+        }
+
+        .about-header h1 {
+          font-size: 2.2em;
+        }
+
+        .about-header p {
+          font-size: 1.1em;
+        }
+
+        .content-section {
+          padding: 30px 25px;
+        }
+
+        .content-section h2 {
+          font-size: 1.6em;
+        }
+
+        .mission-vision {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 20px 15px;
+        }
+
+        .about-header h1 {
+          font-size: 1.8em;
+        }
+
+        .content-section {
+          padding: 25px 20px;
+        }
+
+        .nav-btn {
+          padding: 7px 10px;
+          font-size: 0.8em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo-container">
+          <img src="cx.png" alt="CodX Logo" />
+        </div>
+        <nav class="nav-buttons">
+          <a href="index.html" class="nav-btn">Home</a>
+          <a href="about.html" class="nav-btn active">About</a>
+          <a href="terms.html" class="nav-btn">Terms and Conditions</a>
+          <a href="privacy.html" class="nav-btn">Privacy Policy</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+
+    <div class="container">
+      <div class="about-header">
+        <h1>About CodX Editor</h1>
+        <p>Empowering developers to code anywhere, anytime</p>
+      </div>
+
+      <div class="content-section">
+        <h2>🚀 What is CodX Editor?</h2>
+        <p>
+          <span class="highlight">CodX Editor</span> is a powerful, free, and
+          open-source browser-based code editor designed to make web development
+          accessible to everyone. Whether you're a beginner learning to code or
+          an experienced developer prototyping ideas, CodX Editor provides all
+          the tools you need without any installation or setup.
+        </p>
+        <p>
+          Built with modern web technologies, CodX Editor runs entirely in your
+          browser, giving you the freedom to code from any device, anywhere in
+          the world. No downloads, no configurations—just open and start coding!
+        </p>
+      </div>
+
+      <div class="mission-vision">
+        <div class="card">
+          <h3>🎯 Our Mission</h3>
+          <p>
+            To democratize web development by providing a free, accessible, and
+            powerful coding environment that removes barriers to entry and
+            empowers everyone to bring their ideas to life through code.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>👁️ Our Vision</h3>
+          <p>
+            To become the go-to platform for instant web development, fostering
+            a global community of creators who can learn, experiment, and build
+            without limitations.
+          </p>
+        </div>
+      </div>
+
+      <div class="content-section">
+        <h2>✨ Why CodX Editor?</h2>
+        <div class="features-grid">
+          <div class="feature-item">
+            <h4>💯 100% Free</h4>
+            <p>No hidden costs, no subscriptions. Free forever for everyone.</p>
+          </div>
+          <div class="feature-item">
+            <h4>🌐 Browser-Based</h4>
+            <p>
+              No installation required. Works on any device with a web browser.
+            </p>
+          </div>
+          <div class="feature-item">
+            <h4>⚡ Instant Preview</h4>
+            <p>
+              See your changes in real-time with live preview functionality.
+            </p>
+          </div>
+          <div class="feature-item">
+            <h4>🔒 Privacy First</h4>
+            <p>
+              Your code stays on your device. We don't store or track your
+              projects.
+            </p>
+          </div>
+          <div class="feature-item">
+            <h4>🎨 Customizable</h4>
+            <p>
+              Dark and light themes, adjustable settings, and personalized
+              workspace.
+            </p>
+          </div>
+          <div class="feature-item">
+            <h4>🤝 Open Source</h4>
+            <p>
+              Community-driven development with transparent and accessible code.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-section">
+        <h2>💡 Perfect For</h2>
+        <p>
+          <strong>Beginners:</strong> Learn HTML, CSS, and JavaScript with an
+          intuitive interface and instant feedback. No complex setup means you
+          can focus on learning, not configuration.
+        </p>
+        <p>
+          <strong>Students:</strong> Complete assignments, practice coding
+          challenges, and experiment with web technologies without needing to
+          install software on school computers.
+        </p>
+        <p>
+          <strong>Developers:</strong> Quickly prototype ideas, test code
+          snippets, and share examples with colleagues or clients without the
+          overhead of a full development environment.
+        </p>
+        <p>
+          <strong>Educators:</strong> Teach web development concepts with a tool
+          that's accessible to all students, regardless of their device or
+          technical expertise.
+        </p>
+      </div>
+
+      <div class="content-section team-section">
+        <h2>🌟 Join Our Community</h2>
+        <p>
+          CodX Editor is built by developers, for developers. We believe in the
+          power of community and collaboration. Whether you want to contribute
+          code, report bugs, suggest features, or simply share your projects, we
+          welcome you to be part of our growing community.
+        </p>
+        <p style="margin-top: 25px">
+          <strong>Ready to start coding?</strong> Jump into CodX Editor and
+          bring your ideas to life today!
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

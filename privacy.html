@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Privacy Policy for CodX Editor - We don't collect, store, or track any of your data."
+    />
+    <meta name="theme-color" content="#4CAF50" />
+    <link rel="icon" type="image/png" href="cx.png" />
+    <title>Privacy Policy - CodX Editor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        color: #333;
+        background: linear-gradient(45deg, #e6fff2, #ffffff, #f0fff0);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        padding-top: 80px;
+        overflow-x: hidden;
+      }
+
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        padding: 15px 40px;
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .logo-container img {
+        height: 45px;
+        width: auto;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      .nav-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .nav-btn.active {
+        background: #4caf50;
+        color: white;
+      }
+
+      .nav-btn:not(.active) {
+        background: transparent;
+        color: #333;
+      }
+
+      .nav-btn:not(.active):hover {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+      }
+
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(76, 175, 80, 0.3);
+        border-radius: 50%;
+        animation: float 15s infinite;
+      }
+
+      .particle:nth-child(1) {
+        left: 10%;
+        animation-delay: 0s;
+      }
+      .particle:nth-child(2) {
+        left: 20%;
+        animation-delay: 2s;
+      }
+      .particle:nth-child(3) {
+        left: 30%;
+        animation-delay: 4s;
+      }
+      .particle:nth-child(4) {
+        left: 40%;
+        animation-delay: 6s;
+      }
+      .particle:nth-child(5) {
+        left: 50%;
+        animation-delay: 8s;
+      }
+      .particle:nth-child(6) {
+        left: 60%;
+        animation-delay: 10s;
+      }
+      .particle:nth-child(7) {
+        left: 70%;
+        animation-delay: 12s;
+      }
+      .particle:nth-child(8) {
+        left: 80%;
+        animation-delay: 14s;
+      }
+
+      @keyframes float {
+        0% {
+          transform: translateY(100vh) scale(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100vh) scale(1);
+          opacity: 0;
+        }
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px 60px;
+      }
+
+      .page-header {
+        text-align: center;
+        margin-bottom: 50px;
+        animation: fadeInDown 0.8s ease;
+      }
+
+      .page-header h1 {
+        font-size: 3em;
+        margin-bottom: 15px;
+        background: linear-gradient(90deg, #4caf50, #2e7d32, #81c784);
+        background-size: 300%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: textGradient 5s ease-in-out infinite;
+      }
+
+      .last-updated {
+        font-size: 1em;
+        color: #666;
+        font-style: italic;
+      }
+
+      .content-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        animation: fadeInUp 0.8s ease;
+      }
+
+      .privacy-section {
+        margin-bottom: 35px;
+      }
+
+      .privacy-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .privacy-section h2 {
+        font-size: 1.8em;
+        color: #4caf50;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(76, 175, 80, 0.3);
+      }
+
+      .privacy-section h3 {
+        font-size: 1.3em;
+        color: #2e7d32;
+        margin: 20px 0 12px;
+      }
+
+      .privacy-section p {
+        font-size: 1.05em;
+        line-height: 1.8;
+        color: #444;
+        margin-bottom: 15px;
+        text-align: justify;
+      }
+
+      .privacy-section ul {
+        margin: 15px 0 15px 25px;
+      }
+
+      .privacy-section li {
+        font-size: 1.05em;
+        line-height: 1.8;
+        color: #444;
+        margin-bottom: 10px;
+      }
+
+      .highlight {
+        color: #4caf50;
+        font-weight: bold;
+      }
+
+      .important-note {
+        background: rgba(76, 175, 80, 0.1);
+        border-left: 4px solid #4caf50;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 8px;
+      }
+
+      .important-note p {
+        margin-bottom: 0;
+        font-weight: 500;
+      }
+
+      .privacy-guarantee {
+        background: linear-gradient(
+          135deg,
+          rgba(76, 175, 80, 0.15),
+          rgba(129, 199, 132, 0.15)
+        );
+        border: 2px solid #4caf50;
+        padding: 30px;
+        margin: 30px 0;
+        border-radius: 15px;
+        text-align: center;
+      }
+
+      .privacy-guarantee h3 {
+        font-size: 1.5em;
+        color: #4caf50;
+        margin-bottom: 15px;
+      }
+
+      .privacy-guarantee p {
+        font-size: 1.1em;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      .checkmark {
+        color: #4caf50;
+        font-size: 1.3em;
+        margin-right: 8px;
+      }
+
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      @keyframes textGradient {
+        0% {
+          background-position: 0%;
+        }
+        50% {
+          background-position: 100%;
+        }
+        100% {
+          background-position: 0%;
+        }
+      }
+
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(40px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 768px) {
+        header {
+          padding: 12px 20px;
+        }
+
+        .logo-container img {
+          height: 35px;
+        }
+
+        .nav-buttons {
+          gap: 6px;
+        }
+
+        .nav-btn {
+          padding: 8px 14px;
+          font-size: 0.85em;
+        }
+
+        body {
+          padding-top: 70px;
+        }
+
+        .page-header h1 {
+          font-size: 2.2em;
+        }
+
+        .content-section {
+          padding: 30px 25px;
+        }
+
+        .privacy-section h2 {
+          font-size: 1.5em;
+        }
+
+        .privacy-section p,
+        .privacy-section li {
+          font-size: 1em;
+          text-align: left;
+        }
+
+        .privacy-guarantee p {
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 20px 15px 60px;
+        }
+
+        .page-header h1 {
+          font-size: 1.8em;
+        }
+
+        .content-section {
+          padding: 25px 20px;
+        }
+
+        .nav-btn {
+          padding: 7px 10px;
+          font-size: 0.8em;
+        }
+
+        .privacy-section h2 {
+          font-size: 1.3em;
+        }
+
+        .privacy-section h3 {
+          font-size: 1.1em;
+        }
+
+        .privacy-guarantee {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo-container">
+          <img src="cx.png" alt="CodX Logo" />
+        </div>
+        <nav class="nav-buttons">
+          <a href="index.html" class="nav-btn">Home</a>
+          <a href="about.html" class="nav-btn">About</a>
+          <a href="terms.html" class="nav-btn">Terms and Conditions</a>
+          <a href="privacy.html" class="nav-btn active">Privacy Policy</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+
+    <div class="container">
+      <div class="page-header">
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last Updated: December 7, 2025</p>
+      </div>
+
+      <div class="content-section">
+        <div class="privacy-guarantee">
+          <h3>🔒 Your Privacy is Our Priority</h3>
+          <p>
+            <span class="highlight">CodX Editor</span> is built with privacy at
+            its core. We don't collect, store, track, or sell any of your data.
+            Period.
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>1. Our Privacy Commitment</h2>
+          <p>
+            At <span class="highlight">CodX Editor</span>, we believe your code
+            and your data belong to you alone. We've designed our platform to be
+            completely privacy-focused, ensuring that your work remains private
+            and secure at all times.
+          </p>
+          <p>
+            <strong
+              >In simple terms: We don't collect, store, or track anything about
+              you or your code.</strong
+            >
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>2. What We DON'T Collect</h2>
+          <p>Unlike most online services, CodX Editor does NOT collect:</p>
+          <ul>
+            <li>
+              <span class="checkmark">✓</span>
+              <strong>No Personal Information</strong> - We don't ask for your
+              name, email, or any personal details
+            </li>
+            <li>
+              <span class="checkmark">✓</span>
+              <strong>No Account Data</strong> - No registration required, no
+              accounts, no passwords
+            </li>
+            <li>
+              <span class="checkmark">✓</span>
+              <strong>No Code Storage</strong> - Your code is never uploaded to
+              our servers
+            </li>
+            <li>
+              <span class="checkmark">✓</span>
+              <strong>No Usage Tracking</strong> - We don't track what you code,
+              when you code, or how you use the editor
+            </li>
+            <li>
+              <span class="checkmark">✓</span> <strong>No Analytics</strong> -
+              No Google Analytics, no tracking pixels, no monitoring tools
+            </li>
+            <li>
+              <span class="checkmark">✓</span> <strong>No Cookies</strong> - We
+              don't use cookies to track you or store information
+            </li>
+            <li>
+              <span class="checkmark">✓</span> <strong>No IP Logging</strong> -
+              We don't log or store your IP address
+            </li>
+            <li>
+              <span class="checkmark">✓</span>
+              <strong>No Device Information</strong> - We don't collect data
+              about your device, browser, or operating system
+            </li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h2>3. How CodX Editor Works</h2>
+          <p>
+            <span class="highlight">CodX Editor</span> is a completely
+            client-side application that runs entirely in your web browser.
+            Here's what that means for your privacy:
+          </p>
+
+          <h3>3.1 Local Storage Only</h3>
+          <p>
+            All your code, projects, and settings are stored locally in your
+            browser's storage (localStorage). This means your data never leaves
+            your device unless you explicitly choose to export or share it.
+          </p>
+
+          <h3>3.2 No Server Communication</h3>
+          <p>
+            When you write code in CodX Editor, it's processed entirely on your
+            device. We don't send your code to any server for processing,
+            analysis, or storage. Everything happens locally in your browser.
+          </p>
+
+          <h3>3.3 No Third-Party Scripts</h3>
+          <p>
+            CodX Editor doesn't load third-party tracking scripts, advertising
+            networks, or analytics tools. The only external resources we load
+            are open-source libraries (like code highlighting tools) that are
+            necessary for the editor to function, and these don't collect any
+            data about you.
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>4. Your Data Stays With You</h2>
+          <p>Since CodX Editor stores everything locally in your browser:</p>
+          <ul>
+            <li>Your projects remain on your device</li>
+            <li>You have complete control over your data</li>
+            <li>
+              You can clear your data at any time through your browser settings
+            </li>
+            <li>
+              If you clear your browser data, your projects will be deleted (so
+              make sure to export important work!)
+            </li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h2>5. Optional Features</h2>
+          <p>
+            CodX Editor may offer optional features like sharing or
+            collaboration. If you choose to use these features:
+          </p>
+          <ul>
+            <li>You will be clearly informed before any data is shared</li>
+            <li>You maintain full control over what you share</li>
+            <li>Sharing is always opt-in, never automatic</li>
+            <li>We still don't collect or store your personal information</li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h2>6. Third-Party Links</h2>
+          <p>
+            CodX Editor may contain links to external websites or resources.
+            These third-party sites have their own privacy policies, and we have
+            no control over them. We encourage you to review the privacy
+            policies of any external sites you visit.
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>7. Children's Privacy</h2>
+          <p>
+            CodX Editor is safe for users of all ages. Since we don't collect
+            any personal information, there's no data collection from children
+            or anyone else. Parents and educators can confidently allow students
+            to use CodX Editor knowing that their privacy is protected.
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>8. Open Source Transparency</h2>
+          <p>
+            CodX Editor is open source, which means our code is publicly
+            available for anyone to review. You can verify our privacy claims by
+            examining the source code yourself. We believe in transparency and
+            accountability.
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>9. Data Security</h2>
+          <p>
+            While we don't collect or store your data on our servers, we still
+            take security seriously. CodX Editor is served over HTTPS to ensure
+            that your connection to our website is secure and protected from
+            third-party interception.
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>10. Changes to This Privacy Policy</h2>
+          <p>
+            We may update this Privacy Policy from time to time. Any changes
+            will be posted on this page with an updated revision date. However,
+            our core commitment to not collecting your data will never change.
+          </p>
+        </div>
+
+        <div class="privacy-section">
+          <h2>11. Contact Us</h2>
+          <p>
+            If you have any questions about this Privacy Policy or our privacy
+            practices, please feel free to contact us through our official
+            channels or repository.
+          </p>
+        </div>
+
+        <div class="important-note" style="margin-top: 40px">
+          <p>
+            <strong>Bottom Line:</strong> CodX Editor respects your privacy
+            completely. We don't collect, store, track, or share any of your
+            data. Your code is yours, and it stays on your device. We're
+            committed to keeping it that way.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

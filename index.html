@@ -1,414 +1,669 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="keywords" content="online code editor, code editor online, browser coding, web-based IDE, programming online, HTML CSS JS, JavaScript editor, web development, frontend development, learn coding, coding practice, beginner coding, coding projects, code sandbox, live preview, run code online, debugging online, instant code runner, free code editor">
-<meta name="description" content="CodX Editor is a free, browser-based code editor that lets you write, run, and debug HTML, CSS, and JavaScript instantly—no installation required.">
-<meta name="theme-color" content="#4CAF50">
-<link rel="icon" type="image/png" href="cx.png">
-<title>Code Instantly In Your Browser</title>
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="keywords"
+      content="online code editor, code editor online, browser coding, web-based IDE, programming online, HTML CSS JS, JavaScript editor, web development, frontend development, learn coding, coding practice, beginner coding, coding projects, code sandbox, live preview, run code online, debugging online, instant code runner, free code editor"
+    />
+    <meta
+      name="description"
+      content="CodX Editor is a free, browser-based code editor that lets you write, run, and debug HTML, CSS, and JavaScript instantly—no installation required."
+    />
+    <meta name="theme-color" content="#4CAF50" />
+    <link rel="icon" type="image/png" href="cx.png" />
+    <title>Code Instantly In Your Browser</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    color: #333;
-    text-align: center;
-    background: linear-gradient(45deg, #e6fff2, #ffffff, #f0fff0);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    padding: 20px;
-    overflow-x: hidden;
-  }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        color: #333;
+        text-align: center;
+        background: linear-gradient(45deg, #e6fff2, #ffffff, #f0fff0);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        padding: 20px;
+        padding-top: 80px;
+        overflow-x: hidden;
+      }
 
-  .particles {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 0;
-    pointer-events: none;
-  }
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        padding: 15px 40px;
+      }
 
-  .particle {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: rgba(76, 175, 80, 0.3);
-    border-radius: 50%;
-    animation: float 15s infinite;
-  }
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
 
-  .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
-  .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
-  .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
-  .particle:nth-child(4) { left: 40%; animation-delay: 6s; }
-  .particle:nth-child(5) { left: 50%; animation-delay: 8s; }
-  .particle:nth-child(6) { left: 60%; animation-delay: 10s; }
-  .particle:nth-child(7) { left: 70%; animation-delay: 12s; }
-  .particle:nth-child(8) { left: 80%; animation-delay: 14s; }
+      .logo-container {
+        display: flex;
+        align-items: center;
+      }
 
-  @keyframes float {
-    0% { transform: translateY(100vh) scale(0); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(-100vh) scale(1); opacity: 0; }
-  }
+      .logo-container img {
+        height: 45px;
+        width: auto;
+      }
 
-  .container {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 900px;
-  }
+      .nav-buttons {
+        display: flex;
+        gap: 10px;
+      }
 
-  .ad-container {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 50px 40px;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    border: 2px solid rgba(76, 175, 80, 0.3);
-    animation: floatCard 4s ease-in-out infinite alternate;
-  }
+      .nav-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
 
-  .logo-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #4CAF50, #81C784);
-    color: white;
-    padding: 8px 20px;
-    border-radius: 25px;
-    font-size: 0.9em;
-    font-weight: bold;
-    margin-bottom: 20px;
-    animation: fadeIn 0.8s ease;
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-  }
+      .nav-btn.active {
+        background: #4caf50;
+        color: white;
+      }
 
-  .ad-container h1 {
-    font-size: 2.8em;
-    margin-bottom: 15px;
-    background: linear-gradient(90deg, #4CAF50, #2E7D32, #81C784);
-    background-size: 300%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: textGradient 5s ease-in-out infinite, bounceIn 1s ease forwards;
-    line-height: 1.2;
-  }
+      .nav-btn:not(.active) {
+        background: transparent;
+        color: #333;
+      }
 
-  .cod { color: #000; }
-  .x { color: #4CAF50; }
+      .nav-btn:not(.active):hover {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+      }
 
-  .subtext {
-    font-size: 1.3em;
-    margin-bottom: 30px;
-    color: #555;
-    animation: fadeIn 1.5s ease-in-out forwards;
-    font-weight: 500;
-  }
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+      }
 
-  .highlight {
-    color: #4CAF50;
-    font-weight: bold;
-  }
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(76, 175, 80, 0.3);
+        border-radius: 50%;
+        animation: float 15s infinite;
+      }
 
-  .description {
-    font-size: 1.1em;
-    margin-bottom: 35px;
-    line-height: 1.8;
-    animation: fadeInUp 1.5s ease both;
-    color: #444;
-  }
+      .particle:nth-child(1) {
+        left: 10%;
+        animation-delay: 0s;
+      }
+      .particle:nth-child(2) {
+        left: 20%;
+        animation-delay: 2s;
+      }
+      .particle:nth-child(3) {
+        left: 30%;
+        animation-delay: 4s;
+      }
+      .particle:nth-child(4) {
+        left: 40%;
+        animation-delay: 6s;
+      }
+      .particle:nth-child(5) {
+        left: 50%;
+        animation-delay: 8s;
+      }
+      .particle:nth-child(6) {
+        left: 60%;
+        animation-delay: 10s;
+      }
+      .particle:nth-child(7) {
+        left: 70%;
+        animation-delay: 12s;
+      }
+      .particle:nth-child(8) {
+        left: 80%;
+        animation-delay: 14s;
+      }
 
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-    text-align: left;
-    margin: 35px 0;
-    list-style: none;
-  }
+      @keyframes float {
+        0% {
+          transform: translateY(100vh) scale(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100vh) scale(1);
+          opacity: 0;
+        }
+      }
 
-  .features li {
-    background: rgba(76, 175, 80, 0.05);
-    padding: 15px;
-    border-radius: 10px;
-    border-left: 4px solid #4CAF50;
-    opacity: 0;
-    animation: slideIn 0.6s ease-out forwards;
-    transition: all 0.3s ease;
-  }
+      .container {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 900px;
+      }
 
-  .features li:hover {
-    background: rgba(76, 175, 80, 0.1);
-    transform: translateX(5px);
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
-  }
+      .ad-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 50px 40px;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        animation: floatCard 4s ease-in-out infinite alternate;
+      }
 
-  .features li:nth-child(1) { animation-delay: 0.8s; }
-  .features li:nth-child(2) { animation-delay: 1.0s; }
-  .features li:nth-child(3) { animation-delay: 1.2s; }
-  .features li:nth-child(4) { animation-delay: 1.4s; }
-  .features li:nth-child(5) { animation-delay: 1.6s; }
-  .features li:nth-child(6) { animation-delay: 1.8s; }
-  .features li:nth-child(7) { animation-delay: 2.0s; }
-  .features li:nth-child(8) { animation-delay: 2.2s; }
-  .features li:nth-child(9) { animation-delay: 2.4s; }
-  .features li:nth-child(10) { animation-delay: 2.6s; }
+      .logo-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #4caf50, #81c784);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        animation: fadeIn 0.8s ease;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      }
 
-  .feature-icon {
-    font-size: 1.4em;
-    margin-right: 10px;
-    vertical-align: middle;
-  }
+      .ad-container h1 {
+        font-size: 2.8em;
+        margin-bottom: 15px;
+        background: linear-gradient(90deg, #4caf50, #2e7d32, #81c784);
+        background-size: 300%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: textGradient 5s ease-in-out infinite,
+          bounceIn 1s ease forwards;
+        line-height: 1.2;
+      }
 
-  .cta-section {
-    margin: 40px 0 20px;
-    animation: fadeInUp 2s ease both;
-  }
+      .cod {
+        color: #000;
+      }
+      .x {
+        color: #4caf50;
+      }
 
-  .cta-text {
-    font-size: 1.2em;
-    margin-bottom: 25px;
-    font-weight: 600;
-    color: #333;
-  }
+      .subtext {
+        font-size: 1.3em;
+        margin-bottom: 30px;
+        color: #555;
+        animation: fadeIn 1.5s ease-in-out forwards;
+        font-weight: 500;
+      }
 
-  .btn {
-    position: relative;
-    display: inline-block;
-    background: linear-gradient(135deg, #4CAF50, #45a049);
-    color: #fff;
-    text-decoration: none;
-    padding: 16px 40px;
-    font-weight: bold;
-    border-radius: 50px;
-    transition: all 0.3s ease;
-    font-size: 1.2em;
-    border: none;
-    overflow: hidden;
-    cursor: pointer;
-    animation: pulseGlow 2s infinite;
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-  }
+      .highlight {
+        color: #4caf50;
+        font-weight: bold;
+      }
 
-  .btn:hover {
-    background: linear-gradient(135deg, #45a049, #388E3C);
-    box-shadow: 0 6px 25px rgba(76, 175, 80, 0.6);
-    transform: scale(1.08) translateY(-3px);
-  }
+      .description {
+        font-size: 1.1em;
+        margin-bottom: 35px;
+        line-height: 1.8;
+        animation: fadeInUp 1.5s ease both;
+        color: #444;
+      }
 
-  .btn:active {
-    transform: scale(1.02) translateY(-1px);
-  }
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        text-align: left;
+        margin: 35px 0;
+        list-style: none;
+      }
 
-  .btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(
-      120deg,
-      rgba(255, 255, 255, 0.8) 0%,
-      rgba(255, 255, 255, 0) 80%
-    );
-    transform: skewX(-25deg);
-    animation: shimmer 3s infinite;
-  }
+      .features li {
+        background: rgba(76, 175, 80, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #4caf50;
+        opacity: 0;
+        animation: slideIn 0.6s ease-out forwards;
+        transition: all 0.3s ease;
+      }
 
-  .secondary-info {
-    margin-top: 25px;
-    font-size: 0.95em;
-    color: #666;
-    animation: fadeIn 2.5s ease;
-  }
+      .features li:hover {
+        background: rgba(76, 175, 80, 0.1);
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+      }
 
-  .tech-badges {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-  }
+      .features li:nth-child(1) {
+        animation-delay: 0.8s;
+      }
+      .features li:nth-child(2) {
+        animation-delay: 1s;
+      }
+      .features li:nth-child(3) {
+        animation-delay: 1.2s;
+      }
+      .features li:nth-child(4) {
+        animation-delay: 1.4s;
+      }
+      .features li:nth-child(5) {
+        animation-delay: 1.6s;
+      }
+      .features li:nth-child(6) {
+        animation-delay: 1.8s;
+      }
+      .features li:nth-child(7) {
+        animation-delay: 2s;
+      }
+      .features li:nth-child(8) {
+        animation-delay: 2.2s;
+      }
+      .features li:nth-child(9) {
+        animation-delay: 2.4s;
+      }
+      .features li:nth-child(10) {
+        animation-delay: 2.6s;
+      }
 
-  .badge {
-    background: rgba(76, 175, 80, 0.1);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.9em;
-    font-weight: 600;
-    color: #4CAF50;
-    border: 1px solid rgba(76, 175, 80, 0.3);
-  }
+      .feature-icon {
+        font-size: 1.4em;
+        margin-right: 10px;
+        vertical-align: middle;
+      }
 
-  @keyframes shimmer {
-    0% { left: -150%; }
-    100% { left: 150%; }
-  }
+      .cta-section {
+        margin: 40px 0 20px;
+        animation: fadeInUp 2s ease both;
+      }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+      .cta-text {
+        font-size: 1.2em;
+        margin-bottom: 25px;
+        font-weight: 600;
+        color: #333;
+      }
 
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(40px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+      .btn {
+        position: relative;
+        display: inline-block;
+        background: linear-gradient(135deg, #4caf50, #45a049);
+        color: #fff;
+        text-decoration: none;
+        padding: 16px 40px;
+        font-weight: bold;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        font-size: 1.2em;
+        border: none;
+        overflow: hidden;
+        cursor: pointer;
+        animation: pulseGlow 2s infinite;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+      }
 
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-20px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
+      .btn:hover {
+        background: linear-gradient(135deg, #45a049, #388e3c);
+        box-shadow: 0 6px 25px rgba(76, 175, 80, 0.6);
+        transform: scale(1.08) translateY(-3px);
+      }
 
-  @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+      .btn:active {
+        transform: scale(1.02) translateY(-1px);
+      }
 
-  @keyframes textGradient {
-    0% { background-position: 0%; }
-    50% { background-position: 100%; }
-    100% { background-position: 0%; }
-  }
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -150%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+          120deg,
+          rgba(255, 255, 255, 0.8) 0%,
+          rgba(255, 255, 255, 0) 80%
+        );
+        transform: skewX(-25deg);
+        animation: shimmer 3s infinite;
+      }
 
-  @keyframes bounceIn {
-    0% { transform: scale(0.5) translateY(-200px); opacity: 0; }
-    60% { transform: scale(1.1) translateY(20px); opacity: 1; }
-    80% { transform: scale(0.98) translateY(-8px); }
-    100% { transform: scale(1) translateY(0); }
-  }
+      .secondary-info {
+        margin-top: 25px;
+        font-size: 0.95em;
+        color: #666;
+        animation: fadeIn 2.5s ease;
+      }
 
-  @keyframes floatCard {
-    from { transform: translateY(0px); }
-    to { transform: translateY(-12px); }
-  }
+      .tech-badges {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
 
-  @keyframes pulseGlow {
-    0% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); }
-    50% { box-shadow: 0 6px 25px rgba(76, 175, 80, 0.8); }
-    100% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); }
-  }
+      .badge {
+        background: rgba(76, 175, 80, 0.1);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: 600;
+        color: #4caf50;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+      }
 
-  @media (max-width: 768px) {
-    .ad-container {
-      padding: 35px 25px;
-    }
+      @keyframes shimmer {
+        0% {
+          left: -150%;
+        }
+        100% {
+          left: 150%;
+        }
+      }
 
-    .ad-container h1 {
-      font-size: 2em;
-    }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-    .subtext {
-      font-size: 1.1em;
-    }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(40px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-    .description {
-      font-size: 1em;
-    }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
 
-    .features {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
 
-    .btn {
-      padding: 14px 30px;
-      font-size: 1.1em;
-    }
+      @keyframes textGradient {
+        0% {
+          background-position: 0%;
+        }
+        50% {
+          background-position: 100%;
+        }
+        100% {
+          background-position: 0%;
+        }
+      }
 
-    .tech-badges {
-      gap: 10px;
-    }
-  }
+      @keyframes bounceIn {
+        0% {
+          transform: scale(0.5) translateY(-200px);
+          opacity: 0;
+        }
+        60% {
+          transform: scale(1.1) translateY(20px);
+          opacity: 1;
+        }
+        80% {
+          transform: scale(0.98) translateY(-8px);
+        }
+        100% {
+          transform: scale(1) translateY(0);
+        }
+      }
 
-  @media (max-width: 480px) {
-    body {
-      padding: 15px;
-    }
+      @keyframes floatCard {
+        from {
+          transform: translateY(0px);
+        }
+        to {
+          transform: translateY(-12px);
+        }
+      }
 
-    .ad-container h1 {
-      font-size: 1.6em;
-    }
+      @keyframes pulseGlow {
+        0% {
+          box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        50% {
+          box-shadow: 0 6px 25px rgba(76, 175, 80, 0.8);
+        }
+        100% {
+          box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+      }
 
-    .logo-badge {
-      font-size: 0.85em;
-      padding: 6px 16px;
-    }
-  }
-</style>
-</head>
-<body>
-  <div class="particles">
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-  </div>
+      @media (max-width: 768px) {
+        header {
+          padding: 12px 20px;
+        }
 
-  <div class="container">
-    <div class="ad-container">
-      <div class="logo-badge">100% FREE & OPEN SOURCE</div>
-      
-      <h1>Code Instantly In Your Browser<br>No Installation Needed</h1>
-      
-      <p class="subtext">Stop wasting time with heavy editors. Start coding instantly in your browser.</p>
-      
-      <p class="description">
-        <span class="highlight"><span class="cod">Cod</span><span class="x">X</span> Editor</span> is a powerful, 
-        browser-based code editor that lets you instantly write, run, and debug
-        <span class="highlight">HTML</span>, <span class="highlight">CSS</span>, and <span class="highlight">JavaScript</span> 
-        without any installation. No setup, no hassle – just pure coding, anytime, anywhere!
-      </p>
+        .logo-container img {
+          height: 35px;
+        }
 
-      <ul class="features">
-        <li><span class="highlight">100% Free</span> – No payment or signup required</li>
-        <li><span class="highlight">Auto-Run</span> with live preview</li>
-        <li>Built-in <span class="highlight">Console</span> for debugging</li>
-        <li><span class="highlight">Dark & Light Mode</span> themes</li>
-        <li><span class="highlight">Multi-file Support</span> – create HTML, CSS & JS files</li>
-        <li><span class="highlight">Customizable Settings</span> – personalize your editor</li>
-        <li><span class="highlight">Media Support</span> – add images, videos & audio</li>
-        <li><span class="highlight">Export & Import</span> projects as ZIP</li>
-        <li><span class="highlight">Real-time Collaboration</span> with friends</li>
-        <li><span class="highlight">Cross-platform</span> – works on all devices!</li>
-        <li><span class="highlight">Font Picker</span> – browse and copy 30+ fonts instantly</li>
-      </ul>
+        .nav-buttons {
+          gap: 6px;
+        }
 
-      <div class="cta-section">
-        <p class="cta-text">Ready to revolutionize your coding workflow?</p>
-        <a href="codx-editor.html" class="btn">Start Coding Now</a>
+        .nav-btn {
+          padding: 8px 14px;
+          font-size: 0.85em;
+        }
+
+        body {
+          padding-top: 70px;
+        }
+
+        .ad-container {
+          padding: 35px 25px;
+        }
+
+        .ad-container h1 {
+          font-size: 2em;
+        }
+
+        .subtext {
+          font-size: 1.1em;
+        }
+
+        .description {
+          font-size: 1em;
+        }
+
+        .features {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
+        .btn {
+          padding: 14px 30px;
+          font-size: 1.1em;
+        }
+
+        .tech-badges {
+          gap: 10px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 15px;
+          padding-top: 70px;
+        }
+
+        .ad-container h1 {
+          font-size: 1.6em;
+        }
+
+        .logo-badge {
+          font-size: 0.85em;
+          padding: 6px 16px;
+        }
+
+        .nav-btn {
+          padding: 7px 10px;
+          font-size: 0.8em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo-container">
+          <img src="cx.png" alt="CodX Logo" />
+        </div>
+        <nav class="nav-buttons">
+          <a href="index.html" class="nav-btn active">Home</a>
+          <a href="about.html" class="nav-btn">About</a>
+          <a href="terms.html" class="nav-btn">Terms and Conditions</a>
+          <a href="privacy.html" class="nav-btn">Privacy Policy</a>
+        </nav>
       </div>
+    </header>
 
-      <div class="secondary-info">
-        <p>No downloads • No installations • No account needed</p>
-        <div class="tech-badges">
-          <span class="badge">HTML5</span>
-          <span class="badge">CSS3</span>
-          <span class="badge">JavaScript</span>
-          <span class="badge">Real-time</span>
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+
+    <div class="container">
+      <div class="ad-container">
+        <div class="logo-badge">100% FREE & OPEN SOURCE</div>
+
+        <h1>Code Instantly In Your Browser<br />No Installation Needed</h1>
+
+        <p class="subtext">
+          Stop wasting time with heavy editors. Start coding instantly in your
+          browser.
+        </p>
+
+        <p class="description">
+          <span class="highlight"
+            ><span class="cod">Cod</span><span class="x">X</span> Editor</span
+          >
+          is a powerful, browser-based code editor that lets you instantly
+          write, run, and debug <span class="highlight">HTML</span>,
+          <span class="highlight">CSS</span>, and
+          <span class="highlight">JavaScript</span>
+          without any installation. No setup, no hassle — just pure coding,
+          anytime, anywhere!
+        </p>
+
+        <ul class="features">
+          <li>
+            <span class="highlight">100% Free</span> — No payment or signup
+            required
+          </li>
+          <li><span class="highlight">Auto-Run</span> with live preview</li>
+          <li>Built-in <span class="highlight">Console</span> for debugging</li>
+          <li><span class="highlight">Dark & Light Mode</span> themes</li>
+          <li>
+            <span class="highlight">Multi-file Support</span> — create HTML, CSS
+            & JS files
+          </li>
+          <li>
+            <span class="highlight">Customizable Settings</span> — personalize
+            your editor
+          </li>
+          <li>
+            <span class="highlight">Media Support</span> — add images, videos &
+            audio
+          </li>
+          <li>
+            <span class="highlight">Export & Import</span> projects as ZIP
+          </li>
+          <li>
+            <span class="highlight">Real-time Collaboration</span> with friends
+          </li>
+          <li>
+            <span class="highlight">Cross-platform</span> — works on all
+            devices!
+          </li>
+          <li>
+            <span class="highlight">Font Picker</span> — browse and copy 30+
+            fonts instantly
+          </li>
+        </ul>
+
+        <div class="cta-section">
+          <p class="cta-text">Ready to revolutionize your coding workflow?</p>
+          <a href="codx-editor.html" class="btn">Start Coding Now</a>
+        </div>
+
+        <div class="secondary-info">
+          <p>No downloads • No installations • No account needed</p>
+          <div class="tech-badges">
+            <span class="badge">HTML5</span>
+            <span class="badge">CSS3</span>
+            <span class="badge">JavaScript</span>
+            <span class="badge">Real-time</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
+    <!-- Prism.js Script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  </body>
 </html>
