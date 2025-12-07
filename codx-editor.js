@@ -1472,6 +1472,13 @@ function startSyncing() {
 
 function handleStorageChange(e) {
   const sid = safeLocalStorage("get", "activeSessionId");
+
+  // Only sync if we're in a collaboration session
+  if (!sid || !myInfo.name) {
+    // Not in collab mode, don't sync between tabs
+    return;
+  }
+
   if (e.key === sid && e.newValue) {
     try {
       const nv = JSON.parse(e.newValue);
@@ -1481,9 +1488,9 @@ function handleStorageChange(e) {
         projectFiles.forEach((f) => (f.active = f === activeFile));
 
         const ed = document.getElementById("activeEditor");
-        const currentPos = ed.selectionStart; // Try to save cursor
+        const currentPos = ed.selectionStart;
         ed.value = activeFile.content;
-        ed.selectionStart = ed.selectionEnd = currentPos; // Restore cursor
+        ed.selectionStart = ed.selectionEnd = currentPos;
 
         updateLineNumbers(ed);
         renderFileList();
