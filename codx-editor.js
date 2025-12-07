@@ -562,17 +562,24 @@ ${jsFile.content}
 
   // === 3. Handle <a href> links to other HTML files
   html = html.replace(
-    /<a([^>]*)href=["']([^"']+)["']([^>]*)>/gi,
+    /<a([^>]*)href=["']([^"']+\.html)["']([^>]*)>/gi,
     (match, before, href, after) => {
-      // Check if it's a link to another HTML file in the project
+      // Extract just the filename
+      const fileName = href.split("/").pop();
+
+      // Check if this HTML file exists in project
       const linkedFile = projectFiles.find(
-        (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "html"
+        (f) =>
+          f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html"
       );
+
       if (linkedFile) {
-        // Create onclick handler to switch files and update preview
-        return `<a${before}href="#" onclick="event.preventDefault(); window.parent.postMessage({type: 'switchFile', fileName: '${linkedFile.name}'}, '*');"${after}>`;
+        // File exists - make the link load that file's content in the preview
+        const encodedHTML = encodeURIComponent(linkedFile.content);
+        return `<a${before}href="javascript:void(0)" onclick="window.location.href='data:text/html;charset=utf-8,${encodedHTML}'"${after}>`;
       }
-      // If not found, keep the original link
+
+      // File doesn't exist - keep original
       return match;
     }
   );
