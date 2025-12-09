@@ -966,6 +966,273 @@ function handleEditorKeyDown(e) {
   }
 }
 
+// PART 6.7: AUTO-CLOSING & INDENTATION LOGIC (NEW UTILITY)
+
+/**
+ * Handles auto-closing of brackets/parentheses and indentation on 'Enter'.
+ * This is specific for CSS and JS files.
+ */
+function handleAutoCloseAndIndent(e, editor) {
+  const fileType = activeFile.type;
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  const textAfter = editor.value.substring(pos);
+
+  // 1. Indent level calculation (Find the indentation of the current line)
+  const lineStart = textBefore.lastIndexOf("\n") + 1;
+  const currentLine = textBefore.substring(lineStart);
+  const currentIndentMatch = currentLine.match(/^(\s*)/);
+  const currentIndent = currentIndentMatch ? currentIndentMatch[1] : "";
+
+  // 2. Check for an immediate auto-close/indent trigger
+  let autoClosePair = null; // Stores { or (
+  let isTriggered = false;
+  let closingChar = "";
+  let insertNewlines = 1;
+
+  if (fileType === "css" || fileType === "js") {
+    // Check for { (CSS blocks or JS objects/functions)
+    if (e.key === "{") {
+      autoClosePair = "{";
+      closingChar = "}";
+    }
+    // Check for ( (JS function calls or definitions)
+    else if (fileType === "js" && e.key === "(") {
+      autoClosePair = "(";
+      closingChar = ")";
+    }
+    // Check for Enter key press on an opening brace/parenthesis
+    else if (
+      (e.key === "Enter" &&
+        (textBefore.endsWith("{") || textBefore.endsWith("(")) &&
+        textAfter.startsWith("}")) ||
+      textAfter.startsWith(")")
+    ) {
+      // User is inside a pair like {} or () and hits Enter
+      isTriggered = true;
+      insertNewlines = 2; // Insert two newlines to create space for content
+      // Find the appropriate closing character based on what's before/after
+      if (textBefore.endsWith("{") && textAfter.startsWith("}"))
+        closingChar = "}";
+      if (textBefore.endsWith("(") && textAfter.startsWith(")"))
+        closingChar = ")";
+    }
+  }
+
+  // --- A. Handle typing an opening bracket/parenthesis ({ or () ---
+  if (autoClosePair) {
+    e.preventDefault(); // Stop default { or ( insertion
+
+    const newIndent = currentIndent;
+    const newText = textBefore + autoClosePair + closingChar + textAfter;
+    editor.value = newText;
+
+    // Move cursor before the inserted closing character
+    editor.selectionStart = editor.selectionEnd = pos + 1;
+
+    // Update state
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) debouncedUpdatePreview();
+    handleCodeChange();
+
+    return true; // Handled
+  }
+
+  // --- B. Handle Enter key press for indentation ---
+  if (e.key === "Enter") {
+    e.preventDefault(); // Stop default new line insertion
+
+    let newContent;
+    let newCursorPos;
+    let indentation = currentIndent;
+
+    if (textBefore.endsWith("{") || textBefore.endsWith("(") || isTriggered) {
+      // We need to increase indentation for the next line
+      const nextIndent = currentIndent + "  "; // 2 spaces for indentation
+
+      if (textBefore.endsWith("{") || textBefore.endsWith("(")) {
+        // Case 1: Cursor immediately after { or (
+
+        // --- 💡 MODIFICATION START ---
+        const autoClosingBracket = textBefore.endsWith("{") ? "}" : ")";
+
+        // Check if the corresponding closing bracket already exists right after the cursor
+        const closingExists = textAfter.startsWith(autoClosingBracket);
+
+        if (closingExists) {
+          // Scenario: { | } -> Newline + Indent + Newline + CurrentIndent + }
+          // This is essentially the same logic as 'isTriggered' but applied to the {|} case
+          newContent =
+            textBefore + "\n" + nextIndent + "\n" + currentIndent + textAfter;
+          newCursorPos = pos + 1 + nextIndent.length; // Pos + \n + newIndent
+        } else {
+          // Scenario: { | -> Newline + Indent + Newline + CurrentIndent + autoClosingBracket
+          // Insert: \n  \n}
+          newContent =
+            textBefore +
+            "\n" +
+            nextIndent +
+            "\n" +
+            currentIndent +
+            autoClosingBracket +
+            textAfter;
+          newCursorPos = pos + 1 + nextIndent.length; // Pos + \n + newIndent
+        }
+        // --- 💡 MODIFICATION END ---
+      } else if (isTriggered) {
+        // Case 2: Cursor inside {} or () where Enter was pressed (e.g., body{ | } )
+        // Insert: \n  \n
+        newContent =
+          textBefore + "\n" + nextIndent + "\n" + currentIndent + textAfter;
+        newCursorPos = pos + 1 + nextIndent.length; // Pos + \n + newIndent
+      }
+    } else {
+      // Case 3: Simple Enter press - just maintain current indentation
+      newContent = textBefore + "\n" + currentIndent + textAfter;
+      newCursorPos = pos + 1 + currentIndent.length;
+    }
+
+    // ... (rest of the Enter handler code) ...
+    editor.value = newContent;
+    editor.selectionStart = editor.selectionEnd = newCursorPos;
+
+    // Update state
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) debouncedUpdatePreview();
+    handleCodeChange();
+
+    return true; // Handled
+  }
+
+  return false; // Not handled
+}
+
+// PART 6.5: TAG SUGGESTIONS & AUTO-CLOSING LOGIC (UPDATED)
+
+/**
+ * Handles auto-closing of HTML tags when '>' is typed. (Original logic remains)
+ */
+function handleTagClosing(e) {
+  // ... (Keep the original logic here) ...
+  if (e.key !== ">") return;
+  if (activeFile.type !== "html") return;
+
+  const editor = e.target;
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+
+  const tagMatch = textBefore.match(/<([a-zA-Z0-9]+)(?![^>]*\/?>)\s*$/);
+
+  if (tagMatch) {
+    const tagName = tagMatch[1];
+    if (selfClosingTags.includes(tagName.toLowerCase())) {
+      return;
+    }
+
+    e.preventDefault();
+    const closingTag = `</${tagName}>`;
+    const textAfter = editor.value.substring(editor.selectionEnd);
+
+    editor.value = textBefore + ">" + closingTag + textAfter;
+
+    editor.selectionStart = editor.selectionEnd = pos + 1;
+
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) debouncedUpdatePreview();
+    handleCodeChange();
+  }
+}
+
+/**
+ * Handles all keydown events in the editor for suggestions, tab, and auto-closing. (REVISED)
+ */
+function handleEditorKeyDown(e) {
+  const editor = e.target;
+
+  // --- 1. Suggestion Popup Navigation (HTML only) ---
+  if (suggestionPopup.style.display === "block") {
+    const items = suggestionPopup.querySelectorAll(".suggestion-item");
+    if (!items.length) {
+      // If popup is open but empty, still allow Enter/Tab for default action
+      if (e.key === "Enter" || e.key === "Tab") {
+        suggestionPopup.style.display = "none";
+        if (e.key === "Tab") e.preventDefault(); // Prevent tabbing out
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeSuggestion = (activeSuggestion + 1) % items.length;
+      updateSuggestionHighlight(items);
+      return;
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeSuggestion = (activeSuggestion - 1 + items.length) % items.length;
+      updateSuggestionHighlight(items);
+      return;
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      if (activeSuggestion > -1) {
+        // Select the highlighted suggestion
+        e.preventDefault();
+        selectSuggestion(items[activeSuggestion].dataset.tag);
+        return;
+      } else {
+        // Allow default behavior if no suggestion is active
+        suggestionPopup.style.display = "none";
+        if (e.key === "Tab") e.preventDefault(); // Prevent tabbing out
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      suggestionPopup.style.display = "none";
+      return;
+    } else if (e.key === ">") {
+      // Handle tag closing, then hide popup
+      handleTagClosing(e);
+      suggestionPopup.style.display = "none";
+      return;
+    }
+  }
+
+  // --- 2. Auto-Closing & Indentation (CSS and JS) ---
+  if (activeFile.type === "css" || activeFile.type === "js") {
+    if (handleAutoCloseAndIndent(e, editor)) {
+      return; // If auto-closing/indentation was handled, stop here
+    }
+  }
+
+  // --- 3. HTML Tag Closing (If popup was not visible) ---
+  if (activeFile.type === "html" && e.key === ">") {
+    handleTagClosing(e);
+    return;
+  }
+
+  // --- 4. Tab for Indentation (Fallback for all file types) ---
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    // Insert 2 spaces
+    editor.value =
+      editor.value.substring(0, start) + "  " + editor.value.substring(end);
+    editor.selectionStart = editor.selectionEnd = start + 2;
+
+    // Update state
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) debouncedUpdatePreview();
+    handleCodeChange({
+      target: { id: activeFile.type + "Code", value: editor.value },
+    });
+    return;
+  }
+
+  // All other keys fall through to default behavior
+}
+
 // PART 7: KEYBOARD SHORTCUTS
 document.addEventListener("keydown", (e) => {
   // Prevent shortcuts from firing while suggestion box is open
