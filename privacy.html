@@ -412,6 +412,106 @@
           padding: 20px;
         }
       }
+
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      footer {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-top: 2px solid rgba(76, 175, 80, 0.2);
+        padding: 40px 20px 20px;
+        /* FIX: Removed margin-top: auto as it's not needed with flex-direction: column */
+        position: relative;
+        z-index: 1;
+      }
+
+      .footer-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 40px;
+        margin-bottom: 30px;
+      }
+
+      .footer-section h3 {
+        color: #4caf50;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+      }
+
+      .footer-section p,
+      .footer-section a {
+        color: #666;
+        text-decoration: none;
+        line-height: 1.8;
+        display: block;
+        margin-bottom: 8px;
+        transition: color 0.3s ease;
+      }
+
+      .footer-section a:hover {
+        color: #4caf50;
+      }
+
+      .footer-bottom {
+        text-align: center;
+        padding-top: 20px;
+        border-top: 1px solid rgba(76, 175, 80, 0.2);
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      .footer-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .footer-logo img {
+        height: 40px;
+        width: auto;
+      }
+
+      .footer-logo span {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #4caf50;
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 0;
+        }
+
+        .container {
+          padding: 70px 15px 50px;
+        }
+
+        .ad-container h1 {
+          font-size: 1.6em;
+        }
+
+        .logo-badge {
+          font-size: 0.85em;
+          padding: 6px 16px;
+        }
+
+        .nav-btn {
+          padding: 7px 10px;
+          font-size: 0.8em;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -647,5 +747,45 @@
         </div>
       </div>
     </div>
+    <footer>
+      <div class="footer-content">
+        <div class="footer-section">
+          <div class="footer-logo">
+            <img src="cx.png" alt="CodX Logo" />
+            <span>CodX Editor</span>
+          </div>
+          <p>
+            A powerful, browser-based code editor for instant HTML, CSS, and
+            JavaScript development.
+          </p>
+        </div>
+
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <a href="index.html">Home</a>
+          <a href="welcome.html">Launch Editor</a>
+          <a href="about.html">About</a>
+          <a href="contact.html">Contact</a>
+        </div>
+
+        <div class="footer-section">
+          <h3>Legal</h3>
+          <a href="terms.html">Terms and Conditions</a>
+          <a href="privacy.html">Privacy Policy</a>
+        </div>
+
+        <div class="footer-section">
+          <h3>Features</h3>
+          <p>✓ 100% Free & Open Source</p>
+          <p>✓ No Installation Required</p>
+          <p>✓ Real-time Preview</p>
+          <p>✓ Cross-platform Support</p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2025 CodX Editor. All rights reserved.</p>
+      </div>
+    </footer>
   </body>
 </html>
