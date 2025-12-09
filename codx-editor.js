@@ -55,6 +55,103 @@ const selfClosingTags = [
   "track",
   "wbr",
 ];
+
+// Enhanced tag data with categories, icons, and descriptions
+const htmlTagsData = {
+  structure: [
+    { tag: "html", icon: "🌐", desc: "Root element of HTML document" },
+    { tag: "head", icon: "📋", desc: "Container for metadata" },
+    { tag: "body", icon: "📄", desc: "Main content container" },
+    { tag: "header", icon: "🎯", desc: "Header section" },
+    { tag: "footer", icon: "📌", desc: "Footer section" },
+    { tag: "main", icon: "📰", desc: "Main content area" },
+    { tag: "section", icon: "📦", desc: "Generic section" },
+    { tag: "article", icon: "📝", desc: "Self-contained content" },
+    { tag: "aside", icon: "📎", desc: "Sidebar content" },
+    { tag: "nav", icon: "🧭", desc: "Navigation links" },
+    { tag: "div", icon: "⬜", desc: "Generic container" },
+  ],
+  text: [
+    { tag: "h1", icon: "📰", desc: "Main heading" },
+    { tag: "h2", icon: "📰", desc: "Subheading level 2" },
+    { tag: "h3", icon: "📰", desc: "Subheading level 3" },
+    { tag: "h4", icon: "📰", desc: "Subheading level 4" },
+    { tag: "h5", icon: "📰", desc: "Subheading level 5" },
+    { tag: "h6", icon: "📰", desc: "Subheading level 6" },
+    { tag: "p", icon: "¶", desc: "Paragraph" },
+    { tag: "span", icon: "✏️", desc: "Inline text container" },
+    { tag: "strong", icon: "💪", desc: "Strong importance (bold)" },
+    { tag: "em", icon: "✨", desc: "Emphasized text (italic)" },
+    { tag: "b", icon: "B", desc: "Bold text" },
+    { tag: "i", icon: "I", desc: "Italic text" },
+    { tag: "u", icon: "U̲", desc: "Underlined text" },
+    { tag: "mark", icon: "🖍️", desc: "Highlighted text" },
+    { tag: "small", icon: "🔍", desc: "Smaller text" },
+    { tag: "code", icon: "💻", desc: "Inline code" },
+    { tag: "pre", icon: "📋", desc: "Preformatted text" },
+    { tag: "blockquote", icon: "💬", desc: "Block quotation" },
+  ],
+  lists: [
+    { tag: "ul", icon: "•", desc: "Unordered list" },
+    { tag: "ol", icon: "1.", desc: "Ordered list" },
+    { tag: "li", icon: "→", desc: "List item" },
+    { tag: "dl", icon: "📖", desc: "Description list" },
+    { tag: "dt", icon: "📌", desc: "Description term" },
+    { tag: "dd", icon: "💬", desc: "Description details" },
+  ],
+  media: [
+    { tag: "img", icon: "🖼️", desc: "Image", badge: "self-closing" },
+    { tag: "video", icon: "🎥", desc: "Video player" },
+    { tag: "audio", icon: "🔊", desc: "Audio player" },
+    { tag: "source", icon: "📂", desc: "Media source", badge: "self-closing" },
+    { tag: "picture", icon: "🖼️", desc: "Responsive images" },
+    { tag: "canvas", icon: "🎨", desc: "Graphics canvas" },
+    { tag: "svg", icon: "🎨", desc: "Vector graphics" },
+    { tag: "iframe", icon: "🖥️", desc: "Embedded frame" },
+  ],
+  forms: [
+    { tag: "form", icon: "📝", desc: "Form container" },
+    { tag: "input", icon: "⌨️", desc: "Input field", badge: "self-closing" },
+    { tag: "textarea", icon: "📄", desc: "Multi-line text input" },
+    { tag: "button", icon: "🔘", desc: "Clickable button" },
+    { tag: "select", icon: "📋", desc: "Dropdown menu" },
+    { tag: "option", icon: "•", desc: "Dropdown option" },
+    { tag: "label", icon: "🏷️", desc: "Input label" },
+    { tag: "fieldset", icon: "📦", desc: "Group form elements" },
+    { tag: "legend", icon: "📌", desc: "Fieldset caption" },
+  ],
+  table: [
+    { tag: "table", icon: "📊", desc: "Table container" },
+    { tag: "thead", icon: "📋", desc: "Table header group" },
+    { tag: "tbody", icon: "📄", desc: "Table body group" },
+    { tag: "tfoot", icon: "📌", desc: "Table footer group" },
+    { tag: "tr", icon: "→", desc: "Table row" },
+    { tag: "th", icon: "📌", desc: "Header cell" },
+    { tag: "td", icon: "⬜", desc: "Data cell" },
+  ],
+  links: [
+    { tag: "a", icon: "🔗", desc: "Hyperlink" },
+    {
+      tag: "link",
+      icon: "📎",
+      desc: "External resource",
+      badge: "self-closing",
+    },
+  ],
+  meta: [
+    { tag: "meta", icon: "ℹ️", desc: "Metadata", badge: "self-closing" },
+    { tag: "title", icon: "📰", desc: "Page title" },
+    { tag: "style", icon: "🎨", desc: "CSS styles" },
+    { tag: "script", icon: "⚙️", desc: "JavaScript code" },
+  ],
+};
+
+// Flatten all tags for quick lookup
+const allHtmlTags = Object.values(htmlTagsData)
+  .flat()
+  .map((t) => t.tag);
+// END: Tag suggestion elements
+
 const htmlTags = [
   "a",
   "abbr",
