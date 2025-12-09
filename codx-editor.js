@@ -402,8 +402,7 @@ function updatePreviewBox() {
 
 function applySettingsToEditors() {
   const editor = document.getElementById("activeEditor");
-  editor.style.backgroundColor = editorBgColorInput.value;
-  editor.style.color = editorTextColorInput.value;
+
   editor.style.fontSize = editorTextSizeInput.value + "px";
   editor.style.fontFamily = editorFontFamilySelect.value;
   lineNumbers.style.fontSize = editorTextSizeInput.value + "px";
