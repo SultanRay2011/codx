@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodX Editor - Welcome</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #1e1e1e;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-container {
+        background: #2c2c2c;
+        border-radius: 16px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        border: 2px solid #4caf50;
+        animation: slideUp 0.4s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(50px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #4caf50, #2e7d32);
+        padding: 25px 30px;
+        text-align: center;
+      }
+
+      .modal-header h1 {
+        font-size: 2em;
+        margin-bottom: 5px;
+      }
+
+      .modal-header p {
+        font-size: 0.95em;
+        opacity: 0.95;
+      }
+
+      .modal-content {
+        padding: 30px;
+        max-height: calc(90vh - 250px);
+        overflow-y: auto;
+      }
+
+      .modal-content::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .modal-content::-webkit-scrollbar-track {
+        background: #1e1e1e;
+        border-radius: 4px;
+      }
+
+      .modal-content::-webkit-scrollbar-thumb {
+        background: #4caf50;
+        border-radius: 4px;
+      }
+
+      .modal-content::-webkit-scrollbar-thumb:hover {
+        background: #45a049;
+      }
+
+      .terms-section {
+        margin-bottom: 20px;
+      }
+
+      .terms-section h2 {
+        color: #4caf50;
+        font-size: 1.3em;
+        margin-bottom: 10px;
+      }
+
+      .terms-section p,
+      .terms-section li {
+        line-height: 1.6;
+        color: #cccccc;
+        margin-bottom: 8px;
+      }
+
+      .terms-section ul {
+        margin-left: 20px;
+      }
+
+      .highlight-box {
+        background: rgba(76, 175, 80, 0.15);
+        border-left: 4px solid #4caf50;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+
+      .highlight-box p {
+        color: #ffffff;
+        font-weight: 500;
+      }
+
+      .modal-footer {
+        padding: 20px 30px;
+        background: #1e1e1e;
+        border-top: 1px solid #333333;
+      }
+
+      .checkbox-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .checkbox-container input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 12px;
+        cursor: pointer;
+        accent-color: #4caf50;
+      }
+
+      .checkbox-container label {
+        font-size: 1em;
+        color: #cccccc;
+        cursor: pointer;
+      }
+
+      .checkbox-container label a {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .checkbox-container label a:hover {
+        text-decoration: underline;
+      }
+
+      .action-button {
+        width: 100%;
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #333333;
+        color: #888888;
+        pointer-events: none;
+      }
+
+      .action-button.enabled {
+        background: #4caf50;
+        color: white;
+        pointer-events: all;
+        cursor: pointer;
+      }
+
+      .action-button.enabled:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+      }
+
+      .action-button.enabled:active {
+        transform: translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        .modal-container {
+          max-width: 95%;
+        }
+
+        .modal-header {
+          padding: 20px;
+        }
+
+        .modal-header h1 {
+          font-size: 1.6em;
+        }
+
+        .modal-content {
+          padding: 20px;
+        }
+
+        .terms-section h2 {
+          font-size: 1.1em;
+        }
+
+        .modal-footer {
+          padding: 15px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="modal-overlay" id="termsModal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h1>Welcome to CodX Editor! 👋</h1>
+          <p>Please review our Terms and Conditions</p>
+        </div>
+
+        <div class="modal-content">
+          <div class="highlight-box">
+            <p>
+              <strong>Quick Summary:</strong> CodX Editor is a free,
+              browser-based code editor. Your code stays local on your device.
+              By using our service, you agree to these terms.
+            </p>
+          </div>
+
+          <div class="terms-section">
+            <h2>📋 Service Description</h2>
+            <p>
+              CodX Editor allows you to write, run, and debug HTML, CSS, and
+              JavaScript code directly in your browser. The service is provided
+              "as is" without warranties.
+            </p>
+          </div>
+
+          <div class="terms-section">
+            <h2>✅ Your Responsibilities</h2>
+            <ul>
+              <li>Use the service only for lawful purposes</li>
+              <li>Do not create or distribute malicious code or malware</li>
+              <li>Do not attempt unauthorized access to our systems</li>
+              <li>Take responsibility for backing up your own code</li>
+            </ul>
+          </div>
+
+          <div class="terms-section">
+            <h2>🔒 Your Content & Privacy</h2>
+            <p>
+              <strong>You own your code.</strong> Your work is stored locally in
+              your browser and is never uploaded to our servers. We don't
+              collect, store, or track your data.
+            </p>
+          </div>
+
+          <div class="terms-section">
+            <h2>⚠️ Disclaimer</h2>
+            <p>
+              The service is provided "as is" without guarantees. We are not
+              liable for any loss of data, code, or damages resulting from your
+              use of the service.
+            </p>
+          </div>
+
+          <div class="terms-section">
+            <h2>📝 Updates</h2>
+            <p>
+              We may modify these terms at any time. Continued use after changes
+              means you accept the new terms.
+            </p>
+          </div>
+
+          <div class="highlight-box">
+            <p><strong>Last Updated:</strong> December 7, 2025</p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <div class="checkbox-container">
+            <input type="checkbox" id="agreeCheckbox" />
+            <label for="agreeCheckbox">
+              I agree to the
+              <a href="terms.html" target="_blank">Terms and Conditions</a>
+            </label>
+          </div>
+          <button class="action-button" id="continueButton">
+            Start using CodX Editor
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const checkbox = document.getElementById("agreeCheckbox");
+      const button = document.getElementById("continueButton");
+      const modal = document.getElementById("termsModal");
+
+      // Check if user has already agreed
+      if (localStorage.getItem("codxTermsAgreed") === "true") {
+        modal.style.display = "none";
+        // Redirect to editor or show main content
+        window.location.href = "codx-editor.html";
+      }
+
+      // Enable/disable button based on checkbox
+      checkbox.addEventListener("change", function () {
+        if (this.checked) {
+          button.classList.add("enabled");
+          button.textContent = "Start using CodX Editor";
+        } else {
+          button.classList.remove("enabled");
+          button.textContent = "Please agree to continue";
+        }
+      });
+
+      // Handle continue button click
+      button.addEventListener("click", function () {
+        if (checkbox.checked) {
+          // Save agreement to localStorage
+          localStorage.setItem("codxTermsAgreed", "true");
+          localStorage.setItem("codxTermsAgreedDate", new Date().toISOString());
+
+          // Add success animation
+          button.textContent = "✓ Welcome!";
+          button.style.background = "#2e7d32";
+
+          // Redirect to editor after brief delay
+          setTimeout(() => {
+            window.location.href = "codx-editor.html";
+          }, 800);
+        }
+      });
+    </script>
+  </body>
+</html>
