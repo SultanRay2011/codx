@@ -20,15 +20,13 @@
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
         min-height: 100vh;
         color: #333;
         background: linear-gradient(45deg, #e6fff2, #ffffff, #f0fff0);
         background-size: 400% 400%;
         animation: gradientBG 15s ease infinite;
-        padding: 20px;
-        padding-top: 80px;
+        padding: 0;
         overflow-x: hidden;
       }
 
@@ -169,6 +167,13 @@
         z-index: 1;
         width: 100%;
         max-width: 800px;
+        margin: 0 auto;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 100px 20px 40px 20px;
       }
 
       .contact-container {
@@ -432,8 +437,12 @@
           font-size: 0.85em;
         }
 
-        body {
-          padding-top: 70px;
+        /* FIX: Adjusted container margin for smaller header */
+        .container {
+          margin-top: 70px; /* Use smaller margin for smaller header */
+          padding: 0 20px 40px 20px;
+          align-items: center;
+          justify-content: center;
         }
 
         .contact-container {
@@ -455,8 +464,7 @@
 
       @media (max-width: 480px) {
         body {
-          padding: 15px;
-          padding-top: 70px;
+          padding: 0;
         }
 
         h1 {
@@ -472,6 +480,19 @@
           padding: 7px 10px;
           font-size: 0.8em;
         }
+
+        /* FIX: On very small screens, switch to flex-start to allow content to flow naturally and prevent clipping */
+        .container {
+          margin-top: 70px;
+          padding: 0 15px 40px 15px;
+          align-items: flex-start;
+          justify-content: flex-start;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
       }
 
       .footer-content {
@@ -485,9 +506,9 @@
         backdrop-filter: blur(10px);
         border-top: 2px solid rgba(76, 175, 80, 0.2);
         padding: 40px 20px 20px;
-        /* FIX: Removed margin-top: auto as it's not needed with flex-direction: column */
         position: relative;
         z-index: 1;
+        flex-shrink: 0;
       }
 
       .footer-content {
@@ -543,35 +564,6 @@
         font-size: 1.5em;
         font-weight: bold;
         color: #4caf50;
-      }
-
-      @media (max-width: 480px) {
-        body {
-          padding: 0;
-        }
-
-        .container {
-          padding: 70px 15px 50px;
-        }
-
-        .ad-container h1 {
-          font-size: 1.6em;
-        }
-
-        .logo-badge {
-          font-size: 0.85em;
-          padding: 6px 16px;
-        }
-
-        .nav-btn {
-          padding: 7px 10px;
-          font-size: 0.8em;
-        }
-
-        .footer-content {
-          grid-template-columns: 1fr;
-          gap: 30px;
-        }
       }
     </style>
   </head>
