@@ -222,7 +222,6 @@
       .contact-methods {
         display: grid;
         gap: 20px;
-        margin-bottom: 40px;
       }
 
       .contact-card {
@@ -268,111 +267,6 @@
 
       .icon {
         font-size: 1.5em;
-      }
-
-      .contact-form {
-        background: rgba(76, 175, 80, 0.05);
-        padding: 30px;
-        border-radius: 12px;
-        border: 1px solid rgba(76, 175, 80, 0.2);
-      }
-
-      .form-group {
-        margin-bottom: 20px;
-      }
-
-      .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        color: #333;
-        font-weight: 600;
-      }
-
-      .form-group input,
-      .form-group textarea {
-        width: 100%;
-        padding: 12px 15px;
-        border: 2px solid rgba(76, 175, 80, 0.3);
-        border-radius: 8px;
-        font-size: 1em;
-        font-family: inherit;
-        transition: all 0.3s ease;
-        background: white;
-      }
-
-      .form-group input:focus,
-      .form-group textarea:focus {
-        outline: none;
-        border-color: #4caf50;
-        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-      }
-
-      .form-group textarea {
-        resize: vertical;
-        min-height: 120px;
-      }
-
-      .submit-btn {
-        width: 100%;
-        background: linear-gradient(135deg, #4caf50, #45a049);
-        color: white;
-        padding: 14px 30px;
-        font-weight: bold;
-        border: none;
-        border-radius: 8px;
-        font-size: 1.1em;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-      }
-
-      .submit-btn:hover:not(:disabled) {
-        background: linear-gradient(135deg, #45a049, #388e3c);
-        box-shadow: 0 6px 25px rgba(76, 175, 80, 0.6);
-        transform: translateY(-2px);
-      }
-
-      .submit-btn:active:not(:disabled) {
-        transform: translateY(0);
-      }
-
-      .submit-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-
-      .success-message {
-        display: none;
-        background: rgba(76, 175, 80, 0.1);
-        color: #2e7d32;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 20px;
-        border: 2px solid #4caf50;
-        text-align: center;
-        font-weight: 600;
-      }
-
-      .success-message.show {
-        display: block;
-        animation: fadeInUp 0.5s ease;
-      }
-
-      .error-message {
-        display: none;
-        background: rgba(244, 67, 54, 0.1);
-        color: #c62828;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 20px;
-        border: 2px solid #f44336;
-        text-align: center;
-        font-weight: 600;
-      }
-
-      .error-message.show {
-        display: block;
-        animation: fadeInUp 0.5s ease;
       }
 
       @keyframes gradientBG {
@@ -437,9 +331,8 @@
           font-size: 0.85em;
         }
 
-        /* FIX: Adjusted container margin for smaller header */
         .container {
-          margin-top: 70px; /* Use smaller margin for smaller header */
+          margin-top: 70px;
           padding: 0 20px 40px 20px;
           align-items: center;
           justify-content: center;
@@ -455,10 +348,6 @@
 
         .intro-text {
           font-size: 1em;
-        }
-
-        .contact-form {
-          padding: 20px;
         }
       }
 
@@ -481,7 +370,6 @@
           font-size: 0.8em;
         }
 
-        /* FIX: On very small screens, switch to flex-start to allow content to flow naturally and prevent clipping */
         .container {
           margin-top: 70px;
           padding: 0 15px 40px 15px;
@@ -630,68 +518,6 @@
             <a href="mailto:contact@codxeditor.com">Submit a Feature Request</a>
           </div>
         </div>
-
-        <div class="contact-form">
-          <h3 style="margin-bottom: 20px; color: #333">Send Us a Message</h3>
-
-          <form id="contactForm">
-            <div class="form-group">
-              <label for="name">Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                placeholder="Your name"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="your.email@example.com"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="subject">Subject</label>
-              <input
-                type="text"
-                id="subject"
-                name="subject"
-                placeholder="What's this about?"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="message">Message</label>
-              <textarea
-                id="message"
-                name="message"
-                placeholder="Tell us more..."
-                required
-              ></textarea>
-            </div>
-
-            <button type="submit" class="submit-btn" id="submitBtn">
-              Send Message
-            </button>
-          </form>
-
-          <div class="success-message" id="successMessage">
-            ✓ Thank you! Your message has been sent successfully. We'll get back
-            to you soon.
-          </div>
-
-          <div class="error-message" id="errorMessage">
-            ✗ Oops! Something went wrong. Please try again or email us directly.
-          </div>
-        </div>
       </div>
     </div>
 
@@ -735,76 +561,5 @@
         <p>&copy; 2025 CodX Editor. All rights reserved.</p>
       </div>
     </footer>
-
-    <script>
-      // REPLACE 'YOUR_FORM_ID' WITH YOUR ACTUAL FORMSPREE FORM ID
-      const FORMSPREE_FORM_ID = "FORMSPREE_FORM_ID";
-
-      const form = document.getElementById("contactForm");
-      const submitBtn = document.getElementById("submitBtn");
-      const successMessage = document.getElementById("successMessage");
-      const errorMessage = document.getElementById("errorMessage");
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        // Hide any previous messages
-        successMessage.classList.remove("show");
-        errorMessage.classList.remove("show");
-
-        // Disable submit button
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Sending...";
-
-        // Get form data
-        const formData = new FormData(form);
-        const data = {
-          name: formData.get("name"),
-          email: formData.get("email"),
-          subject: formData.get("subject"),
-          message: formData.get("message"),
-        };
-
-        try {
-          const response = await fetch(
-            `https://formspree.io/f/${FORMSPREE_FORM_ID}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(data),
-            }
-          );
-
-          if (response.ok) {
-            // Show success message
-            successMessage.classList.add("show");
-
-            // Clear form
-            form.reset();
-
-            // Hide success message after 5 seconds
-            setTimeout(() => {
-              successMessage.classList.remove("show");
-            }, 5000);
-          } else {
-            throw new Error("Form submission failed");
-          }
-        } catch (error) {
-          // Show error message
-          errorMessage.classList.add("show");
-
-          // Hide error message after 5 seconds
-          setTimeout(() => {
-            errorMessage.classList.remove("show");
-          }, 5000);
-        } finally {
-          // Re-enable submit button
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Send Message";
-        }
-      });
-    </script>
   </body>
 </html>
