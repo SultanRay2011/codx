@@ -193,22 +193,65 @@
         }
       }
 
+      @keyframes floatCard {
+        from {
+          transform: translateY(0px);
+        }
+        to {
+          transform: translateY(-12px);
+        }
+      }
+
       .container {
         position: relative;
         z-index: 1;
         max-width: 900px;
         margin: 0 auto;
         padding: 40px 20px 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 100px 20px 40px 20px;
       }
 
-      .page-header {
-        text-align: center;
-        margin-bottom: 50px;
-        animation: fadeInDown 0.8s ease;
+      /* Removed .page-header CSS since the structure is now inside the content-section */
+
+      .last-updated {
+        font-size: 1em;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 25px; /* Added spacing */
+        text-align: center; /* MODIFIED: Center the last updated text */
       }
 
-      .page-header h1 {
-        font-size: 3em;
+      .badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #4caf50, #81c784);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      }
+
+      .content-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 50px 40px; /* Increased padding */
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        animation: floatCard 4s ease-in-out infinite alternate,
+          fadeInUp 0.8s ease;
+        width: 100%;
+        text-align: left; /* REVERTED: Ensure the badge and main content align left */
+      }
+
+      .content-section h1 {
+        font-size: 2.5em; /* Match contact.html h1 size */
         margin-bottom: 15px;
         background: linear-gradient(90deg, #4caf50, #2e7d32, #81c784);
         background-size: 300%;
@@ -216,22 +259,7 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
         animation: textGradient 5s ease-in-out infinite;
-      }
-
-      .last-updated {
-        font-size: 1em;
-        color: #666;
-        font-style: italic;
-      }
-
-      .content-section {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        border: 2px solid rgba(76, 175, 80, 0.3);
-        animation: fadeInUp 0.8s ease;
+        text-align: center; /* MODIFIED: Center the main title */
       }
 
       .privacy-section {
@@ -286,6 +314,7 @@
         padding: 20px;
         margin: 25px 0;
         border-radius: 8px;
+        text-align: left;
       }
 
       .important-note p {
@@ -303,19 +332,20 @@
         padding: 30px;
         margin: 30px 0;
         border-radius: 15px;
-        text-align: center;
+        text-align: left; /* Changed from center to left */
       }
 
       .privacy-guarantee h3 {
         font-size: 1.5em;
         color: #4caf50;
         margin-bottom: 15px;
+        text-align: left; /* Changed from center to left */
       }
 
       .privacy-guarantee p {
         font-size: 1.1em;
         font-weight: 500;
-        text-align: center;
+        text-align: left; /* Changed from center to left */
       }
 
       .checkmark {
@@ -330,6 +360,7 @@
         padding: 20px;
         margin: 25px 0;
         border-radius: 8px;
+        text-align: left;
       }
 
       .warning-box p {
@@ -495,19 +526,15 @@
         }
 
         .container {
-          padding: 30px 20px 50px;
+          padding: 80px 20px 40px 20px;
         }
 
-        .page-header {
-          margin-bottom: 35px;
-        }
-
-        .page-header h1 {
-          font-size: 2.2em;
+        .content-section h1 {
+          font-size: 2em;
         }
 
         .content-section {
-          padding: 30px 25px;
+          padding: 35px 25px;
         }
 
         .privacy-section h2 {
@@ -521,7 +548,7 @@
         .privacy-section p,
         .privacy-section li {
           font-size: 1em;
-          text-align: left;
+          text-align: justify;
         }
 
         .privacy-section ul {
@@ -533,7 +560,7 @@
         }
 
         .privacy-guarantee p {
-          text-align: center;
+          text-align: left;
           font-size: 1em;
         }
       }
@@ -558,25 +585,21 @@
         }
 
         .container {
-          padding: 20px 15px 40px;
+          padding: 70px 15px 30px 15px;
         }
 
-        .page-header {
-          margin-bottom: 25px;
+        .content-section {
+          padding: 30px 20px;
+          border-radius: 15px;
         }
 
-        .page-header h1 {
-          font-size: 1.8em;
+        .content-section h1 {
+          font-size: 1.6em;
           line-height: 1.3;
         }
 
         .last-updated {
           font-size: 0.9em;
-        }
-
-        .content-section {
-          padding: 25px 20px;
-          border-radius: 15px;
         }
 
         .privacy-guarantee {
@@ -612,7 +635,7 @@
           font-size: 0.95em;
           line-height: 1.7;
           margin-bottom: 12px;
-          text-align: left;
+          text-align: justify;
         }
 
         .privacy-section ul {
@@ -664,7 +687,7 @@
 
       /* Extra small phones */
       @media (max-width: 360px) {
-        .page-header h1 {
+        .content-section h1 {
           font-size: 1.6em;
         }
 
@@ -673,7 +696,7 @@
         }
 
         .content-section {
-          padding: 20px 15px;
+          padding: 25px 15px;
         }
 
         .privacy-guarantee {
@@ -761,12 +784,10 @@
     </div>
 
     <div class="container">
-      <div class="page-header">
+      <div class="content-section">
+        <div class="badge">PRIVACY POLICY</div>
         <h1>Privacy Policy</h1>
         <p class="last-updated">Last Updated: December 15, 2025</p>
-      </div>
-
-      <div class="content-section">
         <div class="privacy-guarantee">
           <h3>🔒 Your Code Privacy Commitment</h3>
           <p>

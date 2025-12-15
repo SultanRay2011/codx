@@ -199,16 +199,58 @@
         max-width: 900px;
         margin: 0 auto;
         padding: 40px 20px 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 100px 20px 40px 20px;
       }
 
-      .page-header {
+      .last-updated {
+        font-size: 1em;
+        color: #666;
+        font-style: italic;
+        /* Now centered by parent */
+        margin-bottom: 25px;
+      }
+
+      .badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #4caf50, #81c784);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        /* REMOVED: Centering styles to be applied from parent or with margin */
+      }
+
+      /* *** MODIFIED SECTION *** */
+      .terms-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 50px 40px;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(76, 175, 80, 0.3);
+        animation: floatCard 4s ease-in-out infinite alternate,
+          fadeInUp 0.8s ease;
+        width: 100%;
+        /* MODIFIED: Setting text-align to left to align the inline-block badge */
+        text-align: left;
+      }
+
+      /* ADDED: Re-center the main heading and last updated text */
+      .terms-container h1,
+      .terms-container .last-updated {
         text-align: center;
-        margin-bottom: 50px;
-        animation: fadeInDown 0.8s ease;
       }
+      /* *** END MODIFIED SECTION *** */
 
-      .page-header h1 {
-        font-size: 3em;
+      .terms-container h1 {
+        font-size: 2.5em;
         margin-bottom: 15px;
         background: linear-gradient(90deg, #4caf50, #2e7d32, #81c784);
         background-size: 300%;
@@ -216,26 +258,13 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
         animation: textGradient 5s ease-in-out infinite;
-      }
-
-      .last-updated {
-        font-size: 1em;
-        color: #666;
-        font-style: italic;
-      }
-
-      .content-section {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        border: 2px solid rgba(76, 175, 80, 0.3);
-        animation: fadeInUp 0.8s ease;
+        /* Removed explicit text-align: left; to allow center alignment */
       }
 
       .terms-section {
         margin-bottom: 35px;
+        /* Ensure body content is still left-aligned/justified */
+        text-align: left;
       }
 
       .terms-section:last-child {
@@ -286,6 +315,7 @@
         padding: 20px;
         margin: 25px 0;
         border-radius: 8px;
+        text-align: left;
       }
 
       .important-note p {
@@ -404,6 +434,15 @@
         }
       }
 
+      @keyframes floatCard {
+        from {
+          transform: translateY(0px);
+        }
+        to {
+          transform: translateY(-12px);
+        }
+      }
+
       /* Tablet Styles */
       @media (max-width: 768px) {
         header {
@@ -451,19 +490,15 @@
         }
 
         .container {
-          padding: 30px 20px 50px;
+          padding: 80px 20px 40px 20px;
         }
 
-        .page-header {
-          margin-bottom: 35px;
+        .terms-container h1 {
+          font-size: 2em;
         }
 
-        .page-header h1 {
-          font-size: 2.2em;
-        }
-
-        .content-section {
-          padding: 30px 25px;
+        .terms-container {
+          padding: 35px 25px;
         }
 
         .terms-section h2 {
@@ -477,11 +512,12 @@
         .terms-section p,
         .terms-section li {
           font-size: 1em;
-          text-align: left;
+          text-align: justify; /* Keep body text justified */
         }
 
-        .terms-section ul {
-          margin-left: 20px;
+        .badge {
+          font-size: 0.8em;
+          padding: 6px 16px;
         }
       }
 
@@ -505,25 +541,21 @@
         }
 
         .container {
-          padding: 20px 15px 40px;
+          padding: 70px 15px 30px 15px;
         }
 
-        .page-header {
-          margin-bottom: 25px;
+        .terms-container {
+          padding: 30px 20px;
+          border-radius: 15px;
         }
 
-        .page-header h1 {
-          font-size: 1.8em;
+        .terms-container h1 {
+          font-size: 1.6em;
           line-height: 1.3;
         }
 
         .last-updated {
           font-size: 0.9em;
-        }
-
-        .content-section {
-          padding: 25px 20px;
-          border-radius: 15px;
         }
 
         .terms-section {
@@ -545,7 +577,7 @@
           font-size: 0.95em;
           line-height: 1.7;
           margin-bottom: 12px;
-          text-align: left;
+          text-align: justify; /* Keep body text justified */
         }
 
         .terms-section ul {
@@ -592,7 +624,7 @@
 
       /* Extra small phones */
       @media (max-width: 360px) {
-        .page-header h1 {
+        .terms-container h1 {
           font-size: 1.6em;
         }
 
@@ -600,8 +632,8 @@
           font-size: 0.85em;
         }
 
-        .content-section {
-          padding: 20px 15px;
+        .terms-container {
+          padding: 25px 15px;
         }
 
         .terms-section h2 {
@@ -677,12 +709,12 @@
     </div>
 
     <div class="container">
-      <div class="page-header">
+      <div class="terms-container">
+        <div class="badge">RULES TO FOLLOW</div>
+
         <h1>Terms and Conditions</h1>
         <p class="last-updated">Last Updated: December 15, 2025</p>
-      </div>
 
-      <div class="content-section">
         <div class="important-note">
           <p>
             <strong>Welcome to CodX Editor!</strong> By accessing or using our
@@ -777,7 +809,8 @@
               href="privacy.html"
               style="color: #4caf50; text-decoration: none; font-weight: bold"
               >Privacy Policy</a
-            >.
+            >
+            .
           </p>
         </div>
 

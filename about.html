@@ -10,6 +10,13 @@
     <meta name="theme-color" content="#4CAF50" />
     <link rel="icon" type="image/png" href="cx.png" />
     <title>About - CodX Editor</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
     <style>
       * {
         margin: 0;
@@ -201,10 +208,30 @@
         padding: 40px 20px;
       }
 
+      /* ADDED: Badge style */
+      .badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #4caf50, #81c784);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      }
+
+      /* MODIFIED: Set to left for badge, then re-center children */
       .about-header {
-        text-align: center;
+        text-align: left;
         margin-bottom: 60px;
         animation: fadeInDown 0.8s ease;
+      }
+
+      /* ADDED: Re-center the title and subtitle */
+      .about-header h1,
+      .about-header p {
+        text-align: center;
       }
 
       .about-header h1 {
@@ -243,6 +270,10 @@
         align-items: center;
         gap: 10px;
       }
+      /* ADDED: Icon spacing */
+      .content-section h2 .fa-solid {
+        margin-right: 5px;
+      }
 
       .content-section p {
         font-size: 1.1em;
@@ -277,6 +308,9 @@
         font-size: 1.5em;
         color: #4caf50;
         margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
 
       .card p {
@@ -315,6 +349,10 @@
       .feature-item p {
         font-size: 1em;
         color: #666;
+      }
+      /* ADDED: Icon spacing for feature items */
+      .feature-item h4 .fa-solid {
+        margin-right: 5px;
       }
 
       .highlight {
@@ -533,6 +571,11 @@
           grid-template-columns: 1fr;
           gap: 15px;
         }
+        /* ADDED: Mobile badge size */
+        .badge {
+          font-size: 0.8em;
+          padding: 6px 16px;
+        }
       }
 
       /* Mobile Styles */
@@ -720,12 +763,14 @@
 
     <div class="container">
       <div class="about-header">
+        <div class="badge">WHO WE ARE</div>
+
         <h1>CodX Editor</h1>
         <p>Empowering developers to code anywhere, anytime</p>
       </div>
 
       <div class="content-section">
-        <h2>🚀 What is CodX Editor?</h2>
+        <h2><i class="fa-solid fa-rocket"></i> What is CodX Editor?</h2>
         <p>
           <span class="highlight">CodX Editor</span> is a powerful, free, and
           open-source browser-based code editor designed to make web development
@@ -742,7 +787,7 @@
 
       <div class="mission-vision">
         <div class="card">
-          <h3>🎯 Our Mission</h3>
+          <h3><i class="fa-solid fa-bullseye"></i> Our Mission</h3>
           <p>
             To democratize web development by providing a free, accessible, and
             powerful coding environment that removes barriers to entry and
@@ -751,7 +796,7 @@
         </div>
 
         <div class="card">
-          <h3>👁️ Our Vision</h3>
+          <h3><i class="fa-solid fa-eye"></i> Our Vision</h3>
           <p>
             To become the go-to platform for instant web development, fostering
             a global community of creators who can learn, experiment, and build
@@ -761,40 +806,40 @@
       </div>
 
       <div class="content-section">
-        <h2>✨ Why CodX Editor?</h2>
+        <h2><i class="fa-solid fa-sparkles"></i> Why CodX Editor?</h2>
         <div class="features-grid">
           <div class="feature-item">
-            <h4>💯 100% Free</h4>
+            <h4><i class="fa-solid fa-percent"></i> 100% Free</h4>
             <p>No hidden costs, no subscriptions. Free forever for everyone.</p>
           </div>
           <div class="feature-item">
-            <h4>🌐 Browser-Based</h4>
+            <h4><i class="fa-solid fa-globe"></i> Browser-Based</h4>
             <p>
               No installation required. Works on any device with a web browser.
             </p>
           </div>
           <div class="feature-item">
-            <h4>⚡ Instant Preview</h4>
+            <h4><i class="fa-solid fa-bolt"></i> Instant Preview</h4>
             <p>
               See your changes in real-time with live preview functionality.
             </p>
           </div>
           <div class="feature-item">
-            <h4>🔒 Privacy First</h4>
+            <h4><i class="fa-solid fa-lock"></i> Privacy First</h4>
             <p>
               Your code stays on your device. We don't store or track your
               projects.
             </p>
           </div>
           <div class="feature-item">
-            <h4>🎨 Customizable</h4>
+            <h4><i class="fa-solid fa-palette"></i> Customizable</h4>
             <p>
               Dark and light themes, adjustable settings, and personalized
               workspace.
             </p>
           </div>
           <div class="feature-item">
-            <h4>🤝 Open Source</h4>
+            <h4><i class="fa-solid fa-handshake"></i> Open Source</h4>
             <p>
               Community-driven development with transparent and accessible code.
             </p>
@@ -803,7 +848,7 @@
       </div>
 
       <div class="content-section">
-        <h2>💡 Perfect For</h2>
+        <h2><i class="fa-solid fa-lightbulb"></i> Perfect For</h2>
         <p>
           <strong>Beginners:</strong> Learn HTML, CSS, and JavaScript with an
           intuitive interface and instant feedback. No complex setup means you
@@ -827,7 +872,7 @@
       </div>
 
       <div class="content-section team-section">
-        <h2>🌟 Join Our Community</h2>
+        <h2><i class="fa-solid fa-star"></i> Join Our Community</h2>
         <p>
           CodX Editor is built by developers, for developers. We believe in the
           power of community and collaboration. Whether you want to contribute
@@ -873,10 +918,10 @@
 
         <div class="footer-section">
           <h3>Features</h3>
-          <p>✓ 100% Free & Open Source</p>
-          <p>✓ No Installation Required</p>
-          <p>✓ Real-time Preview</p>
-          <p>✓ Cross-platform Support</p>
+          <p><i class="fa-solid fa-check"></i> 100% Free & Open Source</p>
+          <p><i class="fa-solid fa-check"></i> No Installation Required</p>
+          <p><i class="fa-solid fa-check"></i> Real-time Preview</p>
+          <p><i class="fa-solid fa-check"></i> Cross-platform Support</p>
         </div>
       </div>
 
