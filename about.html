@@ -364,6 +364,28 @@
         text-align: center;
         padding: 30px;
       }
+      /* ADDED: Call to Action Button Style */
+      .cta-btn {
+        display: inline-block;
+        padding: 12px 30px;
+        margin-top: 25px;
+        background: #4caf50;
+        color: white;
+        border: 2px solid #4caf50;
+        border-radius: 10px;
+        text-decoration: none;
+        font-size: 1.1em;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+      }
+
+      .cta-btn:hover {
+        background: #388e3c;
+        border-color: #388e3c;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(76, 175, 80, 0.5);
+      }
 
       .team-section p {
         font-size: 1.15em;
@@ -575,6 +597,12 @@
         .badge {
           font-size: 0.8em;
           padding: 6px 16px;
+        }
+
+        /* ADDED: Mobile CTA size */
+        .cta-btn {
+          padding: 10px 20px;
+          font-size: 1em;
         }
       }
 
@@ -879,6 +907,7 @@
           code, report bugs, suggest features, or simply share your projects, we
           welcome you to be part of our growing community.
         </p>
+        <a href="welcome.html" class="cta-btn">Launch CodX Editor</a>
         <p style="margin-top: 25px">
           <strong>Ready to start coding?</strong> Jump into CodX Editor and
           bring your ideas to life today!
