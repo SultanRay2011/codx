@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="cx.png" />
-    <title>CodX Editor - Welcome</title>
+    <title>Welcome - CodX Editor</title>
     <style>
       * {
         margin: 0;
@@ -273,89 +273,102 @@
 
       /* Mobile Styles */
       @media (max-width: 480px) {
+        header {
+          padding: 10px 15px;
+        }
+
+        .logo-container img {
+          height: 30px;
+        }
+
+        .nav-buttons {
+          width: 100%;
+          right: -100%;
+        }
+
         body {
-          padding: 10px;
+          padding-top: 60px;
         }
 
-        .modal-overlay {
-          padding: 10px;
-          align-items: flex-start;
+        .container {
+          padding: 70px 15px 30px 15px;
         }
 
-        .modal-container {
-          margin-top: 10px;
-          max-height: calc(100vh - 20px);
-          border-radius: 10px;
+        .terms-container {
+          padding: 30px 20px;
+          border-radius: 15px;
         }
 
-        .modal-header {
-          padding: 18px 15px;
-        }
-
-        .modal-header h1 {
-          font-size: 1.4em;
+        .terms-container h1 {
+          font-size: 1.6em;
           line-height: 1.3;
         }
 
-        .modal-header p {
-          font-size: 0.85em;
-        }
-
-        .modal-content {
-          padding: 20px 15px;
+        .last-updated {
+          font-size: 0.9em;
         }
 
         .terms-section {
-          margin-bottom: 18px;
+          margin-bottom: 28px;
         }
 
         .terms-section h2 {
-          font-size: 1.1em;
-          margin-bottom: 8px;
+          font-size: 1.3em;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
         }
 
-        .terms-section p,
-        .terms-section li {
-          font-size: 0.9em;
-          line-height: 1.5;
+        .terms-section h3 {
+          font-size: 1.1em;
+          margin: 15px 0 10px;
+        }
+
+        .terms-section p {
+          font-size: 0.95em;
+          line-height: 1.7;
+          margin-bottom: 12px;
+          text-align: justify; /* Keep body text justified */
         }
 
         .terms-section ul {
-          margin-left: 18px;
+          margin: 12px 0 12px 18px;
         }
 
-        .highlight-box {
-          padding: 12px;
-          margin: 15px 0;
-        }
-
-        .highlight-box p {
-          font-size: 0.9em;
-        }
-
-        .modal-footer {
-          padding: 15px;
-        }
-
-        .checkbox-container {
-          margin-bottom: 15px;
-          align-items: flex-start;
-        }
-
-        .checkbox-container input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          margin-right: 10px;
-          margin-top: 2px;
-        }
-
-        .checkbox-container label {
-          font-size: 0.9em;
-        }
-
-        .action-button {
-          padding: 13px;
+        .terms-section li {
           font-size: 0.95em;
+          line-height: 1.7;
+          margin-bottom: 8px;
+        }
+
+        .important-note {
+          padding: 15px;
+          margin: 20px 0;
+        }
+
+        .important-note p {
+          font-size: 0.95em;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+
+        .footer-logo {
+          justify-content: center;
+        }
+
+        .footer-section {
+          text-align: center;
+        }
+
+        .footer-section h3 {
+          font-size: 1.1em;
+        }
+
+        .footer-section p,
+        .footer-section a {
+          font-size: 0.9em;
         }
       }
 
@@ -469,8 +482,21 @@
             <h2>🔒 Your Content & Privacy</h2>
             <p>
               <strong>You own your code.</strong> Your work is stored locally in
-              your browser and is never uploaded to our servers. We don't
-              collect, store, or track your data.
+              your browser and is never uploaded to our servers.
+            </p>
+            <p>
+              We are committed to the security of your code. Your work is kept
+              private and stored only on your device. However, to keep this
+              service free, we use third-party advertisements (Google AdSense),
+              which may collect data and use cookies for personalized
+              advertising purposes. Please see our
+              <a
+                href="terms.html"
+                target="_blank"
+                style="color: #4caf50; text-decoration: none; font-weight: 600"
+                >Terms and Conditions</a
+              >
+              for full details.
             </p>
           </div>
 
