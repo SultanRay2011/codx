@@ -589,10 +589,11 @@ function updatePreview() {
   let html = htmlFile.content;
   consoleOutput.innerHTML = ""; // Clear console
 
-  // === 1. Replace <link rel="stylesheet" href="style.css">
+  // === 1. Replace <link rel="stylesheet" href="style.css"> (handles both attribute orders)
   html = html.replace(
-    /<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi,
-    (match, href) => {
+    /<link[^>]*(?:rel=["']stylesheet["'][^>]*href=["']([^"']+)["']|href=["']([^"']+)["'][^>]*rel=["']stylesheet["'])[^>]*\/?>/gi,
+    (match, href1, href2) => {
+      const href = href1 || href2;
       const cssFile = projectFiles.find(
         (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "css"
       );
@@ -604,9 +605,7 @@ function updatePreview() {
           "warn",
           `WARNING: CSS file not found: ${fileName}`
         );
-        return `<link rel="stylesheet" href="${href}?file=${encodeURIComponent(
-          fileName
-        )}">`;
+        return match; // Keep original link tag
       }
     }
   );
