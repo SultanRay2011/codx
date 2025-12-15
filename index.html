@@ -253,7 +253,9 @@
       .x {
         color: #4caf50;
       }
-
+      .editor {
+        color: #000;
+      }
       .subtext {
         font-size: 1.3em;
         margin-bottom: 30px;
@@ -779,6 +781,23 @@
           font-size: 0.95em;
         }
       }
+
+      .footer-logo span {
+        font-size: 1.1em;
+        font-weight: bold;
+      }
+
+      .footer-logo .cod {
+        color: #000;
+      }
+
+      .footer-logo .x {
+        color: #4caf50;
+      }
+
+      .footer-logo .editor {
+        color: #000;
+      }
     </style>
   </head>
   <body>
@@ -826,7 +845,8 @@
 
         <p class="description">
           <span class="highlight"
-            ><span class="cod">Cod</span><span class="x">X</span> Editor</span
+            ><span class="cod">Cod</span><span class="x">X</span>
+            <span class="editor">Editor</span></span
           >
           is a powerful, browser-based code editor that lets you instantly
           write, run, and debug <span class="highlight">HTML</span>,
@@ -900,7 +920,10 @@
         <div class="footer-section">
           <div class="footer-logo">
             <img src="cx.png" alt="CodX Logo" />
-            <span>CodX Editor</span>
+            <span>
+              <span class="cod">Cod</span><span class="x">X</span>
+              <span class="editor"> Editor</span>
+            </span>
           </div>
           <p>
             A powerful, browser-based code editor for instant HTML, CSS, and
