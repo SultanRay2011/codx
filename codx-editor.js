@@ -410,6 +410,7 @@ function createNewFile() {
   const name = prompt("Enter file name (e.g., newfile.html):");
   if (!name) return;
   const ext = name.split(".").pop().toLowerCase();
+
   if (!["html", "css", "js"].includes(ext)) {
     showNotification("File must be .html, .css, or .js", "error");
     return;
@@ -418,17 +419,36 @@ function createNewFile() {
     showNotification("File name already exists", "error");
     return;
   }
+
+  // Define the default HTML template
+  const defaultHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodX Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Welcome to CodX Editor</h1>
+    <script src="script.js"></script>
+</body>
+</html>`;
+
   const newFile = {
     name,
     type: ext,
-    content: "",
+    // Use template for HTML files, otherwise empty string
+    content: ext === "html" ? defaultHTML : "",
     active: true,
   };
+
   projectFiles.forEach((file) => (file.active = false));
   projectFiles.push(newFile);
   activeFile = newFile;
+
   const editor = document.getElementById("activeEditor");
-  editor.value = "";
+  editor.value = newFile.content; // Set editor value to the template
   updateLineNumbers(editor);
   renderFileList();
   syncProjectWithSession();
