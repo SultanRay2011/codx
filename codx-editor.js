@@ -283,8 +283,74 @@ let projectFiles = [
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Welcome to CodX Editor</h1>
-    <script src="script.js"></script>
+    <div class="particles">
+        <div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <div class="shortcut-box">
+            <div class="logo-badge">COMMAND CENTER</div>
+            <h1>Welcome to CodX Editor</h1>
+            <p>Get Started With Keyboard Shortcuts</p>
+            
+            <div class="shortcut-group">
+                <h3><span class="icon">📁</span> Project & Files</h3>
+                <div class="shortcut-item">
+                    <span class="desc">Create New File</span>
+                    <span class="key">Ctrl + N</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="desc">Export Project (ZIP)</span>
+                    <span class="key">Ctrl + S</span>
+                </div>
+            </div>
+
+            <div class="shortcut-group">
+                <h3><span class="icon">⚡</span> Execution & Console</h3>
+                <div class="shortcut-item">
+                    <span class="desc">Run Code / Update Preview</span>
+                    <span class="key">Ctrl + Enter</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="desc">Toggle Console</span>
+                    <span class="key">Ctrl + Shift + C</span>
+                </div>
+            </div>
+
+            <div class="shortcut-group">
+                <h3><span class="icon">✍️</span> Smart Editing</h3>
+                <div class="shortcut-item">
+                    <span class="desc">Indent Line</span>
+                    <span class="key">Tab</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="desc">Auto-close HTML Tag</span>
+                    <span class="key">Type ></span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="desc">Auto-close Brackets</span>
+                    <span class="key">{ or (</span>
+                </div>
+            </div>
+
+            <div class="shortcut-group">
+                <h3><span class="icon">🔍</span> Tag Suggestions</h3>
+                <div class="shortcut-item">
+                    <span class="desc">Show Suggestions</span>
+                    <span class="key">Type <</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="desc">Navigate List</span>
+                    <span class="key">↑ / ↓</span>
+                </div>
+                <div class="shortcut-item">
+                    <span class="desc">Confirm Selection</span>
+                    <span class="key">Enter / Tab</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>`,
     active: true,
@@ -292,10 +358,114 @@ let projectFiles = [
   {
     name: "style.css",
     type: "css",
-    content: `h1 {
-    color: rgb(2, 255, 116);
-    text-align: center;
-    font-family: Arial, sans-serif;
+    content: `:root {
+  --primary: #4caf50;
+  --bg-white: #ffffff;
+  --card-bg: #ffffff;
+  --text-main: #1a1a1a;
+  --text-dim: #64748b;
+  --border-light: #e2e8f0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background-color: var(--bg-white);
+  color: var(--text-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  width: 90%;
+  max-width: 550px;
+  text-align: center;
+}
+
+/* Logo Styles */
+.logo-header {
+  margin-bottom: 20px;
+}
+
+.main-logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Shortcut Box Styles */
+.shortcut-box {
+  background: var(--card-bg);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  text-align: left;
+}
+
+.logo-badge {
+  display: inline-block;
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin: 0 0 30px 0;
+  color: var(--text-main);
+}
+
+.shortcut-group {
+  margin-bottom: 25px;
+}
+
+h3 {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.shortcut-item:last-child {
+  border-bottom: none;
+}
+
+.desc {
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.key {
+  background: #f8fafc;
+  color: var(--text-main);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 0.85rem;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 0 #e2e8f0;
 }`,
     active: false,
   },
@@ -421,16 +591,51 @@ function createNewFile() {
   }
 
   // Define the default HTML template
+  // Locate this in your projectFiles or createNewFile function in codx-editor.js
   const defaultHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodX Editor</title>
+    <title>CodX Editor - Shortcuts</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Welcome to CodX Editor</h1>
+    <div class="welcome-container">
+        <h1>Welcome to CodX Editor</h1>
+        <p class="subtitle">Keyboard Shortcuts & Commands</p>
+        
+        <div class="shortcut-grid">
+            <div class="shortcut-card">
+                <span class="key">Ctrl</span> + <span class="key">S</span>
+                <p>Save Project</p>
+            </div>
+            <div class="shortcut-card">
+                <span class="key">Ctrl</span> + <span class="key">Enter</span>
+                <p>Run Code / Refresh</p>
+            </div>
+            <div class="shortcut-card">
+                <span class="key">Ctrl</span> + <span class="key">/</span>
+                <p>Toggle Comment</p>
+            </div>
+            <div class="shortcut-card">
+                <span class="key">Tab</span>
+                <p>Indent (2 spaces)</p>
+            </div>
+            <div class="shortcut-card">
+                <span class="key">Shift</span> + <span class="key">Tab</span>
+                <p>Outdent</p>
+            </div>
+            <div class="shortcut-card">
+                <span class="key">&lt;</span>
+                <p>HTML Tag Suggestions</p>
+            </div>
+        </div>
+
+        <div class="features">
+            <p><strong>Pro Tip:</strong> Type <code>&lt;div</code> and press <strong>Enter</strong> to auto-close tags!</p>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>`;
