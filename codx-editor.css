@@ -773,15 +773,3 @@ input[type="file"] {
 #fontPickerModal > div::-webkit-scrollbar-thumb:hover {
   background: var(--accent-color);
 }
-
-.suggestion-item.active {
-  background-color: var(--accent-color); /* Uses your green theme */
-  color: white;
-  outline: none;
-}
-
-#suggestionPopup {
-  max-height: 200px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
