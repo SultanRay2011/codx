@@ -2128,3 +2128,454 @@ fontPickerModal.addEventListener("click", (e) => {
     fontPickerModal.style.display = "none";
   }
 });
+
+// ADD THIS CODE TO THE END OF codx-editor.js (before the final console.log)
+
+// ============ TUTORIAL SYSTEM ============
+
+const tutorialSteps = [
+  {
+    target: 'label[title="Toggle auto-run feature"]',
+    icon: "fa-solid fa-rotate",
+    title: "Auto-Run",
+    description:
+      "When enabled, your code runs automatically as you type. Disable it to run manually with the RUN button.",
+    position: "bottom",
+  },
+  {
+    target: 'label[title="Show/hide console output"]',
+    icon: "fa-solid fa-terminal",
+    title: "Console Toggle",
+    description:
+      "Show or hide the console output panel. View console.log(), errors, and warnings here.",
+    position: "bottom",
+  },
+  {
+    target: "#collabBtn",
+    icon: "fa-solid fa-users",
+    title: "Collaborate",
+    description:
+      "Work together with friends in real-time! Share a link and code together.",
+    position: "bottom-left",
+  },
+  {
+    target: "#previewFullscreenBtn",
+    icon: "fa-solid fa-expand",
+    title: "Fullscreen Preview",
+    description:
+      "View your website in fullscreen mode. Perfect for testing responsive designs.",
+    position: "bottom-left",
+  },
+  {
+    target: "#settingsBtn",
+    icon: "fa-solid fa-gear",
+    title: "Editor Settings",
+    description:
+      "Customize your editor colors, font size, and font family to match your preferences.",
+    position: "bottom-left",
+  },
+  {
+    target: "#addMediaBtn",
+    icon: "fa-solid fa-image",
+    title: "Add Media",
+    description:
+      "Upload images, videos, or audio files to use in your project.",
+    position: "bottom-left",
+  },
+  {
+    target: "#fontPickerBtn",
+    icon: "fa-solid fa-font",
+    title: "Font Picker",
+    description:
+      "Browse and copy professional font-family CSS code for your designs.",
+    position: "bottom-left",
+  },
+  {
+    target: 'label[title="Toggle light/dark theme"]',
+    icon: "fa-solid fa-moon",
+    title: "Theme Toggle",
+    description: "Switch between dark and light themes for comfortable coding.",
+    position: "bottom-right",
+  },
+  {
+    target: "#newFileBtn",
+    icon: "fa-solid fa-plus",
+    title: "New File",
+    description: "Create new HTML, CSS, or JS files for your project.",
+    position: "bottom-right",
+  },
+  {
+    target: "#fileList",
+    icon: "fa-solid fa-folder-open",
+    title: "File Explorer",
+    description:
+      "Click files to switch between them. Click the trash icon to delete files.",
+    position: "bottom",
+  },
+  {
+    target: "#activeEditor",
+    icon: "fa-solid fa-code",
+    title: "Code Editor",
+    description:
+      "Write your code here! Features include:\n• Auto-closing tags (HTML)\n• Auto-closing brackets (CSS/JS)\n• Tag suggestions (type < in HTML)\n• Tab for 2-space indentation\n• Drag & drop files",
+    position: "right",
+  },
+  {
+    target: 'button[onclick="updatePreview()"]',
+    icon: "fa-solid fa-play",
+    title: "Run Button",
+    description: "Click to manually run your code and update the preview.",
+    position: "top-left",
+  },
+  {
+    target: "#output",
+    icon: "fa-solid fa-eye",
+    title: "Live Preview",
+    description:
+      "See your website come to life here! Updates automatically if Auto-Run is enabled.",
+    position: "left",
+  },
+];
+
+let currentStep = 0;
+let tutorialActive = false;
+
+// Create tutorial modal HTML
+const tutorialModalHTML = `
+  <div id="tutorialModal" style="
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  ">
+    <div id="tutorialCard" style="
+      position: absolute;
+      background: var(--bg-secondary);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 350px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      animation: tutorialFadeIn 0.3s ease;
+      pointer-events: auto;
+    ">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+          <i id="tutorialIcon" style="color: var(--accent-color); font-size: 20px;"></i>
+          <h3 id="tutorialTitle" style="margin: 0; color: var(--accent-color); font-size: 18px;"></h3>
+        </div>
+        <button id="closeTutorialBtn" style="
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          font-size: 24px;
+          cursor: pointer;
+          line-height: 1;
+          padding: 0;
+          width: 30px;
+          height: 30px;
+          flex-shrink: 0;
+        " aria-label="Close tutorial">&times;</button>
+      </div>
+      <p id="tutorialDescription" style="
+        color: var(--text-primary);
+        line-height: 1.6;
+        margin-bottom: 20px;
+        white-space: pre-line;
+      "></p>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="tutorialProgress" style="color: var(--text-muted); font-size: 13px;"></span>
+        <div style="display: flex; gap: 10px;">
+          <button id="tutorialPrevBtn" class="run-button" style="padding: 6px 12px; font-size: 12px;">
+            <i class="fa-solid fa-arrow-left"></i> <strong>BACK</strong>
+          </button>
+          <button id="tutorialNextBtn" class="run-button" style="padding: 6px 12px; font-size: 12px;">
+            <strong>NEXT</strong> <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="tutorialHighlight" style="
+      position: absolute;
+      border: 3px solid var(--accent-color);
+      border-radius: 8px;
+      pointer-events: none;
+      background: transparent;
+      transition: all 0.3s ease;
+      z-index: 9999;
+    "></div>
+  </div>
+`;
+
+// Add tutorial styles
+const tutorialStyles = `
+  @keyframes tutorialFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  #closeTutorialBtn:hover {
+    color: var(--accent-color) !important;
+    transform: rotate(90deg);
+    transition: all 0.3s ease;
+  }
+`;
+
+const tutorialStyleSheet = document.createElement("style");
+tutorialStyleSheet.textContent = tutorialStyles;
+document.head.appendChild(tutorialStyleSheet);
+
+// Insert tutorial modal into body
+document.body.insertAdjacentHTML("beforeend", tutorialModalHTML);
+
+// Get tutorial elements
+const tutorialModal = document.getElementById("tutorialModal");
+const tutorialCard = document.getElementById("tutorialCard");
+const tutorialIcon = document.getElementById("tutorialIcon");
+const tutorialTitle = document.getElementById("tutorialTitle");
+const tutorialDescription = document.getElementById("tutorialDescription");
+const tutorialProgress = document.getElementById("tutorialProgress");
+const tutorialHighlight = document.getElementById("tutorialHighlight");
+const tutorialNextBtn = document.getElementById("tutorialNextBtn");
+const tutorialPrevBtn = document.getElementById("tutorialPrevBtn");
+const closeTutorialBtn = document.getElementById("closeTutorialBtn");
+
+// Check if tutorial has been completed
+function checkTutorialStatus() {
+  const completed = safeLocalStorage("get", "tutorialCompleted");
+  if (!completed) {
+    // Wait a moment for the page to fully load, then start tutorial
+    setTimeout(() => startTutorial(), 500);
+  }
+}
+
+// Start tutorial
+function startTutorial() {
+  tutorialActive = true;
+  currentStep = 0;
+  tutorialModal.style.display = "block";
+  showTutorialStep(currentStep);
+}
+
+// Show specific tutorial step
+function showTutorialStep(stepIndex) {
+  if (stepIndex < 0 || stepIndex >= tutorialSteps.length) return;
+
+  const step = tutorialSteps[stepIndex];
+  const targetElement = document.querySelector(step.target);
+
+  if (!targetElement) {
+    console.warn(`Tutorial target not found: ${step.target}`);
+    return;
+  }
+
+  // Update content
+  tutorialIcon.className = step.icon;
+  tutorialTitle.textContent = step.title;
+  tutorialDescription.textContent = step.description;
+  tutorialProgress.textContent = `Step ${stepIndex + 1} of ${
+    tutorialSteps.length
+  }`;
+
+  // Update buttons
+  tutorialPrevBtn.disabled = stepIndex === 0;
+  tutorialPrevBtn.style.opacity = stepIndex === 0 ? "0.5" : "1";
+
+  if (stepIndex === tutorialSteps.length - 1) {
+    tutorialNextBtn.innerHTML =
+      '<strong>FINISH</strong> <i class="fa-solid fa-check"></i>';
+  } else {
+    tutorialNextBtn.innerHTML =
+      '<strong>NEXT</strong> <i class="fa-solid fa-arrow-right"></i>';
+  }
+
+  // Position highlight and card
+  positionTutorialElements(targetElement, step.position);
+}
+
+// Position tutorial card and highlight
+function positionTutorialElements(target, position) {
+  const rect = target.getBoundingClientRect();
+  const cardRect = tutorialCard.getBoundingClientRect();
+
+  // Position highlight around the target element
+  tutorialHighlight.style.left = rect.left - 5 + "px";
+  tutorialHighlight.style.top = rect.top - 5 + "px";
+  tutorialHighlight.style.width = rect.width + 10 + "px";
+  tutorialHighlight.style.height = rect.height + 10 + "px";
+
+  // Position card based on position parameter
+  let cardLeft, cardTop;
+  const margin = 15;
+
+  switch (position) {
+    case "bottom":
+      // Center card below target
+      cardLeft = rect.left + rect.width / 2 - cardRect.width / 2;
+      cardTop = rect.bottom + margin;
+      break;
+
+    case "bottom-left":
+      // Align card's left edge with target's left edge, below it
+      cardLeft = rect.left;
+      cardTop = rect.bottom + margin;
+      break;
+
+    case "bottom-right":
+      // Align card's right edge with target's right edge, below it
+      cardLeft = rect.right - cardRect.width;
+      cardTop = rect.bottom + margin;
+      break;
+
+    case "top":
+      // Center card above target
+      cardLeft = rect.left + rect.width / 2 - cardRect.width / 2;
+      cardTop = rect.top - cardRect.height - margin;
+      break;
+
+    case "top-left":
+      // Align card's left edge with target's left edge, above it
+      cardLeft = rect.left;
+      cardTop = rect.top - cardRect.height - margin;
+      break;
+
+    case "top-right":
+      // Align card's right edge with target's right edge, above it
+      cardLeft = rect.right - cardRect.width;
+      cardTop = rect.top - cardRect.height - margin;
+      break;
+
+    case "right":
+      // Position card to the right, vertically centered
+      cardLeft = rect.right + margin;
+      cardTop = rect.top + rect.height / 2 - cardRect.height / 2;
+      break;
+
+    case "left":
+      // Position card to the left, vertically centered
+      cardLeft = rect.left - cardRect.width - margin;
+      cardTop = rect.top + rect.height / 2 - cardRect.height / 2;
+      break;
+
+    default:
+      // Default to bottom-left
+      cardLeft = rect.left;
+      cardTop = rect.bottom + margin;
+  }
+
+  // Viewport bounds checking with padding
+  const viewportPadding = 15;
+  const maxLeft = window.innerWidth - cardRect.width - viewportPadding;
+  const maxTop = window.innerHeight - cardRect.height - viewportPadding;
+
+  // Horizontal bounds
+  if (cardLeft < viewportPadding) {
+    cardLeft = viewportPadding;
+  } else if (cardLeft > maxLeft) {
+    cardLeft = maxLeft;
+  }
+
+  // Vertical bounds with smart repositioning
+  if (cardTop < viewportPadding) {
+    // If card would be above viewport, try positioning below target
+    const belowPosition = rect.bottom + margin;
+    if (
+      belowPosition + cardRect.height <
+      window.innerHeight - viewportPadding
+    ) {
+      cardTop = belowPosition;
+    } else {
+      cardTop = viewportPadding;
+    }
+  } else if (cardTop > maxTop) {
+    // If card would be below viewport, try positioning above target
+    const abovePosition = rect.top - cardRect.height - margin;
+    if (abovePosition > viewportPadding) {
+      cardTop = abovePosition;
+    } else {
+      cardTop = maxTop;
+    }
+  }
+
+  // Apply positions
+  tutorialCard.style.left = cardLeft + "px";
+  tutorialCard.style.top = cardTop + "px";
+}
+
+// Tutorial navigation
+tutorialNextBtn.addEventListener("click", () => {
+  if (currentStep < tutorialSteps.length - 1) {
+    currentStep++;
+    showTutorialStep(currentStep);
+  } else {
+    completeTutorial();
+  }
+});
+
+tutorialPrevBtn.addEventListener("click", () => {
+  if (currentStep > 0) {
+    currentStep--;
+    showTutorialStep(currentStep);
+  }
+});
+
+closeTutorialBtn.addEventListener("click", () => {
+  if (
+    confirm(
+      "Are you sure you want to skip the tutorial? You can always restart it from the settings."
+    )
+  ) {
+    completeTutorial();
+  }
+});
+
+// Complete tutorial
+function completeTutorial() {
+  tutorialActive = false;
+  tutorialModal.style.display = "none";
+  safeLocalStorage("set", "tutorialCompleted", "true");
+  showNotification("Tutorial completed! Welcome to CodX Editor", "success");
+}
+
+// Handle window resize during tutorial
+window.addEventListener("resize", () => {
+  if (tutorialActive && currentStep < tutorialSteps.length) {
+    showTutorialStep(currentStep);
+  }
+});
+
+// Add "Restart Tutorial" option to settings modal
+const settingsModalContent = document.querySelector("#settingsModal > div");
+if (settingsModalContent) {
+  const restartTutorialBtn = document.createElement("button");
+  restartTutorialBtn.className = "run-button";
+  restartTutorialBtn.style.cssText =
+    "width: 100%; margin-top: 15px; background: #9C27B0;";
+  restartTutorialBtn.innerHTML =
+    '<i class="fa-solid fa-graduation-cap"></i> <strong>RESTART TUTORIAL</strong>';
+  restartTutorialBtn.addEventListener("click", () => {
+    settingsModal.style.display = "none";
+    safeLocalStorage("remove", "tutorialCompleted");
+    startTutorial();
+  });
+
+  // Insert before action buttons
+  const actionButtons = settingsModalContent.querySelector(
+    'div[style*="display: flex"][style*="justify-content: space-between"]'
+  );
+  if (actionButtons) {
+    actionButtons.parentNode.insertBefore(restartTutorialBtn, actionButtons);
+  }
+}
+
+// Initialize tutorial check on page load
+window.addEventListener("load", () => {
+  // Give the page a moment to fully render
+  setTimeout(checkTutorialStatus, 800);
+});
+
+console.log("Tutorial system loaded!");
