@@ -1147,6 +1147,9 @@ function handleSuggestions(e) {
 /**
  * Displays the suggestion popup with filtered tags.
  */
+/**
+ * Displays the suggestion popup with filtered tags.
+ */
 function showSuggestions(suggestions, prefix) {
   suggestionPopup.innerHTML = "";
   suggestions.forEach((tag, index) => {
@@ -1158,15 +1161,74 @@ function showSuggestions(suggestions, prefix) {
       prefix.length
     )}</strong>${tag.substring(prefix.length)}`;
     item.dataset.tag = tag;
-    // Use mousedown instead of click to fire before blur
+
+    // Mousedown fires before the editor loses focus (blur)
     item.addEventListener("mousedown", (e) => {
       e.preventDefault();
       selectSuggestion(tag);
     });
     suggestionPopup.appendChild(item);
   });
+
   suggestionPopup.style.display = "block";
-  activeSuggestion = -1; // Reset active suggestion
+  activeSuggestion = 0; // Start with the first item highlighted for faster navigation
+  const items = suggestionPopup.querySelectorAll(".suggestion-item");
+  if (items.length > 0) updateSuggestionHighlight(items);
+}
+
+/**
+ * Handles all keydown events for suggestions and navigation.
+ */
+function handleEditorKeyDown(e) {
+  const editor = e.target;
+
+  // --- 1. Suggestion Popup Navigation ---
+  if (suggestionPopup.style.display === "block") {
+    const items = suggestionPopup.querySelectorAll(".suggestion-item");
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      // Circular navigation: loop to top if at bottom
+      activeSuggestion = (activeSuggestion + 1) % items.length;
+      updateSuggestionHighlight(items);
+      return;
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      // Circular navigation: loop to bottom if at top
+      activeSuggestion = (activeSuggestion - 1 + items.length) % items.length;
+      updateSuggestionHighlight(items);
+      return;
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      if (activeSuggestion > -1 && items[activeSuggestion]) {
+        e.preventDefault();
+        selectSuggestion(items[activeSuggestion].dataset.tag);
+      } else {
+        suggestionPopup.style.display = "none";
+      }
+      return;
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      suggestionPopup.style.display = "none";
+      return;
+    }
+  }
+
+  // --- 2. Standard Editor Actions (Tab Indentation) ---
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    editor.value =
+      editor.value.substring(0, start) + "  " + editor.value.substring(end);
+    editor.selectionStart = editor.selectionEnd = start + 2;
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+  }
+
+  // Handle auto-closing tags
+  if (e.key === ">") {
+    handleTagClosing(e);
+  }
 }
 
 /**
