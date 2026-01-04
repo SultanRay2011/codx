@@ -565,18 +565,23 @@ iframe {
 
 .console-output .error {
   color: var(--error-color);
+  font-size: 14px;
 }
 
 .console-output .warn {
   color: var(--warning-color);
+  font-size: 14px;
 }
 
 .console-output .info {
   color: var(--console-text);
+  font-size: 14px;
 }
 
 .console-output .log {
-  color: var(--text-primary);
+  color: var(--success-color);
+  font-weight: bold;
+  font-size: 14px;
 }
 
 .console-output::-webkit-scrollbar {
