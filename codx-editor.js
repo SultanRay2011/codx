@@ -1026,49 +1026,6 @@ function initializeEditor() {
   editor.addEventListener("keydown", handleEditorKeyDown);
 }
 
-// PART 6.5: TAG SUGGESTIONS & AUTO-CLOSING LOGIC (NEW)
-
-/**
- * Handles auto-closing of HTML tags when '>' is typed.
- */
-function handleTagClosing(e) {
-  if (e.key !== ">") return;
-  if (activeFile.type !== "html") return;
-
-  const editor = e.target;
-  const pos = editor.selectionStart;
-  const textBefore = editor.value.substring(0, pos);
-
-  // Regex: Find the last opening tag <tagname just before the cursor
-  // It avoids matching </tagname> or <tagname/>
-  const tagMatch = textBefore.match(/<([a-zA-Z0-9]+)(?![^>]*\/?>)\s*$/);
-
-  if (tagMatch) {
-    const tagName = tagMatch[1];
-    if (selfClosingTags.includes(tagName.toLowerCase())) {
-      // It's a self-closing tag, just allow the '>'
-      return;
-    }
-
-    // It's a regular tag, auto-close it
-    e.preventDefault();
-    const closingTag = `</${tagName}>`;
-    const textAfter = editor.value.substring(editor.selectionEnd);
-
-    // Insert the > and the closing tag
-    editor.value = textBefore + ">" + closingTag + textAfter;
-
-    // Place cursor between the tags
-    editor.selectionStart = editor.selectionEnd = pos + 1;
-
-    // Update content
-    activeFile.content = editor.value;
-    updateLineNumbers(editor);
-    if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange();
-  }
-}
-
 /**
  * Handles the editor's 'input' event to show/hide suggestions.
  */
@@ -1175,70 +1132,6 @@ function updateSuggestionHighlight(items) {
       item.classList.remove("active");
     }
   });
-}
-
-/**
- * Handles all keydown events in the editor for suggestions, tab, and auto-closing.
- */
-function handleEditorKeyDown(e) {
-  const editor = e.target;
-
-  // --- 1. Suggestion Popup Navigation ---
-  if (suggestionPopup.style.display === "block") {
-    const items = suggestionPopup.querySelectorAll(".suggestion-item");
-    if (!items.length) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      activeSuggestion = (activeSuggestion + 1) % items.length;
-      updateSuggestionHighlight(items);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      activeSuggestion = (activeSuggestion - 1 + items.length) % items.length;
-      updateSuggestionHighlight(items);
-    } else if (e.key === "Enter" || e.key === "Tab") {
-      if (activeSuggestion > -1) {
-        // Select the highlighted suggestion
-        e.preventDefault();
-        selectSuggestion(items[activeSuggestion].dataset.tag);
-      } else {
-        // Allow default behavior (like new line) if no suggestion is active
-        suggestionPopup.style.display = "none";
-        if (e.key === "Tab") e.preventDefault(); // Prevent tabbing out
-      }
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      suggestionPopup.style.display = "none";
-    } else if (e.key === ">") {
-      // Handle tag closing, then hide popup
-      handleTagClosing(e);
-      suggestionPopup.style.display = "none";
-    }
-  } else {
-    // --- 2. No Popup Visible: Handle Tab and Tag Closing ---
-
-    if (e.key === ">") {
-      // Handle tag closing
-      handleTagClosing(e);
-    } else if (e.key === "Tab") {
-      // Handle Tab for indentation
-      e.preventDefault();
-      const start = editor.selectionStart;
-      const end = editor.selectionEnd;
-      // Insert 2 spaces
-      editor.value =
-        editor.value.substring(0, start) + "  " + editor.value.substring(end);
-      editor.selectionStart = editor.selectionEnd = start + 2;
-
-      // Update state
-      activeFile.content = editor.value;
-      updateLineNumbers(editor);
-      if (autoRunCheckbox.checked) debouncedUpdatePreview();
-      handleCodeChange({
-        target: { id: activeFile.type + "Code", value: editor.value },
-      });
-    }
-  }
 }
 
 // PART 6.7: AUTO-CLOSING & INDENTATION LOGIC (NEW UTILITY)
