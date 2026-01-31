@@ -775,7 +775,7 @@ function updatePreview() {
     (match, href1, href2) => {
       const href = href1 || href2;
       const cssFile = projectFiles.find(
-        (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "css"
+        (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "css",
       );
       if (cssFile) {
         return `<style>${cssFile.content}</style>`;
@@ -783,11 +783,11 @@ function updatePreview() {
         const fileName = href.split("/").pop();
         appendConsoleMessage(
           "warn",
-          `WARNING: CSS file not found: ${fileName}`
+          `WARNING: CSS file not found: ${fileName}`,
         );
         return match; // Keep original link tag
       }
-    }
+    },
   );
 
   // === 2. Replace <script src="script.js"></script> WITH FILE NAME MARKERS
@@ -795,7 +795,7 @@ function updatePreview() {
     /<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,
     (match, src) => {
       const jsFile = projectFiles.find(
-        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "js"
+        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "js",
       );
       if (jsFile) {
         // Wrap JS with file markers and line tracking
@@ -829,10 +829,10 @@ ${jsFile.content}
         const fileName = src.split("/").pop();
         appendConsoleMessage("warn", `WARNING: JS file not found: ${fileName}`);
         return `<script src="${src}?file=${encodeURIComponent(
-          fileName
+          fileName,
         )}"></script>`;
       }
-    }
+    },
   );
 
   // === 3. Handle <a href> links to other HTML files
@@ -845,7 +845,7 @@ ${jsFile.content}
       // Check if this HTML file exists in project
       const linkedFile = projectFiles.find(
         (f) =>
-          f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html"
+          f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html",
       );
 
       if (linkedFile) {
@@ -856,27 +856,35 @@ ${jsFile.content}
 
       // File doesn't exist - keep original
       return match;
-    }
+    },
   );
 
   // === 3. Handle media: <img>, <video>, <audio> src attributes
   html = html.replace(
-    /<(img|video|audio)[^>]*src=["']([^"']+)["'][^>]*>/gi,
-    (match, tag, src) => {
+    /<(img|video|audio)([^>]*)src=["']([^"']+)["']([^>]*)>/gi,
+    (match, tag, before, src, after) => {
+      // Check if it's a data URL, external URL (http/https), or local file
+      if (
+        src.startsWith("data:") ||
+        src.startsWith("http://") ||
+        src.startsWith("https://")
+      ) {
+        // Keep external URLs and data URLs as-is
+        return match;
+      }
+
+      // Try to find the media file in projectFiles
       const mediaFile = projectFiles.find(
-        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "media"
+        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "media",
       );
       if (mediaFile && mediaFile.content) {
-        return `<${tag} src="${mediaFile.content}">`;
+        return `<${tag}${before} src="${mediaFile.content}"${after}>`;
       } else {
-        const fileName = src.split("/").pop();
-        appendConsoleMessage(
-          "warn",
-          `WARNING: Media file not found: ${fileName}`
-        );
-        return `<${tag} src="${src}?file=${encodeURIComponent(fileName)}">`;
+        // File not found in project - it might be in the same directory or external
+        // Just keep the original src
+        return match;
       }
-    }
+    },
   );
 
   // === 4. Inject console override BEFORE any scripts
@@ -958,16 +966,42 @@ ${jsFile.content}
       })();
     </script>`;
 
-  // Insert console script at the very beginning (BEFORE any other scripts)
+  // === 5. Inject image sizing CSS to ensure proper display
+  const imageSizingCSS = `
+    <style>
+      /* Prevent images from overflowing their containers */
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+      
+      /* If images have explicit width/height attributes, respect them but constrain to container */
+      img[width]:not([width=""]):not([width="auto"]),
+      img[height]:not([height=""]):not([height="auto"]) {
+        max-width: 100%;
+        height: auto;
+      }
+      
+      /* Ensure video and audio don't overflow */
+      video, audio {
+        max-width: 100%;
+      }
+    </style>
+  `;
+
+  // Insert console script and image CSS at the very beginning
+  const injectionContent = imageSizingCSS + consoleScript;
+
   if (/<head[^>]*>/i.test(html)) {
-    html = html.replace(/(<head[^>]*>)/i, `$1${consoleScript}`);
+    html = html.replace(/(<head[^>]*>)/i, `$1${injectionContent}`);
   } else if (/<html[^>]*>/i.test(html)) {
-    html = html.replace(/(<html[^>]*>)/i, `$1${consoleScript}`);
+    html = html.replace(/(<html[^>]*>)/i, `$1${injectionContent}`);
   } else if (/<body[^>]*>/i.test(html)) {
-    html = html.replace(/(<body[^>]*>)/i, `${consoleScript}$1`);
+    html = html.replace(/(<body[^>]*>)/i, `${injectionContent}$1`);
   } else {
     // No proper HTML structure, prepend it
-    html = consoleScript + html;
+    html = injectionContent + html;
   }
 
   iframe.srcdoc = html;
@@ -988,7 +1022,7 @@ function updateLineNumbers(textarea) {
   if (!textarea) return;
   const lines = textarea.value.split("\n").length;
   lineNumbers.textContent = Array.from({ length: lines }, (_, i) => i + 1).join(
-    "\n"
+    "\n",
   );
 }
 
@@ -1024,6 +1058,49 @@ function initializeEditor() {
 
   // MODIFIED: Replaced Tab logic with comprehensive keydown handler
   editor.addEventListener("keydown", handleEditorKeyDown);
+}
+
+// PART 6.5: TAG SUGGESTIONS & AUTO-CLOSING LOGIC (NEW)
+
+/**
+ * Handles auto-closing of HTML tags when '>' is typed.
+ */
+function handleTagClosing(e) {
+  if (e.key !== ">") return;
+  if (activeFile.type !== "html") return;
+
+  const editor = e.target;
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+
+  // Regex: Find the last opening tag <tagname just before the cursor
+  // It avoids matching </tagname> or <tagname/>
+  const tagMatch = textBefore.match(/<([a-zA-Z0-9]+)(?![^>]*\/?>)\s*$/);
+
+  if (tagMatch) {
+    const tagName = tagMatch[1];
+    if (selfClosingTags.includes(tagName.toLowerCase())) {
+      // It's a self-closing tag, just allow the '>'
+      return;
+    }
+
+    // It's a regular tag, auto-close it
+    e.preventDefault();
+    const closingTag = `</${tagName}>`;
+    const textAfter = editor.value.substring(editor.selectionEnd);
+
+    // Insert the > and the closing tag
+    editor.value = textBefore + ">" + closingTag + textAfter;
+
+    // Place cursor between the tags
+    editor.selectionStart = editor.selectionEnd = pos + 1;
+
+    // Update content
+    activeFile.content = editor.value;
+    updateLineNumbers(editor);
+    if (autoRunCheckbox.checked) debouncedUpdatePreview();
+    handleCodeChange();
+  }
 }
 
 /**
@@ -1067,7 +1144,7 @@ function showSuggestions(suggestions, prefix) {
     // Highlight the part that was typed
     item.innerHTML = `<strong>${tag.substring(
       0,
-      prefix.length
+      prefix.length,
     )}</strong>${tag.substring(prefix.length)}`;
     item.dataset.tag = tag;
     // Use mousedown instead of click to fire before blur
@@ -1096,7 +1173,7 @@ function selectSuggestion(tag) {
     const prefix = triggerMatch[1];
     const textBeforeTrigger = textBefore.substring(
       0,
-      textBefore.length - prefix.length
+      textBefore.length - prefix.length,
     );
     const textAfter = editor.value.substring(editor.selectionEnd);
 
@@ -1522,7 +1599,7 @@ function handleZipImport(event) {
                 content,
                 active: false,
               });
-            })
+            }),
           );
         }
       });
@@ -1542,7 +1619,7 @@ function handleZipImport(event) {
         syncProjectWithSession();
         showNotification(
           `Project imported! Files: ${foundFiles.join(", ")}`,
-          "success"
+          "success",
         );
       });
     })
@@ -1781,9 +1858,8 @@ function copyLink() {
 // ---- 7. Close modal (reset button) ----
 function closeModal() {
   collabModal.style.display = "none";
-  document.getElementById(
-    "modalActions"
-  ).innerHTML = `<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`;
+  document.getElementById("modalActions").innerHTML =
+    `<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`;
 }
 
 // ---- 8. Check URL hash on load (join or error) ----
@@ -1822,7 +1898,7 @@ function checkForSession() {
 
     const sess = JSON.parse(stored);
     const taken = sess.participants.some(
-      (p) => p.name.toLowerCase() === name.toLowerCase()
+      (p) => p.name.toLowerCase() === name.toLowerCase(),
     );
     if (taken) {
       errorMsgEl.textContent = "Name already taken.";
@@ -1962,8 +2038,8 @@ mediaInput.addEventListener("change", (e) => {
       const type = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)
         ? "img"
         : ext === "mp4"
-        ? "video"
-        : "audio";
+          ? "video"
+          : "audio";
 
       const newFile = {
         name,
@@ -2577,7 +2653,7 @@ tutorialPrevBtn.addEventListener("click", () => {
 closeTutorialBtn.addEventListener("click", () => {
   if (
     confirm(
-      "Are you sure you want to skip the tutorial? You can always restart it from the settings."
+      "Are you sure you want to skip the tutorial? You can always restart it from the settings.",
     )
   ) {
     completeTutorial();
@@ -2616,7 +2692,7 @@ if (settingsModalContent) {
 
   // Insert before action buttons
   const actionButtons = settingsModalContent.querySelector(
-    'div[style*="display: flex"][style*="justify-content: space-between"]'
+    'div[style*="display: flex"][style*="justify-content: space-between"]',
   );
   if (actionButtons) {
     actionButtons.parentNode.insertBefore(restartTutorialBtn, actionButtons);
