@@ -695,6 +695,26 @@ editorTextColorInput.addEventListener("input", (e) => {
   updatePreviewBox();
 });
 
+// Allow manual hex code input for background color
+editorBgColorText.addEventListener("input", (e) => {
+  const hexValue = e.target.value;
+  // Validate hex color format
+  if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+    editorBgColorInput.value = hexValue;
+    updatePreviewBox();
+  }
+});
+
+// Allow manual hex code input for text color
+editorTextColorText.addEventListener("input", (e) => {
+  const hexValue = e.target.value;
+  // Validate hex color format
+  if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+    editorTextColorInput.value = hexValue;
+    updatePreviewBox();
+  }
+});
+
 editorTextSizeInput.addEventListener("input", (e) => {
   textSizeValue.textContent = e.target.value + "px";
   updatePreviewBox();
