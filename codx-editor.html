@@ -363,50 +363,6 @@
           </div>
         </div>
 
-        <!-- Text Color -->
-        <div style="margin-bottom: 20px">
-          <label
-            style="
-              display: block;
-              margin-bottom: 8px;
-              font-weight: bold;
-              color: var(--text-primary);
-            "
-          >
-            Editor Text Color:
-          </label>
-          <div style="display: flex; gap: 10px; align-items: center">
-            <input
-              type="color"
-              id="editorTextColor"
-              style="
-                width: 60px;
-                height: 40px;
-                border: 2px solid var(--border-color);
-                border-radius: 4px;
-                cursor: pointer;
-              "
-              aria-label="Select text color"
-            />
-            <input
-              type="text"
-              id="editorTextColorText"
-              placeholder="#ffffff"
-              maxlength="7"
-              style="
-                flex: 1;
-                padding: 10px;
-                background: var(--bg-tertiary);
-                border: 1px solid var(--border-color);
-                color: var(--text-primary);
-                border-radius: 4px;
-                font-family: monospace;
-              "
-              aria-label="Text color code"
-            />
-          </div>
-        </div>
-
         <!-- Text Size -->
         <div style="margin-bottom: 20px">
           <label
@@ -457,17 +413,20 @@
             "
             aria-label="Select font family"
           >
-            <option value="monospace">Monospace (Default)</option>
-            <option value="'Courier New', monospace">Courier New</option>
-            <option value="'Consolas', monospace">Consolas</option>
-            <option value="'Monaco', monospace">Monaco</option>
-            <option value="'Lucida Console', monospace">Lucida Console</option>
-            <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
-            <option value="'Roboto Mono', monospace">Roboto Mono</option>
-            <option value="'Source Code Pro', monospace">
-              Source Code Pro
+            <option value="'JetBrains Mono', 'Consolas', monospace">
+              JetBrains Mono (Default)
             </option>
-            <option value="'Fira Code', monospace">Fira Code</option>
+            <option value="'Outfit', 'Segoe UI', sans-serif">
+              Outfit Sans
+            </option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            <option value="'Verdana', sans-serif">Verdana</option>
+            <option value="'Georgia', serif">Georgia Serif</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Courier New', monospace">Courier New Mono</option>
+            <option value="'Lucida Console', monospace">
+              Lucida Console Mono
+            </option>
           </select>
         </div>
         <!-- Preview Box -->

@@ -17,8 +17,6 @@ const applySettingsBtn = document.getElementById("applySettings");
 const resetSettingsBtn = document.getElementById("resetSettings");
 const editorBgColorInput = document.getElementById("editorBgColor");
 const editorBgColorText = document.getElementById("editorBgColorText");
-const editorTextColorInput = document.getElementById("editorTextColor");
-const editorTextColorText = document.getElementById("editorTextColorText");
 const editorTextSizeInput = document.getElementById("editorTextSize");
 const textSizeValue = document.getElementById("textSizeValue");
 const editorFontFamilySelect = document.getElementById("editorFontFamily");
@@ -629,9 +627,8 @@ let activeFile = projectFiles[0];
 
 const defaultSettings = {
   bgColor: "#1E1E1E",
-  textColor: "#ffffff",
   textSize: "14",
-  fontFamily: "monospace",
+  fontFamily: "'JetBrains Mono', 'Consolas', monospace",
 };
 
 // PART 2 - UTILITY FUNCTIONS
@@ -855,11 +852,12 @@ function loadSettings() {
       const settings = JSON.parse(savedSettings);
       editorBgColorInput.value = settings.bgColor;
       editorBgColorText.value = settings.bgColor;
-      editorTextColorInput.value = settings.textColor;
-      editorTextColorText.value = settings.textColor;
       editorTextSizeInput.value = settings.textSize;
       textSizeValue.textContent = settings.textSize + "px";
       editorFontFamilySelect.value = settings.fontFamily;
+      if (!editorFontFamilySelect.value) {
+        editorFontFamilySelect.value = defaultSettings.fontFamily;
+      }
     } catch (e) {
       console.error("Error loading settings:", e);
       resetToDefaultSettings();
@@ -874,8 +872,6 @@ function loadSettings() {
 function resetToDefaultSettings() {
   editorBgColorInput.value = defaultSettings.bgColor;
   editorBgColorText.value = defaultSettings.bgColor;
-  editorTextColorInput.value = defaultSettings.textColor;
-  editorTextColorText.value = defaultSettings.textColor;
   editorTextSizeInput.value = defaultSettings.textSize;
   textSizeValue.textContent = defaultSettings.textSize + "px";
   editorFontFamilySelect.value = defaultSettings.fontFamily;
@@ -883,10 +879,6 @@ function resetToDefaultSettings() {
 
 function updatePreviewBox() {
   settingsPreview.style.backgroundColor = editorBgColorInput.value;
-  settingsPreview.style.setProperty(
-    "--settings-preview-text",
-    editorTextColorInput.value,
-  );
   settingsPreview.style.fontSize = editorTextSizeInput.value + "px";
   settingsPreview.style.fontFamily = editorFontFamilySelect.value;
   settingsPreviewCode.style.fontSize = editorTextSizeInput.value + "px";
@@ -909,27 +901,12 @@ editorBgColorInput.addEventListener("input", (e) => {
   updatePreviewBox();
 });
 
-editorTextColorInput.addEventListener("input", (e) => {
-  editorTextColorText.value = e.target.value;
-  updatePreviewBox();
-});
-
 // Allow manual hex code input for background color
 editorBgColorText.addEventListener("input", (e) => {
   const hexValue = e.target.value;
   // Validate hex color format
   if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
     editorBgColorInput.value = hexValue;
-    updatePreviewBox();
-  }
-});
-
-// Allow manual hex code input for text color
-editorTextColorText.addEventListener("input", (e) => {
-  const hexValue = e.target.value;
-  // Validate hex color format
-  if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
-    editorTextColorInput.value = hexValue;
     updatePreviewBox();
   }
 });
@@ -957,7 +934,6 @@ settingsModal.addEventListener("click", (e) => {
 applySettingsBtn.addEventListener("click", () => {
   const settings = {
     bgColor: editorBgColorInput.value,
-    textColor: editorTextColorInput.value,
     textSize: editorTextSizeInput.value,
     fontFamily: editorFontFamilySelect.value,
   };
