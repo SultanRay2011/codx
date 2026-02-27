@@ -1009,6 +1009,15 @@ function updatePreview() {
   html = html.replace(
     /<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,
     (match, src) => {
+      // Preserve external scripts exactly (including API-key query params).
+      if (
+        /^(https?:)?\/\//i.test(src) ||
+        src.startsWith("data:") ||
+        src.startsWith("blob:")
+      ) {
+        return match;
+      }
+
       const jsFile = projectFiles.find(
         (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "js",
       );
@@ -1043,9 +1052,7 @@ ${jsFile.content}
       } else {
         const fileName = src.split("/").pop();
         appendConsoleMessage("warn", `WARNING: JS file not found: ${fileName}`);
-        return `<script src="${src}?file=${encodeURIComponent(
-          fileName,
-        )}"></script>`;
+        return match;
       }
     },
   );
