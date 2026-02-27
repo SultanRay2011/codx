@@ -23,6 +23,7 @@ const editorTextSizeInput = document.getElementById("editorTextSize");
 const textSizeValue = document.getElementById("textSizeValue");
 const editorFontFamilySelect = document.getElementById("editorFontFamily");
 const settingsPreview = document.getElementById("settingsPreview");
+const settingsPreviewCode = document.getElementById("settingsPreviewCode");
 const newFileBtn = document.getElementById("newFileBtn");
 const fileList = document.getElementById("fileList");
 const collabBtn = document.getElementById("collabBtn");
@@ -38,6 +39,10 @@ const errorMsgEl = document.getElementById("errorMsg");
 function getModalDoneBtn() {
   return document.getElementById("modalDoneBtn");
 }
+
+const settingsPreviewSampleCode = `function helloWorld() {
+  console.log("Hello, World!");
+}`;
 
 // ADDED: Tag suggestion elements
 const suggestionPopup = document.getElementById("suggestionPopup");
@@ -878,9 +883,15 @@ function resetToDefaultSettings() {
 
 function updatePreviewBox() {
   settingsPreview.style.backgroundColor = editorBgColorInput.value;
-  settingsPreview.style.color = editorTextColorInput.value;
+  settingsPreview.style.setProperty(
+    "--settings-preview-text",
+    editorTextColorInput.value,
+  );
   settingsPreview.style.fontSize = editorTextSizeInput.value + "px";
   settingsPreview.style.fontFamily = editorFontFamilySelect.value;
+  settingsPreviewCode.style.fontSize = editorTextSizeInput.value + "px";
+  settingsPreviewCode.style.fontFamily = editorFontFamilySelect.value;
+  settingsPreviewCode.innerHTML = highlightJs(settingsPreviewSampleCode);
 }
 
 function applySettingsToEditors() {
