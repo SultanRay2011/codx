@@ -1,4 +1,4 @@
-// PART 1 - INITIALIZATION & CONSTANTS
+﻿// PART 1 - INITIALIZATION & CONSTANTS
 const iframe = document.getElementById("output");
 const autoRunCheckbox = document.getElementById("autoRun");
 const showConsoleCheckbox = document.getElementById("showConsole");
@@ -68,167 +68,167 @@ const htmlTagsData = {
   structure: [
     {
       tag: "html",
-      icon: "🌐",
+      icon: "ðŸŒ",
       desc: "Root element of HTML document",
       attrs: ["lang"],
     },
-    { tag: "head", icon: "📋", desc: "Container for metadata", attrs: [] },
-    { tag: "body", icon: "📄", desc: "Main content container", attrs: [] },
+    { tag: "head", icon: "ðŸ“‹", desc: "Container for metadata", attrs: [] },
+    { tag: "body", icon: "ðŸ“„", desc: "Main content container", attrs: [] },
     {
       tag: "header",
-      icon: "🎯",
+      icon: "ðŸŽ¯",
       desc: "Header section",
       attrs: ["id", "class"],
     },
     {
       tag: "footer",
-      icon: "📌",
+      icon: "ðŸ“Œ",
       desc: "Footer section",
       attrs: ["id", "class"],
     },
     {
       tag: "main",
-      icon: "📰",
+      icon: "ðŸ“°",
       desc: "Main content area",
       attrs: ["id", "class"],
     },
     {
       tag: "section",
-      icon: "📦",
+      icon: "ðŸ“¦",
       desc: "Generic section",
       attrs: ["id", "class"],
     },
     {
       tag: "article",
-      icon: "📝",
+      icon: "ðŸ“",
       desc: "Self-contained content",
       attrs: ["id", "class"],
     },
     {
       tag: "aside",
-      icon: "📎",
+      icon: "ðŸ“Ž",
       desc: "Sidebar content",
       attrs: ["id", "class"],
     },
     {
       tag: "nav",
-      icon: "🧭",
+      icon: "ðŸ§­",
       desc: "Navigation links",
       attrs: ["id", "class"],
     },
     {
       tag: "div",
-      icon: "⬜",
+      icon: "â¬œ",
       desc: "Generic container",
       attrs: ["id", "class"],
     },
   ],
   text: [
-    { tag: "h1", icon: "📰", desc: "Main heading", attrs: ["id", "class"] },
+    { tag: "h1", icon: "ðŸ“°", desc: "Main heading", attrs: ["id", "class"] },
     {
       tag: "h2",
-      icon: "📰",
+      icon: "ðŸ“°",
       desc: "Subheading level 2",
       attrs: ["id", "class"],
     },
     {
       tag: "h3",
-      icon: "📰",
+      icon: "ðŸ“°",
       desc: "Subheading level 3",
       attrs: ["id", "class"],
     },
     {
       tag: "h4",
-      icon: "📰",
+      icon: "ðŸ“°",
       desc: "Subheading level 4",
       attrs: ["id", "class"],
     },
     {
       tag: "h5",
-      icon: "📰",
+      icon: "ðŸ“°",
       desc: "Subheading level 5",
       attrs: ["id", "class"],
     },
     {
       tag: "h6",
-      icon: "📰",
+      icon: "ðŸ“°",
       desc: "Subheading level 6",
       attrs: ["id", "class"],
     },
-    { tag: "p", icon: "¶", desc: "Paragraph", attrs: ["id", "class"] },
+    { tag: "p", icon: "Â¶", desc: "Paragraph", attrs: ["id", "class"] },
     {
       tag: "span",
-      icon: "✏️",
+      icon: "âœï¸",
       desc: "Inline text container",
       attrs: ["id", "class"],
     },
-    { tag: "strong", icon: "💪", desc: "Strong importance (bold)", attrs: [] },
-    { tag: "em", icon: "✨", desc: "Emphasized text (italic)", attrs: [] },
+    { tag: "strong", icon: "ðŸ’ª", desc: "Strong importance (bold)", attrs: [] },
+    { tag: "em", icon: "âœ¨", desc: "Emphasized text (italic)", attrs: [] },
     { tag: "b", icon: "B", desc: "Bold text", attrs: [] },
     { tag: "i", icon: "I", desc: "Italic text", attrs: [] },
-    { tag: "u", icon: "U̲", desc: "Underlined text", attrs: [] },
-    { tag: "mark", icon: "🖍️", desc: "Highlighted text", attrs: [] },
-    { tag: "small", icon: "🔍", desc: "Smaller text", attrs: [] },
-    { tag: "code", icon: "💻", desc: "Inline code", attrs: [] },
-    { tag: "pre", icon: "📋", desc: "Preformatted text", attrs: [] },
-    { tag: "blockquote", icon: "💬", desc: "Block quotation", attrs: ["cite"] },
+    { tag: "u", icon: "UÌ²", desc: "Underlined text", attrs: [] },
+    { tag: "mark", icon: "ðŸ–ï¸", desc: "Highlighted text", attrs: [] },
+    { tag: "small", icon: "ðŸ”", desc: "Smaller text", attrs: [] },
+    { tag: "code", icon: "ðŸ’»", desc: "Inline code", attrs: [] },
+    { tag: "pre", icon: "ðŸ“‹", desc: "Preformatted text", attrs: [] },
+    { tag: "blockquote", icon: "ðŸ’¬", desc: "Block quotation", attrs: ["cite"] },
   ],
   lists: [
-    { tag: "ul", icon: "•", desc: "Unordered list", attrs: ["id", "class"] },
+    { tag: "ul", icon: "â€¢", desc: "Unordered list", attrs: ["id", "class"] },
     {
       tag: "ol",
       icon: "1.",
       desc: "Ordered list",
       attrs: ["id", "class", "type", "start"],
     },
-    { tag: "li", icon: "→", desc: "List item", attrs: ["value"] },
-    { tag: "dl", icon: "📖", desc: "Description list", attrs: [] },
-    { tag: "dt", icon: "📌", desc: "Description term", attrs: [] },
-    { tag: "dd", icon: "💬", desc: "Description details", attrs: [] },
+    { tag: "li", icon: "â†’", desc: "List item", attrs: ["value"] },
+    { tag: "dl", icon: "ðŸ“–", desc: "Description list", attrs: [] },
+    { tag: "dt", icon: "ðŸ“Œ", desc: "Description term", attrs: [] },
+    { tag: "dd", icon: "ðŸ’¬", desc: "Description details", attrs: [] },
   ],
   media: [
     {
       tag: "img",
-      icon: "🖼️",
+      icon: "ðŸ–¼ï¸",
       desc: "Image",
       badge: "self-closing",
       attrs: ["src", "alt", "width", "height"],
     },
     {
       tag: "video",
-      icon: "🎥",
+      icon: "ðŸŽ¥",
       desc: "Video player",
       attrs: ["src", "controls", "width", "height"],
     },
     {
       tag: "audio",
-      icon: "🔊",
+      icon: "ðŸ”Š",
       desc: "Audio player",
       attrs: ["src", "controls"],
     },
     {
       tag: "source",
-      icon: "📂",
+      icon: "ðŸ“‚",
       desc: "Media source",
       badge: "self-closing",
       attrs: ["src", "type"],
     },
-    { tag: "picture", icon: "🖼️", desc: "Responsive images", attrs: [] },
+    { tag: "picture", icon: "ðŸ–¼ï¸", desc: "Responsive images", attrs: [] },
     {
       tag: "canvas",
-      icon: "🎨",
+      icon: "ðŸŽ¨",
       desc: "Graphics canvas",
       attrs: ["id", "width", "height"],
     },
     {
       tag: "svg",
-      icon: "🎨",
+      icon: "ðŸŽ¨",
       desc: "Vector graphics",
       attrs: ["width", "height", "viewBox"],
     },
     {
       tag: "iframe",
-      icon: "🖥️",
+      icon: "ðŸ–¥ï¸",
       desc: "Embedded frame",
       attrs: ["src", "width", "height"],
     },
@@ -236,59 +236,59 @@ const htmlTagsData = {
   forms: [
     {
       tag: "form",
-      icon: "📝",
+      icon: "ðŸ“",
       desc: "Form container",
       attrs: ["action", "method"],
     },
     {
       tag: "input",
-      icon: "⌨️",
+      icon: "âŒ¨ï¸",
       desc: "Input field",
       badge: "self-closing",
       attrs: ["type", "name", "id", "placeholder", "value"],
     },
     {
       tag: "textarea",
-      icon: "📄",
+      icon: "ðŸ“„",
       desc: "Multi-line text input",
       attrs: ["name", "id", "rows", "cols"],
     },
     {
       tag: "button",
-      icon: "🔘",
+      icon: "ðŸ”˜",
       desc: "Clickable button",
       attrs: ["type", "id", "class"],
     },
-    { tag: "select", icon: "📋", desc: "Dropdown menu", attrs: ["name", "id"] },
+    { tag: "select", icon: "ðŸ“‹", desc: "Dropdown menu", attrs: ["name", "id"] },
     {
       tag: "option",
-      icon: "•",
+      icon: "â€¢",
       desc: "Dropdown option",
       attrs: ["value", "selected"],
     },
-    { tag: "label", icon: "🏷️", desc: "Input label", attrs: ["for"] },
-    { tag: "fieldset", icon: "📦", desc: "Group form elements", attrs: [] },
-    { tag: "legend", icon: "📌", desc: "Fieldset caption", attrs: [] },
+    { tag: "label", icon: "ðŸ·ï¸", desc: "Input label", attrs: ["for"] },
+    { tag: "fieldset", icon: "ðŸ“¦", desc: "Group form elements", attrs: [] },
+    { tag: "legend", icon: "ðŸ“Œ", desc: "Fieldset caption", attrs: [] },
   ],
   table: [
     {
       tag: "table",
-      icon: "📊",
+      icon: "ðŸ“Š",
       desc: "Table container",
       attrs: ["id", "class"],
     },
-    { tag: "thead", icon: "📋", desc: "Table header group", attrs: [] },
-    { tag: "tbody", icon: "📄", desc: "Table body group", attrs: [] },
-    { tag: "tfoot", icon: "📌", desc: "Table footer group", attrs: [] },
-    { tag: "tr", icon: "→", desc: "Table row", attrs: [] },
-    { tag: "th", icon: "📌", desc: "Header cell", attrs: ["scope"] },
-    { tag: "td", icon: "⬜", desc: "Data cell", attrs: ["colspan", "rowspan"] },
+    { tag: "thead", icon: "ðŸ“‹", desc: "Table header group", attrs: [] },
+    { tag: "tbody", icon: "ðŸ“„", desc: "Table body group", attrs: [] },
+    { tag: "tfoot", icon: "ðŸ“Œ", desc: "Table footer group", attrs: [] },
+    { tag: "tr", icon: "â†’", desc: "Table row", attrs: [] },
+    { tag: "th", icon: "ðŸ“Œ", desc: "Header cell", attrs: ["scope"] },
+    { tag: "td", icon: "â¬œ", desc: "Data cell", attrs: ["colspan", "rowspan"] },
   ],
   links: [
-    { tag: "a", icon: "🔗", desc: "Hyperlink", attrs: ["href", "target"] },
+    { tag: "a", icon: "ðŸ”—", desc: "Hyperlink", attrs: ["href", "target"] },
     {
       tag: "link",
-      icon: "📎",
+      icon: "ðŸ“Ž",
       desc: "External resource",
       badge: "self-closing",
       attrs: ["rel", "href"],
@@ -297,16 +297,16 @@ const htmlTagsData = {
   meta: [
     {
       tag: "meta",
-      icon: "ℹ️",
+      icon: "â„¹ï¸",
       desc: "Metadata",
       badge: "self-closing",
       attrs: ["charset", "name", "content"],
     },
-    { tag: "title", icon: "📰", desc: "Page title", attrs: [] },
-    { tag: "style", icon: "🎨", desc: "CSS styles", attrs: [] },
+    { tag: "title", icon: "ðŸ“°", desc: "Page title", attrs: [] },
+    { tag: "style", icon: "ðŸŽ¨", desc: "CSS styles", attrs: [] },
     {
       tag: "script",
-      icon: "⚙️",
+      icon: "âš™ï¸",
       desc: "JavaScript code",
       attrs: ["src", "type"],
     },
@@ -456,6 +456,11 @@ let autoRunTimeout;
 let sessionData = {};
 let typingTimer;
 let myInfo = {};
+let collabSocket = null;
+let collabParticipants = [];
+let activeSessionId = null;
+let isApplyingRemoteState = false;
+let currentTypingIndicator = null;
 let projectFiles = [
   {
     name: "index.html",
@@ -691,6 +696,17 @@ function renderFileList() {
 
     const nameSpan = document.createElement("span");
     nameSpan.textContent = file.name;
+    if (
+      currentTypingIndicator &&
+      currentTypingIndicator.name !== myInfo.name &&
+      currentTypingIndicator.fileName === file.name
+    ) {
+      const typingSpan = document.createElement("span");
+      typingSpan.className = "file-typing-indicator";
+      typingSpan.textContent = ` - ${currentTypingIndicator.name} is typing...`;
+      typingSpan.style.color = currentTypingIndicator.theme || "var(--accent-color)";
+      nameSpan.appendChild(typingSpan);
+    }
 
     const renameBtn = document.createElement("button");
     renameBtn.className = "rename-file";
@@ -1696,7 +1712,7 @@ function showSuggestions(editor, suggestions, prefix, mode) {
       <span class="suggestion-icon">${escapeHtml(tagMeta.icon || "</>")}</span>
       <span class="suggestion-content">
         <div class="suggestion-tag">&lt;${highlightedTag}&gt;${badge}</div>
-        <div class="suggestion-desc">${escapeHtml(tagMeta.desc || "HTML element")}${attrs ? ` • ${escapeHtml(attrs)}` : ""}</div>
+        <div class="suggestion-desc">${escapeHtml(tagMeta.desc || "HTML element")}${attrs ? ` â€¢ ${escapeHtml(attrs)}` : ""}</div>
       </span>
     `;
     suggestionItem.dataset.tag = tagText;
@@ -1950,7 +1966,7 @@ function handleAutoCloseAndIndent(e, editor) {
       if (textBefore.endsWith("{") || textBefore.endsWith("(")) {
         // Case 1: Cursor immediately after { or (
 
-        // --- 💡 MODIFICATION START ---
+        // --- ðŸ’¡ MODIFICATION START ---
         const autoClosingBracket = textBefore.endsWith("{") ? "}" : ")";
 
         // Check if the corresponding closing bracket already exists right after the cursor
@@ -1975,7 +1991,7 @@ function handleAutoCloseAndIndent(e, editor) {
             textAfter;
           newCursorPos = pos + 1 + nextIndent.length; // Pos + \n + newIndent
         }
-        // --- 💡 MODIFICATION END ---
+        // --- ðŸ’¡ MODIFICATION END ---
       } else if (isTriggered) {
         // Case 2: Cursor inside {} or () where Enter was pressed (e.g., body{ | } )
         // Insert: \n  \n
@@ -2361,73 +2377,43 @@ function updateFullscreenButtonState() {
   }
 }
 
-// PART 12 - COLLABORATION FEATURES (NUMERIC-ONLY SESSION IDs)
+// PART 12 - COLLABORATION FEATURES (SOCKET.IO BACKEND)
 closeModalBtn.addEventListener("click", closeModal);
 collabBtn.addEventListener("click", startCollaboration);
 window.addEventListener("load", checkForSession);
-window.addEventListener("storage", handleStorageChange);
 
-// ---- 1. Generate a numeric-only unique ID ----
 function generateNumericSessionId() {
-  const ts = Date.now(); // 13-digit timestamp
-  const rnd = Math.floor(Math.random() * 1000); // 0-999
-  return `${ts}${rnd}`; // e.g. 17234567890123
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const part = () =>
+    Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
+      "",
+    );
+  return `${part()}-${part()}-${part()}-${part()}`;
 }
 
-// ---- 2. Typing indicator (unchanged) ----
-function announceTyping(activeEditorId) {
-  if (!myInfo.name) return;
-  clearTimeout(typingTimer);
-  const sessionId = safeLocalStorage("get", "activeSessionId");
-  if (!sessionId) return;
-
-  let session;
-  try {
-    const s = safeLocalStorage("get", sessionId);
-    session = s ? JSON.parse(s) : null;
-  } catch {
-    return;
-  }
-
-  if (session) {
-    session.typingIndicator = {
-      name: myInfo.name,
-      theme: myInfo.theme,
-      editor: activeEditorId,
-    };
-    safeLocalStorage("set", sessionId, JSON.stringify(session));
-  }
-
-  typingTimer = setTimeout(() => {
-    try {
-      const s = safeLocalStorage("get", sessionId);
-      if (s) {
-        const sess = JSON.parse(s);
-        sess.typingIndicator = null;
-        safeLocalStorage("set", sessionId, JSON.stringify(sess));
-      }
-    } catch {}
-  }, 1500);
+function isValidSessionId(id) {
+  return /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/.test(id);
 }
 
-function updateTypingIndicatorUI(ind) {
-  const ed = document.getElementById("activeEditor");
-  ed.style.boxShadow = "none";
-  if (
-    ind &&
-    ind.name !== myInfo.name &&
-    ind.editor === activeFile.type + "Code"
-  ) {
-    ed.style.boxShadow = `0 0 0 3px ${ind.theme} inset`;
-    typingIndicatorEl.textContent = `${ind.name} is typing...`;
-    typingIndicatorEl.style.backgroundColor = ind.theme;
-    typingIndicatorEl.style.display = "block";
-  } else {
-    typingIndicatorEl.style.display = "none";
-  }
+function getBaseEditorUrl() {
+  return `${window.location.origin}/codx-editor.html`;
 }
 
-// ---- 3. Username validation (unchanged) ----
+function buildSessionUrl(sessionId) {
+  return `${getBaseEditorUrl()}/${sessionId}`;
+}
+
+function extractSessionIdFromUrl() {
+  const pathMatch = window.location.pathname.match(
+    /\/codx-editor\.html\/([A-Za-z0-9-]+)$/,
+  );
+  if (pathMatch) return pathMatch[1].toUpperCase();
+
+  const hash = window.location.hash.substring(1).trim().toUpperCase();
+  if (isValidSessionId(hash)) return hash;
+  return null;
+}
+
 function validateUsername(u) {
   if (!u || !u.trim()) return { valid: false, error: "Enter a name." };
   if (u.length < 2) return { valid: false, error: "At least 2 characters." };
@@ -2437,23 +2423,142 @@ function validateUsername(u) {
   return { valid: true };
 }
 
-// ---- 4. Start a new session (host) ----
-function startCollaboration() {
-  const sid = safeLocalStorage("get", "activeSessionId");
-  const data = sid ? safeLocalStorage("get", sid) : null;
-
-  // Already in a session → show details
-  if (data && myInfo.name) {
-    showSessionDetails(sid);
-    return;
+function ensureCollabSocket() {
+  if (collabSocket && collabSocket.connected) return true;
+  if (typeof io !== "function") {
+    showNotification("Collab backend unavailable. Start server first.", "error");
+    return false;
   }
 
-  // Fresh session
+  collabSocket = io();
+  collabSocket.on("connect_error", () => {
+    showNotification("Unable to connect to collaboration server", "error");
+  });
+
+  collabSocket.on("collab:state", (payload) => {
+    if (!payload || !payload.files) return;
+    applyRemoteSessionState(payload.files, payload.activeFileName);
+  });
+
+  collabSocket.on("collab:typing", (indicator) => {
+    updateTypingIndicatorUI(indicator);
+  });
+
+  collabSocket.on("collab:participants", (participants) => {
+    collabParticipants = Array.isArray(participants) ? participants : [];
+  });
+
+  return true;
+}
+
+function applyRemoteSessionState(files, activeFileName) {
+  if (!Array.isArray(files) || !files.length) return;
+  isApplyingRemoteState = true;
+  try {
+    const currentActiveName = activeFile ? activeFile.name : null;
+    projectFiles = files;
+    const nextActive =
+      projectFiles.find((f) => f.name === currentActiveName) ||
+      projectFiles.find((f) => f.active) ||
+      projectFiles[0];
+    activeFile = nextActive;
+    projectFiles.forEach((f) => (f.active = f.name === nextActive.name));
+
+    const ed = document.getElementById("activeEditor");
+    const currentPos = ed.selectionStart;
+    ed.value = activeFile.content;
+    ed.selectionStart = ed.selectionEnd = Math.min(currentPos, ed.value.length);
+    updateLineNumbers(ed);
+    renderFileList();
+    if (autoRunCheckbox.checked) updatePreview();
+  } finally {
+    isApplyingRemoteState = false;
+  }
+}
+
+function emitSessionUpdate() {
+  if (!collabSocket || !activeSessionId || !myInfo.name) return;
+  collabSocket.emit("collab:update", {
+    sessionId: activeSessionId,
+    files: projectFiles,
+    activeFileName: activeFile ? activeFile.name : null,
+    user: myInfo,
+  });
+}
+
+function announceTyping(activeEditorId) {
+  if (!collabSocket || !activeSessionId || !myInfo.name) return;
+  clearTimeout(typingTimer);
+  collabSocket.emit("collab:typing", {
+    sessionId: activeSessionId,
+    indicator: {
+      name: myInfo.name,
+      theme: myInfo.theme,
+      editor: activeEditorId,
+      fileName: activeFile ? activeFile.name : null,
+    },
+  });
+
+  typingTimer = setTimeout(() => {
+    if (!collabSocket || !activeSessionId) return;
+    collabSocket.emit("collab:typing", {
+      sessionId: activeSessionId,
+      indicator: null,
+    });
+  }, 1500);
+}
+
+function updateTypingIndicatorUI(ind) {
+  currentTypingIndicator = ind || null;
+  const ed = document.getElementById("activeEditor");
+  ed.style.boxShadow = "none";
+  if (
+    ind &&
+    ind.name !== myInfo.name &&
+    ind.fileName === activeFile.name
+  ) {
+    ed.style.boxShadow = `0 0 0 3px ${ind.theme} inset`;
+    typingIndicatorEl.textContent = `${ind.name} is typing...`;
+    typingIndicatorEl.style.backgroundColor = ind.theme;
+    typingIndicatorEl.style.display = "block";
+  } else {
+    typingIndicatorEl.style.display = "none";
+  }
+  renderFileList();
+}
+
+function setModalActions(html) {
+  const actions = document.getElementById("modalActions");
+  if (!actions) return;
+  actions.innerHTML = html;
+  actions.style.display = "flex";
+  actions.style.gap = "10px";
+  actions.style.alignItems = "center";
+  actions.style.justifyContent =
+    actions.children.length > 1 ? "space-between" : "center";
+
+  if (actions.children.length > 1) {
+    Array.from(actions.children).forEach((btn) => {
+      btn.style.flex = "1";
+    });
+  }
+}
+
+function setCollabCloseButtonVisible(visible) {
+  if (!closeModalBtn) return;
+  closeModalBtn.style.display = visible ? "block" : "none";
+}
+
+function renderHostNameStep(prefill = "") {
+  setCollabCloseButtonVisible(true);
   modalTitle.innerHTML = "<strong>START COLLAB</strong>";
   modalBody.innerHTML =
-    '<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20">';
+    `<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20" value="${escapeHtml(prefill)}">`;
   collabModal.style.display = "flex";
   errorMsgEl.style.display = "none";
+  setModalActions(
+    `<button id="modalDoneBtn" class="run-button"><strong>NEXT</strong></button>`,
+  );
 
   const doneBtn = getModalDoneBtn();
   if (!doneBtn) return;
@@ -2467,14 +2572,77 @@ function startCollaboration() {
     }
     errorMsgEl.style.display = "none";
     sessionData.host = name;
-    promptForTheme();
+    promptForTheme(name);
   };
 }
 
-function promptForTheme() {
-  modalTitle.innerHTML = "<strong>PICK COLOR</strong>";
-  modalBody.innerHTML = `<p><strong>Your color:</strong></p><input type="color" id="userThemeInput" value="#4CAF50">`;
+function renderJoinNameStep(sid, prefill = "") {
+  setCollabCloseButtonVisible(false);
+  modalTitle.innerHTML = "<strong>JOIN SESSION</strong>";
+  modalBody.innerHTML =
+    `<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20" value="${escapeHtml(prefill)}">`;
+  collabModal.style.display = "flex";
   errorMsgEl.style.display = "none";
+  setModalActions(
+    `<button id="modalDoneBtn" class="run-button"><strong>NEXT</strong></button>`,
+  );
+
+  const doneBtn = getModalDoneBtn();
+  if (!doneBtn) return;
+  doneBtn.onclick = () => {
+    const name = document.getElementById("userNameInput").value.trim();
+    const v = validateUsername(name);
+    if (!v.valid) {
+      errorMsgEl.textContent = v.error;
+      errorMsgEl.style.display = "block";
+      return;
+    }
+    errorMsgEl.style.display = "none";
+    promptJoinTheme(name, sid);
+  };
+}
+
+function startCollaboration() {
+  if (!ensureCollabSocket()) return;
+  if (activeSessionId && myInfo.name) {
+    showSessionDetails(activeSessionId);
+    return;
+  }
+  renderHostNameStep();
+}
+
+function promptForTheme(hostName) {
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>PICK COLOR</strong>";
+  modalBody.innerHTML = `
+    <button
+      id="modalBackBtn"
+      aria-label="Go back"
+      style="
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 8px;
+        width: 34px;
+        height: 30px;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+      "
+    >&#8592;</button>
+    <p style="margin-top: 8px;"><strong>Your color:</strong></p>
+    <input type="color" id="userThemeInput" value="#4CAF50">
+  `;
+  errorMsgEl.style.display = "none";
+  setModalActions(`<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`);
+
+  const backBtn = document.getElementById("modalBackBtn");
+  if (backBtn) {
+    backBtn.onclick = () => renderHostNameStep(hostName || sessionData.host || "");
+  }
 
   const doneBtn = getModalDoneBtn();
   if (!doneBtn) return;
@@ -2485,52 +2653,62 @@ function promptForTheme() {
 }
 
 function createNumericSession() {
-  const sid = generateNumericSessionId(); // numeric only
-  const link = window.location.href.split("#")[0] + "#" + sid;
-
-  const init = {
-    id: sid,
-    files: projectFiles,
-    participants: [{ name: sessionData.host, theme: sessionData.theme }],
-  };
-
-  if (!safeLocalStorage("set", sid, JSON.stringify(init))) {
-    showNotification("Storage full – cannot create session", "error");
+  if (!ensureCollabSocket()) return;
+  const sid = generateNumericSessionId().toUpperCase();
+  if (!isValidSessionId(sid)) {
+    showNotification("Failed to generate valid session id", "error");
     return;
   }
+  const link = buildSessionUrl(sid);
 
-  safeLocalStorage("set", "activeSessionId", sid);
-  myInfo = { name: sessionData.host, theme: sessionData.theme };
+  collabSocket.emit(
+    "collab:create",
+    {
+      sessionId: sid,
+      name: sessionData.host,
+      theme: sessionData.theme,
+      files: projectFiles,
+      activeFileName: activeFile ? activeFile.name : null,
+    },
+    (res) => {
+      if (!res || !res.ok) {
+        showNotification((res && res.error) || "Failed to create session", "error");
+        return;
+      }
 
-  modalTitle.innerHTML = "<strong>SHARE LINK</strong>";
-  modalBody.innerHTML = `<input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">`;
-  document.getElementById("modalActions").innerHTML = `
-    <button class="run-button" onclick="copyLink()"><strong>COPY</strong></button>
-    <button class="run-button" onclick="closeModal()"><strong>DONE</strong></button>`;
-  startSyncing();
+      activeSessionId = sid;
+      myInfo = { name: sessionData.host, theme: sessionData.theme };
+      collabParticipants = res.participants || [myInfo];
+      window.history.replaceState({}, "", `/codx-editor.html/${sid}`);
+      setCollabCloseButtonVisible(true);
+
+      modalTitle.innerHTML = "<strong>SHARE LINK</strong>";
+      modalBody.innerHTML = `<input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">`;
+      document.getElementById("modalActions").innerHTML = `
+        <button class="run-button" onclick="copyLink()"><strong>COPY</strong></button>
+        <button class="run-button" onclick="closeModal()"><strong>DONE</strong></button>`;
+      startSyncing();
+    },
+  );
 }
 
-// ---- 5. Show existing session details (for host or participants) ----
 function showSessionDetails(sid) {
-  const data = safeLocalStorage("get", sid);
-  if (!data) return;
-
-  const sess = JSON.parse(data);
-  const link = window.location.href.split("#")[0] + "#" + sid;
+  setCollabCloseButtonVisible(true);
+  const link = buildSessionUrl(sid);
+  const listItems = collabParticipants
+    .map(
+      (p) =>
+        `<li style="padding:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${p.name}</li>`,
+    )
+    .join("");
 
   modalTitle.innerHTML = "<strong>SESSION INFO</strong>";
-  let list =
-    '<h4>Participants:</h4><ul style="list-style:none;padding:0;text-align:left;">';
-  sess.participants.forEach((p) => {
-    list += `<li style="padding:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${p.name}</li>`;
-  });
-  list += "</ul>";
-
   modalBody.innerHTML = `
     <p><strong>Share:</strong></p>
     <input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">
     <hr style="border-color:var(--border-color);margin:15px 0;">
-    ${list}
+    <h4>Participants:</h4>
+    <ul style="list-style:none;padding:0;text-align:left;">${listItems}</ul>
   `;
 
   document.getElementById("modalActions").innerHTML = `
@@ -2539,7 +2717,6 @@ function showSessionDetails(sid) {
   collabModal.style.display = "flex";
 }
 
-// ---- 6. Copy link helper ----
 function copyLink() {
   const el = document.getElementById("collabLinkInput");
   el.select();
@@ -2554,168 +2731,94 @@ function copyLink() {
   }
 }
 
-// ---- 7. Close modal (reset button) ----
 function closeModal() {
   collabModal.style.display = "none";
+  setCollabCloseButtonVisible(true);
   document.getElementById("modalActions").innerHTML =
     `<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`;
 }
 
-// ---- 8. Check URL hash on load (join or error) ----
 function checkForSession() {
-  const hash = window.location.hash.substring(1);
-  if (!/^\d+$/.test(hash)) return; // only digits allowed
+  const hash = extractSessionIdFromUrl();
+  if (!hash || !isValidSessionId(hash)) return;
 
-  const stored = safeLocalStorage("get", hash);
-  if (!stored) {
-    // ---- INVALID / EXPIRED LINK ----
-    modalTitle.innerHTML = "<strong>SESSION NOT FOUND</strong>";
-    modalBody.innerHTML = `
-      <p style="color:#ff5555;"><strong>This link is invalid or the session has expired.</strong></p>
-      <p>Ask the host for a new link.</p>`;
-    document.getElementById("modalActions").innerHTML = `
-      <button class="run-button" onclick="closeModal()" style="background:#ff5555;"><strong>CLOSE</strong></button>`;
-    collabModal.style.display = "flex";
-    return;
-  }
-
-  safeLocalStorage("set", "activeSessionId", hash);
-  modalTitle.innerHTML = "<strong>JOIN SESSION</strong>";
-  modalBody.innerHTML =
-    '<p><strong>Your name:</strong></p><input type="text" id="userNameInput" placeholder="Name" style="width:80%;padding:8px;" maxlength="20">';
-  collabModal.style.display = "flex";
-  errorMsgEl.style.display = "none";
-
-  const doneBtn = getModalDoneBtn();
-  if (!doneBtn) return;
-  doneBtn.onclick = () => {
-    const name = document.getElementById("userNameInput").value.trim();
-    const v = validateUsername(name);
-    if (!v.valid) {
-      errorMsgEl.textContent = v.error;
-      errorMsgEl.style.display = "block";
-      return;
-    }
-
-    const sess = JSON.parse(stored);
-    const taken = sess.participants.some(
-      (p) => p.name.toLowerCase() === name.toLowerCase(),
-    );
-    if (taken) {
-      errorMsgEl.textContent = "Name already taken.";
-      errorMsgEl.style.display = "block";
-      return;
-    }
-
-    errorMsgEl.style.display = "none";
-    promptJoinTheme(name, hash);
-  };
+  if (!ensureCollabSocket()) return;
+  renderJoinNameStep(hash);
 }
 
-// ---- 9. Choose color & join ----
 function promptJoinTheme(name, sid) {
+  setCollabCloseButtonVisible(false);
   modalTitle.innerHTML = "<strong>PICK COLOR</strong>";
-  modalBody.innerHTML = `<p><strong>Your color:</strong></p><input type="color" id="userThemeInput" value="#2196F3">`;
+  modalBody.innerHTML = `
+    <button
+      id="modalBackBtn"
+      aria-label="Go back"
+      style="
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 8px;
+        width: 34px;
+        height: 30px;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+      "
+    >&#8592;</button>
+    <p style="margin-top: 8px;"><strong>Your color:</strong></p>
+    <input type="color" id="userThemeInput" value="#2196F3">
+  `;
   errorMsgEl.style.display = "none";
+  setModalActions(`<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`);
+
+  const backBtn = document.getElementById("modalBackBtn");
+  if (backBtn) {
+    backBtn.onclick = () => renderJoinNameStep(sid, name);
+  }
 
   const doneBtn = getModalDoneBtn();
   if (!doneBtn) return;
   doneBtn.onclick = () => {
     const theme = document.getElementById("userThemeInput").value;
-    const data = safeLocalStorage("get", sid);
-    if (!data) {
-      showNotification("Session gone.", "error");
-      closeModal();
-      return;
-    }
 
-    myInfo = { name, theme };
-    const sess = JSON.parse(data);
-    sess.participants.push({ name, theme });
-    projectFiles = sess.files;
-    activeFile = projectFiles.find((f) => f.active) || projectFiles[0];
-    projectFiles.forEach((f) => (f.active = f === activeFile));
+    collabSocket.emit(
+      "collab:join",
+      { sessionId: sid, name, theme },
+      (res) => {
+        if (!res || !res.ok) {
+          errorMsgEl.textContent = (res && res.error) || "Cannot join session.";
+          errorMsgEl.style.display = "block";
+          return;
+        }
 
-    const ed = document.getElementById("activeEditor");
-    ed.value = activeFile.content;
-    updateLineNumbers(ed);
-    renderFileList();
-    updatePreview();
-    safeLocalStorage("set", sid, JSON.stringify(sess));
-
-    showNotification(`Welcome, ${name}!`, "success");
-    startSyncing();
-    closeModal();
+        activeSessionId = sid;
+        myInfo = { name, theme };
+        collabParticipants = res.participants || [];
+        applyRemoteSessionState(res.files, res.activeFileName);
+        showNotification(`Welcome, ${name}!`, "success");
+        startSyncing();
+        closeModal();
+      },
+    );
   };
 }
 
-// ---- 10. Sync helpers (unchanged) ----
 function handleCodeChange() {
-  const sid = safeLocalStorage("get", "activeSessionId");
-  if (!sid) return;
-  const s = safeLocalStorage("get", sid);
-  if (!s) return;
-  try {
-    const sess = JSON.parse(s);
-    sess.files = projectFiles;
-    safeLocalStorage("set", sid, JSON.stringify(sess));
-  } catch (e) {
-    console.error("sync err", e);
-  }
+  if (isApplyingRemoteState) return;
+  emitSessionUpdate();
 }
 
 function syncProjectWithSession() {
-  const sid = safeLocalStorage("get", "activeSessionId");
-  if (!sid) return;
-  const s = safeLocalStorage("get", sid);
-  if (!s) return;
-  try {
-    const sess = JSON.parse(s);
-    sess.files = projectFiles;
-    safeLocalStorage("set", sid, JSON.stringify(sess));
-  } catch (e) {
-    console.error("sync err", e);
-  }
+  if (isApplyingRemoteState) return;
+  emitSessionUpdate();
 }
 
 function startSyncing() {
-  // The 'input' listener in initializeEditor already calls handleCodeChange
-  // and announceTyping, so no need to add duplicate listeners.
+  emitSessionUpdate();
 }
-
-function handleStorageChange(e) {
-  const sid = safeLocalStorage("get", "activeSessionId");
-
-  // Only sync if we're in a collaboration session
-  if (!sid || !myInfo.name) {
-    // Not in collab mode, don't sync between tabs
-    return;
-  }
-
-  if (e.key === sid && e.newValue) {
-    try {
-      const nv = JSON.parse(e.newValue);
-      if (JSON.stringify(projectFiles) !== JSON.stringify(nv.files)) {
-        projectFiles = nv.files;
-        activeFile = projectFiles.find((f) => f.active) || projectFiles[0];
-        projectFiles.forEach((f) => (f.active = f === activeFile));
-
-        const ed = document.getElementById("activeEditor");
-        const currentPos = ed.selectionStart;
-        ed.value = activeFile.content;
-        ed.selectionStart = ed.selectionEnd = currentPos;
-
-        updateLineNumbers(ed);
-        renderFileList();
-        if (autoRunCheckbox.checked) updatePreview();
-      }
-      updateTypingIndicatorUI(nv.typingIndicator);
-    } catch (er) {
-      console.error("storage sync err", er);
-    }
-  }
-}
-
 // PART 13 - MEDIA FILE HANDLER
 const addMediaBtn = document.getElementById("addMediaBtn");
 const mediaInput = document.createElement("input");
@@ -3044,7 +3147,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-code",
     title: "Code Editor",
     description:
-      "Write your code here! Features include:\n• Auto-closing tags (HTML)\n• Auto-closing brackets (CSS/JS)\n• Tag suggestions (type < in HTML)\n• Tab for 2-space indentation\n• Drag & drop files",
+      "Write your code here! Features include:\nâ€¢ Auto-closing tags (HTML)\nâ€¢ Auto-closing brackets (CSS/JS)\nâ€¢ Tag suggestions (type < in HTML)\nâ€¢ Tab for 2-space indentation\nâ€¢ Drag & drop files",
     position: "right",
   },
   {
@@ -3413,3 +3516,4 @@ console.log("Ctrl + Enter: Manually triggers an update of the preview pane.");
 console.log("Ctrl + N: Creates a new file in the project.");
 console.log("Ctrl + Shift + C: Opens the console panel.");
 console.log("CodX Editor loaded with file linking and tag suggestions!");
+

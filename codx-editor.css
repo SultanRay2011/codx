@@ -187,6 +187,12 @@ input:checked + .slider:before {
   font-weight: 500;
 }
 
+.file-typing-indicator {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .file-item:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);
