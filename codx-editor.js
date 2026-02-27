@@ -1069,8 +1069,9 @@ ${jsFile.content}
         return `<a${before}href="javascript:void(0)" onclick="window.location.href='data:text/html;charset=utf-8,${encodedHTML}'"${after}>`;
       }
 
-      // File doesn't exist - keep original
-      return match;
+      // File doesn't exist - route to preview-specific 404 page
+      const missingFile = encodeURIComponent(fileName);
+      return `<a${before}href="404-for-preview.html?file=${missingFile}"${after}>`;
     },
   );
 

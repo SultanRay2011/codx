@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Preview File Not Found | CodX Editor</title>
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/png" href="cx.png" />
+    <link rel="stylesheet" href="theme.css" />
+    <style>
+      :root {
+        --bg-primary: #ffffff;
+        --text-primary: #333333;
+        --text-secondary: #666666;
+        --accent-color: #4caf50;
+        --box-bg: #f5f5f5;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        width: 100%;
+        padding: 40px;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background-color: var(--box-bg);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .logo {
+        margin-bottom: 20px;
+      }
+
+      .logo img {
+        width: 70px;
+        height: 70px;
+      }
+
+      .error-code {
+        font-size: 6rem;
+        font-weight: 700;
+        color: var(--accent-color);
+        margin-bottom: 5px;
+        line-height: 1;
+      }
+
+      .error-message {
+        font-size: 1.6rem;
+        margin-bottom: 15px;
+        color: var(--text-primary);
+      }
+
+      .description {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin-bottom: 14px;
+        line-height: 1.6;
+      }
+
+      .missing-file {
+        margin-bottom: 30px;
+        font-family: "Consolas", "Courier New", monospace;
+        color: #b45309;
+        word-break: break-word;
+      }
+
+      .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .home-link,
+      .editor-link {
+        display: inline-block;
+        text-decoration: none;
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+        flex: 0 1 auto;
+      }
+
+      .editor-link {
+        background-color: var(--accent-color);
+        color: #ffffff;
+        border: 2px solid var(--accent-color);
+      }
+
+      .editor-link:hover {
+        background-color: #45a049;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .home-link {
+        background-color: transparent;
+        color: var(--text-primary);
+        border: 2px solid var(--text-secondary);
+      }
+
+      .home-link:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+      }
+
+      .editor-link:active,
+      .home-link:active {
+        transform: scale(0.98);
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 35px 30px;
+        }
+
+        .logo img {
+          width: 60px;
+          height: 60px;
+        }
+
+        .error-code {
+          font-size: 5rem;
+        }
+
+        .error-message {
+          font-size: 1.4rem;
+        }
+
+        .description {
+          font-size: 0.95rem;
+        }
+
+        .home-link,
+        .editor-link {
+          padding: 11px 22px;
+          font-size: 0.95rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 15px;
+        }
+
+        .container {
+          padding: 30px 20px;
+          border-radius: 10px;
+        }
+
+        .logo {
+          margin-bottom: 15px;
+        }
+
+        .logo img {
+          width: 50px;
+          height: 50px;
+        }
+
+        .error-code {
+          font-size: 4rem;
+          margin-bottom: 10px;
+        }
+
+        .error-message {
+          font-size: 1.2rem;
+          margin-bottom: 12px;
+        }
+
+        .description {
+          font-size: 0.9rem;
+          margin-bottom: 12px;
+          line-height: 1.5;
+        }
+
+        .missing-file {
+          margin-bottom: 25px;
+          font-size: 0.9rem;
+        }
+
+        .button-group {
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .home-link,
+        .editor-link {
+          width: 100%;
+          padding: 12px 20px;
+          font-size: 0.95rem;
+        }
+      }
+
+      @media (max-width: 360px) {
+        body {
+          padding: 12px;
+        }
+
+        .container {
+          padding: 25px 18px;
+        }
+
+        .logo img {
+          width: 45px;
+          height: 45px;
+        }
+
+        .error-code {
+          font-size: 3.5rem;
+        }
+
+        .error-message {
+          font-size: 1.1rem;
+        }
+
+        .description,
+        .missing-file {
+          font-size: 0.85rem;
+        }
+
+        .home-link,
+        .editor-link {
+          padding: 11px 18px;
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">
+        <img src="cx.png" alt="CodX Logo" />
+      </div>
+      <div class="error-code">404</div>
+      <h1 class="error-message">Preview File Not Found</h1>
+      <p class="description">
+        The file path used in your preview link is missing or incorrect. Check
+        the file name and try again.
+      </p>
+      <p class="missing-file" id="missingFile"></p>
+      <div class="button-group">
+        <a href="javascript:history.back()" class="editor-link">Go Back</a>
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const missingFile = params.get("file");
+      if (missingFile) {
+        document.getElementById(
+          "missingFile",
+        ).textContent = `Missing file: ${decodeURIComponent(missingFile)}`;
+      }
+    </script>
+  </body>
+</html>
