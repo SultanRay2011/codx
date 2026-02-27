@@ -18,6 +18,7 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="codx-editor.css" />
   </head>
   <body>
@@ -149,9 +150,11 @@
         <div class="code-container">
           <div class="line-numbers" id="lineNumbers">1</div>
           <div class="editor-wrapper">
+            <pre id="highlightLayer" aria-hidden="true"></pre>
             <textarea
               id="activeEditor"
               class="active"
+              wrap="off"
               aria-label="Code editor"
               autocapitalize="none"
               autocomplete="off"
@@ -679,7 +682,7 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.85);
+        background-color: transparent;
         overflow: hidden;
       "
     >
@@ -690,7 +693,7 @@
           position: absolute;
           border: 3px solid var(--accent-color);
           border-radius: 8px;
-          box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+          box-shadow: none;
           pointer-events: none;
           transition: all 0.3s ease;
           z-index: 2001;

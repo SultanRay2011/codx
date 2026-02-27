@@ -1,4 +1,4 @@
-// PART 1: INITIALIZATION & CONSTANTS
+// PART 1 - INITIALIZATION & CONSTANTS
 const iframe = document.getElementById("output");
 const autoRunCheckbox = document.getElementById("autoRun");
 const showConsoleCheckbox = document.getElementById("showConsole");
@@ -8,6 +8,7 @@ const consoleOutput = document.getElementById("consoleOutput");
 const divider = document.querySelector(".divider");
 const editorsPanel = document.querySelector(".editors");
 const lineNumbers = document.getElementById("lineNumbers");
+const highlightLayer = document.getElementById("highlightLayer");
 const editorContainer = document.querySelector(".editor-container");
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsModal = document.getElementById("settingsModal");
@@ -28,12 +29,15 @@ const collabBtn = document.getElementById("collabBtn");
 const collabModal = document.getElementById("collabModal");
 const modalTitle = document.getElementById("modalTitle");
 const modalBody = document.getElementById("modalBody");
-const modalDoneBtn = document.getElementById("modalDoneBtn");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const typingIndicatorEl = document.getElementById("typingIndicator");
 const previewFullscreenBtn = document.getElementById("previewFullscreenBtn");
 const previewIframe = document.getElementById("output");
 const errorMsgEl = document.getElementById("errorMsg");
+
+function getModalDoneBtn() {
+  return document.getElementById("modalDoneBtn");
+}
 
 // ADDED: Tag suggestion elements
 const suggestionPopup = document.getElementById("suggestionPopup");
@@ -425,6 +429,25 @@ const htmlTags = [
 ];
 // END: Tag suggestion elements
 
+const htmlTagMetaMap = new Map();
+Object.entries(htmlTagsData).forEach(([category, tags]) => {
+  tags.forEach((item) => {
+    htmlTagMetaMap.set(item.tag, { ...item, category });
+  });
+});
+htmlTags.forEach((tag) => {
+  if (!htmlTagMetaMap.has(tag)) {
+    htmlTagMetaMap.set(tag, {
+      tag,
+      icon: "</>",
+      desc: "HTML element",
+      attrs: [],
+      category: "other",
+    });
+  }
+});
+const tagSuggestionPool = Array.from(htmlTagMetaMap.values());
+
 let hasUnsavedChanges = false;
 let autoRunTimeout;
 let sessionData = {};
@@ -439,11 +462,42 @@ let projectFiles = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodX Editor</title>
+    <title>CodX Starter</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Welcome to CodX Editor</h1>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">CodX Editor Starter</p>
+        <h1>Build and preview web apps instantly</h1>
+        <p class="lead">
+          Write HTML, CSS, and JavaScript in separate files and see updates live in the preview panel.
+        </p>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>What you can do</h2>
+          <ul>
+            <li>Create and switch between multiple files</li>
+            <li>Use Auto-Run for instant preview updates</li>
+            <li>Debug quickly with the built-in console</li>
+            <li>Import/Export projects as ZIP files</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>Controls</h2>
+          <ul>
+            <li><kbd>Ctrl</kbd> + <kbd>S</kbd> Save current file</li>
+            <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Run preview manually</li>
+            <li><kbd>Ctrl</kbd> + <kbd>N</kbd> Create a new file</li>
+            <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+
     <script src="script.js"></script>
 </body>
 </html>`,
@@ -452,10 +506,110 @@ let projectFiles = [
   {
     name: "style.css",
     type: "css",
-    content: `h1 {
-    color: rgb(2, 255, 116);
-    text-align: center;
-    font-family: Arial, sans-serif;
+    content: `:root {
+  --bg: #0b1220;
+  --panel: #121b2d;
+  --panel-2: #16233a;
+  --text: #eaf1ff;
+  --muted: #98a8c8;
+  --accent: #3ddc97;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 85% -10%, rgba(61, 220, 151, 0.2), transparent 45%),
+    radial-gradient(circle at 10% 100%, rgba(61, 153, 220, 0.14), transparent 40%),
+    var(--bg);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.shell {
+  width: min(920px, 100%);
+  background: rgba(11, 18, 32, 0.72);
+  border: 1px solid rgba(152, 168, 200, 0.25);
+  border-radius: 16px;
+  padding: 28px;
+  backdrop-filter: blur(8px);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+}
+
+.lead {
+  margin: 12px 0 0;
+  color: var(--muted);
+  max-width: 65ch;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid rgba(152, 168, 200, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+li {
+  margin: 8px 0;
+  color: var(--muted);
+}
+
+kbd {
+  background: #0a1020;
+  border: 1px solid rgba(152, 168, 200, 0.35);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 2px 6px;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 20px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }`,
     active: false,
   },
@@ -475,7 +629,7 @@ const defaultSettings = {
   fontFamily: "monospace",
 };
 
-// PART 2: UTILITY FUNCTIONS
+// PART 2 - UTILITY FUNCTIONS
 function safeLocalStorage(method, key, value = null) {
   try {
     if (method === "get") return localStorage.getItem(key);
@@ -532,19 +686,39 @@ function renderFileList() {
   projectFiles.forEach((file) => {
     const fileItem = document.createElement("div");
     fileItem.className = `file-item ${file.active ? "active" : ""}`;
-    fileItem.innerHTML = `
-      <span>${file.name}</span>
-      <button class="delete-file" data-file="${file.name}" aria-label="Delete ${file.name}">
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    `;
+
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = file.name;
+
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "rename-file";
+    renameBtn.dataset.file = file.name;
+    renameBtn.setAttribute("aria-label", `Rename ${file.name}`);
+
+    const pencilIcon = document.createElement("i");
+    pencilIcon.className = "fa-solid fa-pen";
+    renameBtn.appendChild(pencilIcon);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-file";
+    deleteBtn.dataset.file = file.name;
+    deleteBtn.setAttribute("aria-label", `Delete ${file.name}`);
+
+    const trashIcon = document.createElement("i");
+    trashIcon.className = "fa-solid fa-trash";
+    deleteBtn.appendChild(trashIcon);
+
+    fileItem.appendChild(nameSpan);
+    fileItem.appendChild(renameBtn);
+    fileItem.appendChild(deleteBtn);
+
     fileItem.addEventListener("click", (e) => {
-      if (e.target.closest(".delete-file")) return;
+      if (e.target.closest(".delete-file") || e.target.closest(".rename-file"))
+        return;
       switchFile(file.name);
     });
-    fileItem
-      .querySelector(".delete-file")
-      .addEventListener("click", () => deleteFile(file.name));
+    renameBtn.addEventListener("click", () => renameFile(file.name));
+    deleteBtn.addEventListener("click", () => deleteFile(file.name));
     fileList.appendChild(fileItem);
   });
 }
@@ -559,7 +733,7 @@ function switchFile(fileName) {
       updateLineNumbers(editor);
       syncScroll(editor);
       // Hide suggestions when switching files
-      if (suggestionPopup) suggestionPopup.style.display = "none";
+      hideSuggestions();
     }
   });
   renderFileList();
@@ -615,6 +789,38 @@ function createNewFile() {
   showNotification(`File ${name} created`, "success");
 }
 
+function renameFile(oldName) {
+  const file = projectFiles.find((f) => f.name === oldName);
+  if (!file) return;
+
+  const nextName = prompt("Rename file:", oldName);
+  if (!nextName) return;
+  const name = nextName.trim();
+  if (!name || name === oldName) return;
+
+  const ext = name.split(".").pop().toLowerCase();
+  if (!["html", "css", "js"].includes(ext)) {
+    showNotification("File must be .html, .css, or .js", "error");
+    return;
+  }
+  if (projectFiles.some((f) => f.name === name && f.name !== oldName)) {
+    showNotification("File name already exists", "error");
+    return;
+  }
+
+  file.name = name;
+  file.type = ext;
+
+  if (activeFile && activeFile === file) {
+    hideSuggestions();
+  }
+
+  renderFileList();
+  syncProjectWithSession();
+  showNotification(`File renamed to ${name}`, "success");
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+}
+
 function deleteFile(fileName) {
   if (projectFiles.length <= 1) {
     showNotification("Cannot delete the last file", "error");
@@ -636,7 +842,7 @@ function deleteFile(fileName) {
   }
 }
 
-// PART 3: SETTINGS MANAGEMENT
+// PART 3 - SETTINGS MANAGEMENT
 function loadSettings() {
   const savedSettings = safeLocalStorage("get", "editorSettings");
   if (savedSettings) {
@@ -683,6 +889,8 @@ function applySettingsToEditors() {
   editor.style.fontSize = editorTextSizeInput.value + "px";
   editor.style.fontFamily = editorFontFamilySelect.value;
   lineNumbers.style.fontSize = editorTextSizeInput.value + "px";
+  syncSyntaxLayerStyle(editor);
+  renderSyntaxHighlight(editor);
 }
 
 editorBgColorInput.addEventListener("input", (e) => {
@@ -761,7 +969,7 @@ resetSettingsBtn.addEventListener("click", () => {
   }
 });
 
-// PART 4: THEME & UI CONTROLS
+// PART 4 - THEME & UI CONTROLS
 themeToggle.addEventListener("change", () => {
   document.body.classList.toggle("light", themeToggle.checked);
   safeLocalStorage("set", "theme", themeToggle.checked ? "light" : "dark");
@@ -777,7 +985,7 @@ showConsoleCheckbox.addEventListener("change", () => {
   consoleContainer.classList.toggle("show", showConsoleCheckbox.checked);
 });
 
-// PART 5: PREVIEW & LINE NUMBERS (FIXED CONSOLE OUTPUT WITH ACCURATE LINE NUMBERS)
+// PART 5 - PREVIEW & LINE NUMBERS
 function updatePreview() {
   const htmlFile = projectFiles.find((f) => f.type === "html");
   if (!htmlFile) {
@@ -1044,22 +1252,143 @@ function updateLineNumbers(textarea) {
   lineNumbers.textContent = Array.from({ length: lines }, (_, i) => i + 1).join(
     "\n",
   );
+  renderSyntaxHighlight(textarea);
 }
 
 // Sync scroll
 function syncScroll(textarea) {
   if (!textarea) return;
+  if (textarea.dataset.scrollSyncBound === "true") return;
   textarea.addEventListener("scroll", () => {
     lineNumbers.scrollTop = textarea.scrollTop;
+    if (highlightLayer) {
+      highlightLayer.scrollTop = textarea.scrollTop;
+      highlightLayer.scrollLeft = textarea.scrollLeft;
+    }
+    if (suggestionPopup.style.display === "block") {
+      positionSuggestionPopup(textarea);
+    }
   });
+  textarea.dataset.scrollSyncBound = "true";
 }
 
-// PART 6: EDITOR INITIALIZATION (MODIFIED)
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function wrapTokens(text, patterns) {
+  const ranges = [];
+  patterns.forEach((rule) => {
+    const regex = new RegExp(rule.regex.source, rule.regex.flags);
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const start = match.index;
+      const value = match[0];
+      const end = start + value.length;
+      if (end <= start) continue;
+      if (ranges.some((r) => !(end <= r.start || start >= r.end))) continue;
+      ranges.push({ start, end, className: rule.className });
+      if (!regex.global) break;
+    }
+  });
+
+  ranges.sort((a, b) => a.start - b.start);
+  let result = "";
+  let index = 0;
+  ranges.forEach((r) => {
+    if (index < r.start) result += escapeHtml(text.slice(index, r.start));
+    result += `<span class="token ${r.className}">${escapeHtml(
+      text.slice(r.start, r.end),
+    )}</span>`;
+    index = r.end;
+  });
+  if (index < text.length) result += escapeHtml(text.slice(index));
+  return result || " ";
+}
+
+function highlightHtml(code) {
+  const patterns = [
+    { className: "comment", regex: /<!--[\s\S]*?-->/g },
+    { className: "keyword", regex: /<!DOCTYPE[\s\S]*?>/gi },
+    { className: "string", regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g },
+    {
+      className: "attr",
+      regex: /\b[a-zA-Z-:]+(?=\s*=\s*(?:"[^"]*"|'[^']*'))/g,
+    },
+    { className: "tag", regex: /<\/?[a-zA-Z][a-zA-Z0-9-]*/g },
+    { className: "punctuation", regex: /\/?>/g },
+  ];
+  return wrapTokens(code, patterns);
+}
+
+function highlightCss(code) {
+  const patterns = [
+    { className: "comment", regex: /\/\*[\s\S]*?\*\//g },
+    { className: "string", regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g },
+    { className: "keyword", regex: /@[a-z-]+/gi },
+    { className: "property", regex: /\b[a-z-]+(?=\s*:)/gi },
+    { className: "number", regex: /\b\d+(\.\d+)?(px|rem|em|%|vh|vw|s|ms)?\b/g },
+    { className: "selector", regex: /(^|})\s*[^@{}\n][^{\n]*(?=\{)/g },
+    { className: "punctuation", regex: /[{}:;(),.]/g },
+  ];
+  return wrapTokens(code, patterns);
+}
+
+function highlightJs(code) {
+  const patterns = [
+    { className: "comment", regex: /\/\/[^\n]*|\/\*[\s\S]*?\*\//g },
+    {
+      className: "string",
+      regex: /`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g,
+    },
+    {
+      className: "keyword",
+      regex:
+        /\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|new|class|extends|import|export|default|async|await|this|super|typeof|instanceof|in|of|null|undefined|true|false)\b/g,
+    },
+    { className: "number", regex: /\b\d+(\.\d+)?\b/g },
+    { className: "operator", regex: /[=+\-*/%<>!&|^~?:]+/g },
+    { className: "punctuation", regex: /[()[\]{};,.]/g },
+  ];
+  return wrapTokens(code, patterns);
+}
+
+function renderSyntaxHighlight(textarea) {
+  if (!highlightLayer || !textarea || !activeFile) return;
+  const code = textarea.value || "";
+  let highlighted = "";
+
+  if (activeFile.type === "html") highlighted = highlightHtml(code);
+  else if (activeFile.type === "css") highlighted = highlightCss(code);
+  else highlighted = highlightJs(code);
+
+  if (code.endsWith("\n")) highlighted += " ";
+  highlightLayer.innerHTML = highlighted;
+}
+
+function syncSyntaxLayerStyle(textarea) {
+  if (!highlightLayer || !textarea) return;
+  const computed = window.getComputedStyle(textarea);
+  highlightLayer.style.fontFamily = computed.fontFamily;
+  highlightLayer.style.fontSize = computed.fontSize;
+  highlightLayer.style.lineHeight = computed.lineHeight;
+  highlightLayer.style.letterSpacing = computed.letterSpacing;
+  highlightLayer.style.tabSize = computed.tabSize;
+  highlightLayer.style.whiteSpace = computed.whiteSpace;
+  highlightLayer.style.padding = computed.padding;
+}
+
+// PART 6 - EDITOR INITIALIZATION
 function initializeEditor() {
   const editor = document.getElementById("activeEditor");
   editor.value = activeFile.content;
   updateLineNumbers(editor);
   syncScroll(editor);
+  syncSyntaxLayerStyle(editor);
+  renderSyntaxHighlight(editor);
 
   // MODIFIED: Combined input listener
   editor.addEventListener("input", (e) => {
@@ -1078,142 +1407,449 @@ function initializeEditor() {
 
   // MODIFIED: Replaced Tab logic with comprehensive keydown handler
   editor.addEventListener("keydown", handleEditorKeyDown);
-}
-
-// PART 6.5: TAG SUGGESTIONS & AUTO-CLOSING LOGIC (NEW)
-
-/**
- * Handles auto-closing of HTML tags when '>' is typed.
- */
-function handleTagClosing(e) {
-  if (e.key !== ">") return;
-  if (activeFile.type !== "html") return;
-
-  const editor = e.target;
-  const pos = editor.selectionStart;
-  const textBefore = editor.value.substring(0, pos);
-
-  // Regex: Find the last opening tag <tagname just before the cursor
-  // It avoids matching </tagname> or <tagname/>
-  const tagMatch = textBefore.match(/<([a-zA-Z0-9]+)(?![^>]*\/?>)\s*$/);
-
-  if (tagMatch) {
-    const tagName = tagMatch[1];
-    if (selfClosingTags.includes(tagName.toLowerCase())) {
-      // It's a self-closing tag, just allow the '>'
-      return;
+  editor.addEventListener("click", () => {
+    if (suggestionPopup.style.display === "block") {
+      positionSuggestionPopup(editor);
     }
-
-    // It's a regular tag, auto-close it
-    e.preventDefault();
-    const closingTag = `</${tagName}>`;
-    const textAfter = editor.value.substring(editor.selectionEnd);
-
-    // Insert the > and the closing tag
-    editor.value = textBefore + ">" + closingTag + textAfter;
-
-    // Place cursor between the tags
-    editor.selectionStart = editor.selectionEnd = pos + 1;
-
-    // Update content
-    activeFile.content = editor.value;
-    updateLineNumbers(editor);
-    if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange();
-  }
+  });
+  editor.addEventListener("blur", () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (!active || !suggestionPopup.contains(active)) {
+        hideSuggestions();
+      }
+    }, 0);
+  });
 }
+
+// PART 6.5 - TAG SUGGESTIONS
 
 /**
  * Handles the editor's 'input' event to show/hide suggestions.
  */
 function handleSuggestions(e) {
   if (activeFile.type !== "html") {
-    suggestionPopup.style.display = "none";
+    hideSuggestions();
     return;
   }
 
   const editor = e.target;
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
+  const fileContext = getFileSuggestionContext(textBefore);
 
-  // Regex: Check if cursor is right after <tagprefix
-  const triggerMatch = textBefore.match(/<([a-zA-Z0-9]*)$/);
-
-  if (triggerMatch) {
-    const prefix = triggerMatch[1];
-    const suggestions = htmlTags.filter((tag) => tag.startsWith(prefix));
-
-    if (suggestions.length > 0) {
-      showSuggestions(suggestions, prefix);
-    } else {
-      suggestionPopup.style.display = "none";
+  if (fileContext) {
+    const files = getRankedFileSuggestions(
+      fileContext.valuePrefix,
+      fileContext.attr,
+      fileContext.tag,
+    );
+    if (!files.length) {
+      hideSuggestions();
+      return;
     }
-  } else {
-    suggestionPopup.style.display = "none";
+    showFileSuggestions(editor, files, fileContext.valuePrefix);
+    return;
   }
+
+  const closingMatch = textBefore.match(/<\/([a-zA-Z0-9-]*)$/);
+  const openingMatch = textBefore.match(/<([a-zA-Z0-9-]*)$/);
+  const plainMatch = textBefore.match(/(?:^|[\s>])([a-zA-Z][a-zA-Z0-9-]*)$/);
+  const isClosing = Boolean(closingMatch);
+  const isOpening = Boolean(openingMatch);
+  const lastLt = textBefore.lastIndexOf("<");
+  const lastGt = textBefore.lastIndexOf(">");
+  const outsideTag = lastGt >= lastLt;
+  const isPlain = !isClosing && !isOpening && outsideTag && Boolean(plainMatch);
+  const prefix = isClosing
+    ? closingMatch[1]
+    : isOpening
+      ? openingMatch[1]
+      : isPlain
+        ? plainMatch[1]
+        : "";
+
+  if (!isClosing && !isOpening && !isPlain) {
+    hideSuggestions();
+    return;
+  }
+
+  const suggestions = getRankedTagSuggestions(prefix);
+  if (!suggestions.length) {
+    hideSuggestions();
+    return;
+  }
+
+  const mode = isClosing
+    ? "tag-closing"
+    : isOpening
+      ? "tag-opening"
+      : "tag-plain";
+  showSuggestions(editor, suggestions, prefix, mode);
+}
+
+/**
+ * Hides tag suggestion popup and resets active item.
+ */
+function hideSuggestions() {
+  suggestionPopup.style.display = "none";
+  suggestionPopup.innerHTML = "";
+  suggestionPopup.dataset.mode = "";
+  activeSuggestion = -1;
+}
+
+function getRankedTagSuggestions(prefix) {
+  const q = (prefix || "").toLowerCase();
+  const matches = tagSuggestionPool.filter((entry) => entry.tag.includes(q));
+  matches.sort((a, b) => {
+    const aTag = a.tag.toLowerCase();
+    const bTag = b.tag.toLowerCase();
+    const aStarts = aTag.startsWith(q) ? 1 : 0;
+    const bStarts = bTag.startsWith(q) ? 1 : 0;
+    if (aStarts !== bStarts) return bStarts - aStarts;
+    if (aTag.length !== bTag.length) return aTag.length - bTag.length;
+    return aTag.localeCompare(bTag);
+  });
+  return matches.slice(0, 40);
+}
+
+function getFileSuggestionContext(textBefore) {
+  const match = textBefore.match(
+    /<([a-zA-Z0-9-]+)[^<>]*\b(href|src)=["']([^"']*)$/i,
+  );
+  if (!match) return null;
+  return {
+    tag: match[1].toLowerCase(),
+    attr: match[2].toLowerCase(),
+    valuePrefix: match[3],
+  };
+}
+
+function getFileType(name) {
+  const parts = name.split(".");
+  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+}
+
+function matchesExtensionByContext(fileName, attr, tag) {
+  const ext = getFileType(fileName);
+  const imageExt = new Set(["png", "jpg", "jpeg", "gif", "svg", "webp", "ico"]);
+  const mediaExt = new Set(["mp3", "wav", "ogg", "mp4", "webm", "m4a"]);
+
+  if (attr === "href" && tag === "link") return ext === "css" || imageExt.has(ext);
+  if (attr === "href" && tag === "a") return true;
+  if (attr === "src" && tag === "script") return ext === "js" || ext === "mjs";
+  if (attr === "src" && tag === "img") return imageExt.has(ext);
+  if (attr === "src" && (tag === "audio" || tag === "video" || tag === "source")) {
+    return mediaExt.has(ext);
+  }
+  return true;
+}
+
+function getRankedFileSuggestions(prefix, attr, tag) {
+  const q = (prefix || "").toLowerCase().replace(/^\.?\//, "");
+  const candidates = projectFiles
+    .map((f) => f.name)
+    .filter((name) => matchesExtensionByContext(name, attr, tag));
+
+  const matches = candidates.filter((name) =>
+    name.toLowerCase().replace(/^\.?\//, "").includes(q),
+  );
+  matches.sort((a, b) => {
+    const aa = a.toLowerCase().replace(/^\.?\//, "");
+    const bb = b.toLowerCase().replace(/^\.?\//, "");
+    const aStarts = aa.startsWith(q) ? 1 : 0;
+    const bStarts = bb.startsWith(q) ? 1 : 0;
+    if (aStarts !== bStarts) return bStarts - aStarts;
+    if (a.length !== b.length) return a.length - b.length;
+    return a.localeCompare(b);
+  });
+  return matches.slice(0, 30);
+}
+
+function getFileIcon(fileName) {
+  const ext = getFileType(fileName);
+  if (ext === "html") return "HTML";
+  if (ext === "css") return "CSS";
+  if (ext === "js" || ext === "mjs") return "JS";
+  if (["png", "jpg", "jpeg", "gif", "svg", "webp", "ico"].includes(ext)) return "IMG";
+  if (["mp3", "wav", "ogg", "mp4", "webm", "m4a"].includes(ext)) return "MED";
+  return "FILE";
+}
+
+function getCaretCoordinates(textarea, pos) {
+  const div = document.createElement("div");
+  const style = window.getComputedStyle(textarea);
+  const copyProps = [
+    "boxSizing",
+    "width",
+    "height",
+    "overflowX",
+    "overflowY",
+    "borderTopWidth",
+    "borderRightWidth",
+    "borderBottomWidth",
+    "borderLeftWidth",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "fontStyle",
+    "fontVariant",
+    "fontWeight",
+    "fontStretch",
+    "fontSize",
+    "fontFamily",
+    "lineHeight",
+    "letterSpacing",
+    "textAlign",
+    "textTransform",
+    "textIndent",
+    "textDecoration",
+    "tabSize",
+    "whiteSpace",
+    "wordSpacing",
+    "direction",
+  ];
+  copyProps.forEach((prop) => {
+    div.style[prop] = style[prop];
+  });
+
+  div.style.position = "absolute";
+  div.style.visibility = "hidden";
+  div.style.pointerEvents = "none";
+  div.style.whiteSpace = "pre";
+  div.style.overflow = "hidden";
+
+  const value = textarea.value;
+  const before = value.substring(0, pos);
+  const after = value.substring(pos) || " ";
+  div.textContent = before;
+  const marker = document.createElement("span");
+  marker.textContent = after[0];
+  div.appendChild(marker);
+
+  document.body.appendChild(div);
+  const coords = {
+    top: marker.offsetTop - textarea.scrollTop,
+    left: marker.offsetLeft - textarea.scrollLeft,
+    lineHeight: parseFloat(style.lineHeight) || 20,
+  };
+  document.body.removeChild(div);
+  return coords;
+}
+
+function positionSuggestionPopup(editor) {
+  if (suggestionPopup.style.display !== "block") return;
+  const coords = getCaretCoordinates(editor, editor.selectionStart);
+  const wrapperRect = editor.parentElement.getBoundingClientRect();
+  const popupRect = suggestionPopup.getBoundingClientRect();
+
+  const margin = 10;
+  let left = coords.left + margin;
+  let top = coords.top + coords.lineHeight + 6;
+
+  const maxLeft = wrapperRect.width - popupRect.width - margin;
+  const maxTop = wrapperRect.height - popupRect.height - margin;
+  left = Math.max(margin, Math.min(left, Math.max(margin, maxLeft)));
+  top = Math.max(margin, Math.min(top, Math.max(margin, maxTop)));
+
+  suggestionPopup.style.left = `${left}px`;
+  suggestionPopup.style.top = `${top}px`;
 }
 
 /**
  * Displays the suggestion popup with filtered tags.
  */
-function showSuggestions(suggestions, prefix) {
+function showSuggestions(editor, suggestions, prefix, mode) {
   suggestionPopup.innerHTML = "";
-  suggestions.forEach((tag, index) => {
-    const item = document.createElement("div");
-    item.className = "suggestion-item";
-    // Highlight the part that was typed
-    item.innerHTML = `<strong>${tag.substring(
-      0,
-      prefix.length,
-    )}</strong>${tag.substring(prefix.length)}`;
-    item.dataset.tag = tag;
+  suggestionPopup.dataset.mode = mode;
+
+  const header = document.createElement("div");
+  header.className = "suggestion-header";
+  header.innerHTML = `
+    <span>HTML tags (${suggestions.length})</span>
+    <span class="suggestion-shortcuts">
+      <span class="suggestion-shortcut">Enter</span>
+      <span class="suggestion-shortcut">Tab</span>
+      <span class="suggestion-shortcut">Esc</span>
+    </span>
+  `;
+  suggestionPopup.appendChild(header);
+
+  suggestions.forEach((tagMeta) => {
+    const suggestionItem = document.createElement("div");
+    suggestionItem.className = "suggestion-item";
+    const tagText = tagMeta.tag;
+    const lcTag = tagText.toLowerCase();
+    const lcPrefix = prefix.toLowerCase();
+    const idx = lcPrefix ? lcTag.indexOf(lcPrefix) : -1;
+    const highlightedTag =
+      idx > -1
+        ? `${escapeHtml(tagText.slice(0, idx))}<span class="highlight">${escapeHtml(
+            tagText.slice(idx, idx + prefix.length),
+          )}</span>${escapeHtml(tagText.slice(idx + prefix.length))}`
+        : escapeHtml(tagText);
+
+    const attrs =
+      tagMeta.attrs && tagMeta.attrs.length
+        ? tagMeta.attrs.slice(0, 3).join(", ")
+        : "";
+    const badge = tagMeta.badge
+      ? `<span class="suggestion-badge">${escapeHtml(tagMeta.badge)}</span>`
+      : "";
+    suggestionItem.innerHTML = `
+      <span class="suggestion-icon">${escapeHtml(tagMeta.icon || "</>")}</span>
+      <span class="suggestion-content">
+        <div class="suggestion-tag">&lt;${highlightedTag}&gt;${badge}</div>
+        <div class="suggestion-desc">${escapeHtml(tagMeta.desc || "HTML element")}${attrs ? ` • ${escapeHtml(attrs)}` : ""}</div>
+      </span>
+    `;
+    suggestionItem.dataset.tag = tagText;
     // Use mousedown instead of click to fire before blur
-    item.addEventListener("mousedown", (e) => {
+    suggestionItem.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      selectSuggestion(tag);
+      selectSuggestion(tagText);
     });
-    suggestionPopup.appendChild(item);
+    suggestionPopup.appendChild(suggestionItem);
   });
+
   suggestionPopup.style.display = "block";
-  activeSuggestion = -1; // Reset active suggestion
+  activeSuggestion = 0;
+  const items = suggestionPopup.querySelectorAll(".suggestion-item");
+  updateSuggestionHighlight(items);
+  positionSuggestionPopup(editor);
+}
+
+function showFileSuggestions(editor, fileSuggestions, prefix) {
+  suggestionPopup.innerHTML = "";
+  suggestionPopup.dataset.mode = "file";
+
+  const header = document.createElement("div");
+  header.className = "suggestion-header";
+  header.innerHTML = `
+    <span>Project files (${fileSuggestions.length})</span>
+    <span class="suggestion-shortcuts">
+      <span class="suggestion-shortcut">Enter</span>
+      <span class="suggestion-shortcut">Tab</span>
+      <span class="suggestion-shortcut">Esc</span>
+    </span>
+  `;
+  suggestionPopup.appendChild(header);
+
+  const q = (prefix || "").toLowerCase().replace(/^\.?\//, "");
+  fileSuggestions.forEach((fileName) => {
+    const suggestionItem = document.createElement("div");
+    suggestionItem.className = "suggestion-item";
+
+    const normalized = fileName.toLowerCase().replace(/^\.?\//, "");
+    const idx = q ? normalized.indexOf(q) : -1;
+    const highlightedName =
+      idx > -1
+        ? `${escapeHtml(fileName.slice(0, idx))}<span class="highlight">${escapeHtml(
+            fileName.slice(idx, idx + q.length),
+          )}</span>${escapeHtml(fileName.slice(idx + q.length))}`
+        : escapeHtml(fileName);
+
+    suggestionItem.innerHTML = `
+      <span class="suggestion-icon">${escapeHtml(getFileIcon(fileName))}</span>
+      <span class="suggestion-content">
+        <div class="suggestion-tag">${highlightedName}</div>
+        <div class="suggestion-desc">Use file path in current attribute</div>
+      </span>
+    `;
+    suggestionItem.dataset.tag = fileName;
+    suggestionItem.addEventListener("mousedown", (ev) => {
+      ev.preventDefault();
+      selectSuggestion(fileName);
+    });
+    suggestionPopup.appendChild(suggestionItem);
+  });
+
+  suggestionPopup.style.display = "block";
+  activeSuggestion = 0;
+  const items = suggestionPopup.querySelectorAll(".suggestion-item");
+  updateSuggestionHighlight(items);
+  positionSuggestionPopup(editor);
 }
 
 /**
  * Inserts the selected suggestion into the editor.
  */
 function selectSuggestion(tag) {
+  if (suggestionPopup.dataset.mode === "file") {
+    selectFileSuggestion(tag);
+    return;
+  }
+
   const editor = document.getElementById("activeEditor");
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
+  const mode = suggestionPopup.dataset.mode;
+  const isClosing = mode === "tag-closing";
+  const isPlain = mode === "tag-plain";
+  const triggerMatch = isClosing
+    ? textBefore.match(/<\/([a-zA-Z0-9-]*)$/)
+    : isPlain
+      ? textBefore.match(/(?:^|[\s>])([a-zA-Z][a-zA-Z0-9-]*)$/)
+      : textBefore.match(/<([a-zA-Z0-9-]*)$/);
 
-  // Find the trigger point again
-  const triggerMatch = textBefore.match(/<([a-zA-Z0-9]*)$/);
+  if (!triggerMatch) return;
 
-  if (triggerMatch) {
-    const prefix = triggerMatch[1];
-    const textBeforeTrigger = textBefore.substring(
-      0,
-      textBefore.length - prefix.length,
-    );
-    const textAfter = editor.value.substring(editor.selectionEnd);
+  const prefix = triggerMatch[1];
+  const textBeforeTrigger = textBefore.substring(
+    0,
+    textBefore.length - prefix.length,
+  );
+  const textAfter = editor.value.substring(editor.selectionEnd);
 
-    const openingTag = `${tag}>`;
-    const closingTag = selfClosingTags.includes(tag) ? "" : `</${tag}>`;
+  const insertedTag = isPlain ? `<${tag}>` : `${tag}>`;
+  const shouldAutoClose = !isClosing && !selfClosingTags.includes(tag);
+  const closingTag = shouldAutoClose ? `</${tag}>` : "";
+  editor.value = textBeforeTrigger + insertedTag + closingTag + textAfter;
 
-    editor.value = textBeforeTrigger + openingTag + closingTag + textAfter;
+  editor.selectionStart = editor.selectionEnd = shouldAutoClose
+    ? textBeforeTrigger.length + insertedTag.length
+    : textBeforeTrigger.length + insertedTag.length;
 
-    // Place cursor inside the tags (or after if self-closing)
-    editor.selectionStart = editor.selectionEnd =
-      textBeforeTrigger.length + openingTag.length;
+  hideSuggestions();
+  activeFile.content = editor.value;
+  updateLineNumbers(editor);
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  handleCodeChange({
+    target: { id: activeFile.type + "Code", value: editor.value },
+  });
+  editor.focus();
+}
 
-    // Hide popup and update state
-    suggestionPopup.style.display = "none";
-    activeFile.content = editor.value;
-    updateLineNumbers(editor);
-    if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange();
-    editor.focus();
+function selectFileSuggestion(filePath) {
+  const editor = document.getElementById("activeEditor");
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  const textAfter = editor.value.substring(editor.selectionEnd);
+  const match = textBefore.match(
+    /(<[a-zA-Z0-9-]+[^<>]*\b(?:href|src)=["'])([^"']*)$/i,
+  );
+  if (!match) return;
+
+  const typedPrefix = match[2];
+  const replaceStart = pos - typedPrefix.length;
+  let finalPath = filePath;
+  if (/^\.\//.test(typedPrefix) && !finalPath.startsWith("./")) {
+    finalPath = `./${finalPath}`;
   }
+
+  editor.value =
+    editor.value.substring(0, replaceStart) + finalPath + textAfter;
+  editor.selectionStart = editor.selectionEnd = replaceStart + finalPath.length;
+
+  hideSuggestions();
+  activeFile.content = editor.value;
+  updateLineNumbers(editor);
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  handleCodeChange({
+    target: { id: activeFile.type + "Code", value: editor.value },
+  });
+  editor.focus();
 }
 
 /**
@@ -1231,7 +1867,7 @@ function updateSuggestionHighlight(items) {
   });
 }
 
-// PART 6.7: AUTO-CLOSING & INDENTATION LOGIC (NEW UTILITY)
+// PART 6.7 - AUTO-CLOSING & INDENTATION LOGIC
 
 /**
  * Handles auto-closing of brackets/parentheses and indentation on 'Enter'.
@@ -1374,7 +2010,7 @@ function handleAutoCloseAndIndent(e, editor) {
   return false; // Not handled
 }
 
-// PART 6.5: TAG SUGGESTIONS & AUTO-CLOSING LOGIC (UPDATED)
+// PART 6.6 - TAG AUTO-CLOSING & EDITOR KEYDOWN
 
 /**
  * Handles auto-closing of HTML tags when '>' is typed. (Original logic remains)
@@ -1423,7 +2059,7 @@ function handleEditorKeyDown(e) {
     if (!items.length) {
       // If popup is open but empty, still allow Enter/Tab for default action
       if (e.key === "Enter" || e.key === "Tab") {
-        suggestionPopup.style.display = "none";
+        hideSuggestions();
         if (e.key === "Tab") e.preventDefault(); // Prevent tabbing out
       }
       return;
@@ -1440,42 +2076,66 @@ function handleEditorKeyDown(e) {
       updateSuggestionHighlight(items);
       return;
     } else if (e.key === "Enter" || e.key === "Tab") {
-      if (activeSuggestion > -1) {
-        // Select the highlighted suggestion
-        e.preventDefault();
-        selectSuggestion(items[activeSuggestion].dataset.tag);
-        return;
+      e.preventDefault();
+      const selectedIndex = activeSuggestion > -1 ? activeSuggestion : 0;
+      const selected = items[selectedIndex];
+      if (selected) {
+        selectSuggestion(selected.dataset.tag);
       } else {
-        // Allow default behavior if no suggestion is active
-        suggestionPopup.style.display = "none";
-        if (e.key === "Tab") e.preventDefault(); // Prevent tabbing out
+        hideSuggestions();
       }
+      return;
     } else if (e.key === "Escape") {
       e.preventDefault();
-      suggestionPopup.style.display = "none";
+      hideSuggestions();
       return;
     } else if (e.key === ">") {
       // Handle tag closing, then hide popup
       handleTagClosing(e);
-      suggestionPopup.style.display = "none";
+      hideSuggestions();
       return;
     }
   }
 
   // --- 2. Auto-Closing & Indentation (CSS and JS) ---
+  if (activeFile.type === "html" && e.key === "=") {
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const textBefore = editor.value.substring(0, start);
+    const textAfter = editor.value.substring(end);
+
+    // Auto-complete HTML attributes: href= -> href=""
+    // Trigger only when caret is right after a likely attribute name.
+    if (/[\w:-]\s*$/.test(textBefore)) {
+      e.preventDefault();
+      editor.value =
+        editor.value.substring(0, start) + '=""' + editor.value.substring(end);
+      editor.selectionStart = editor.selectionEnd = start + 2;
+
+      activeFile.content = editor.value;
+      updateLineNumbers(editor);
+      if (autoRunCheckbox.checked) debouncedUpdatePreview();
+      handleCodeChange({
+        target: { id: activeFile.type + "Code", value: editor.value },
+      });
+      return;
+    }
+  }
+
+  // --- 3. Auto-Closing & Indentation (CSS and JS) ---
   if (activeFile.type === "css" || activeFile.type === "js") {
     if (handleAutoCloseAndIndent(e, editor)) {
       return; // If auto-closing/indentation was handled, stop here
     }
   }
 
-  // --- 3. HTML Tag Closing (If popup was not visible) ---
+  // --- 4. HTML Tag Closing (If popup was not visible) ---
   if (activeFile.type === "html" && e.key === ">") {
     handleTagClosing(e);
     return;
   }
 
-  // --- 4. Tab for Indentation (Fallback for all file types) ---
+  // --- 5. Tab for Indentation (Fallback for all file types) ---
   if (e.key === "Tab") {
     e.preventDefault();
     const start = editor.selectionStart;
@@ -1498,36 +2158,56 @@ function handleEditorKeyDown(e) {
   // All other keys fall through to default behavior
 }
 
-// PART 7: KEYBOARD SHORTCUTS
+// PART 7 - KEYBOARD SHORTCUTS
 document.addEventListener("keydown", (e) => {
+  const key = e.key.toLowerCase();
+  const mod = e.ctrlKey || e.metaKey;
+
   // Prevent shortcuts from firing while suggestion box is open
   if (suggestionPopup.style.display === "block") {
-    if (e.ctrlKey && (e.key === "s" || e.key === "Enter" || e.key === "n")) {
+    if (mod && (key === "s" || key === "enter" || key === "n")) {
       e.preventDefault();
     }
     return;
   }
 
-  if (e.ctrlKey && e.key === "s") {
+  if (mod && key === "s") {
     e.preventDefault();
     exportAsZip();
   }
-  if (e.ctrlKey && e.key === "Enter") {
+  if (mod && key === "enter") {
     e.preventDefault();
     updatePreview();
   }
-  if (e.ctrlKey && e.key === "n") {
+  if (mod && key === "n") {
     e.preventDefault();
     createNewFile();
   }
-  if (e.ctrlKey && e.shiftKey && e.key === "C") {
+  if (mod && e.shiftKey && key === "c") {
     e.preventDefault();
     showConsoleCheckbox.checked = !showConsoleCheckbox.checked;
     showConsoleCheckbox.dispatchEvent(new Event("change"));
   }
 });
 
-// PART 8: DRAG & DROP
+document.addEventListener("mousedown", (e) => {
+  const editor = document.getElementById("activeEditor");
+  if (!editor) return;
+  const clickedInsidePopup = suggestionPopup.contains(e.target);
+  const clickedEditor = e.target === editor;
+  if (!clickedInsidePopup && !clickedEditor) {
+    hideSuggestions();
+  }
+});
+
+window.addEventListener("resize", () => {
+  const editor = document.getElementById("activeEditor");
+  if (editor && suggestionPopup.style.display === "block") {
+    positionSuggestionPopup(editor);
+  }
+});
+
+// PART 8 - DRAG & DROP
 ["dragover", "dragleave", "drop"].forEach((eventName) => {
   editorContainer.addEventListener(eventName, (e) => {
     e.preventDefault();
@@ -1566,7 +2246,7 @@ editorContainer.addEventListener("drop", (e) => {
   }
 });
 
-// PART 9: ZIP EXPORT
+// PART 9 - ZIP EXPORT
 async function exportAsZip() {
   const zip = new JSZip();
   projectFiles.forEach((file) => {
@@ -1587,7 +2267,7 @@ async function exportAsZip() {
   }
 }
 
-// PART 10: ZIP IMPORT
+// PART 10 - ZIP IMPORT
 function importZip() {
   document.getElementById("zipFileInput").click();
 }
@@ -1650,7 +2330,7 @@ function handleZipImport(event) {
   event.target.value = "";
 }
 
-// PART 11: FULLSCREEN
+// PART 11 - FULLSCREEN
 previewFullscreenBtn.addEventListener("click", togglePreviewFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButtonState);
 
@@ -1686,7 +2366,7 @@ function updateFullscreenButtonState() {
   }
 }
 
-// PART 12: COLLABORATION FEATURES (NUMERIC-ONLY SESSION IDs)
+// PART 12 - COLLABORATION FEATURES (NUMERIC-ONLY SESSION IDs)
 closeModalBtn.addEventListener("click", closeModal);
 collabBtn.addEventListener("click", startCollaboration);
 window.addEventListener("load", checkForSession);
@@ -1780,7 +2460,9 @@ function startCollaboration() {
   collabModal.style.display = "flex";
   errorMsgEl.style.display = "none";
 
-  modalDoneBtn.onclick = () => {
+  const doneBtn = getModalDoneBtn();
+  if (!doneBtn) return;
+  doneBtn.onclick = () => {
     const name = document.getElementById("userNameInput").value.trim();
     const v = validateUsername(name);
     if (!v.valid) {
@@ -1799,7 +2481,9 @@ function promptForTheme() {
   modalBody.innerHTML = `<p><strong>Your color:</strong></p><input type="color" id="userThemeInput" value="#4CAF50">`;
   errorMsgEl.style.display = "none";
 
-  modalDoneBtn.onclick = () => {
+  const doneBtn = getModalDoneBtn();
+  if (!doneBtn) return;
+  doneBtn.onclick = () => {
     sessionData.theme = document.getElementById("userThemeInput").value;
     createNumericSession();
   };
@@ -1907,7 +2591,9 @@ function checkForSession() {
   collabModal.style.display = "flex";
   errorMsgEl.style.display = "none";
 
-  modalDoneBtn.onclick = () => {
+  const doneBtn = getModalDoneBtn();
+  if (!doneBtn) return;
+  doneBtn.onclick = () => {
     const name = document.getElementById("userNameInput").value.trim();
     const v = validateUsername(name);
     if (!v.valid) {
@@ -1937,7 +2623,9 @@ function promptJoinTheme(name, sid) {
   modalBody.innerHTML = `<p><strong>Your color:</strong></p><input type="color" id="userThemeInput" value="#2196F3">`;
   errorMsgEl.style.display = "none";
 
-  modalDoneBtn.onclick = () => {
+  const doneBtn = getModalDoneBtn();
+  if (!doneBtn) return;
+  doneBtn.onclick = () => {
     const theme = document.getElementById("userThemeInput").value;
     const data = safeLocalStorage("get", sid);
     if (!data) {
@@ -1996,7 +2684,6 @@ function syncProjectWithSession() {
 }
 
 function startSyncing() {
-  const ed = document.getElementById("activeEditor");
   // The 'input' listener in initializeEditor already calls handleCodeChange
   // and announceTyping, so no need to add duplicate listeners.
 }
@@ -2034,7 +2721,7 @@ function handleStorageChange(e) {
   }
 }
 
-// 10: MEDIA FILE HANDLER
+// PART 13 - MEDIA FILE HANDLER
 const addMediaBtn = document.getElementById("addMediaBtn");
 const mediaInput = document.createElement("input");
 mediaInput.type = "file";
@@ -2083,7 +2770,7 @@ mediaInput.addEventListener("change", (e) => {
   mediaInput.value = "";
 });
 
-// 11 === SEAMLESS & FULL-RANGE DIVIDER DRAG ===
+// PART 14 - SEAMLESS & FULL-RANGE DIVIDER DRAG
 let isDragging = false;
 let startX, startEditorWidth, containerWidth;
 
@@ -2155,7 +2842,7 @@ window.addEventListener("resize", () => {
   }
 });
 
-// PART 12: INITIALIZATION
+// PART 15 - APPLICATION INITIALIZATION
 window.addEventListener("load", () => {
   loadSettings();
   renderFileList();
@@ -2173,7 +2860,7 @@ window.addEventListener("beforeunload", function (e) {
 
 newFileBtn.addEventListener("click", createNewFile);
 
-// FONT PICKER
+// PART 16 - FONT PICKER
 const fontPickerBtn = document.getElementById("fontPickerBtn");
 const fontPickerModal = document.getElementById("fontPickerModal");
 const closeFontPickerBtn = document.getElementById("closeFontPickerBtn");
@@ -2276,9 +2963,7 @@ fontPickerModal.addEventListener("click", (e) => {
   }
 });
 
-// ADD THIS CODE TO THE END OF codx-editor.js (before the final console.log)
-
-// ============ TUTORIAL SYSTEM ============
+// PART 17 - TUTORIAL SYSTEM
 
 const tutorialSteps = [
   {
@@ -2476,8 +3161,10 @@ const tutorialStyleSheet = document.createElement("style");
 tutorialStyleSheet.textContent = tutorialStyles;
 document.head.appendChild(tutorialStyleSheet);
 
-// Insert tutorial modal into body
-document.body.insertAdjacentHTML("beforeend", tutorialModalHTML);
+// Insert tutorial modal into body only if it does not already exist in HTML
+if (!document.getElementById("tutorialModal")) {
+  document.body.insertAdjacentHTML("beforeend", tutorialModalHTML);
+}
 
 // Get tutorial elements
 const tutorialModal = document.getElementById("tutorialModal");
