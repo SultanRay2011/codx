@@ -23,7 +23,7 @@
   </head>
   <body>
     <header>
-      <div style="display: flex; align-items: center; gap: 8px">
+      <div class="header-switches" style="display: flex; align-items: center; gap: 8px">
         <span>Auto-Run</span>
         <label class="switch" title="Toggle auto-run feature">
           <input type="checkbox" id="autoRun" checked />
@@ -120,6 +120,7 @@
       <div class="editors">
         <div class="file-explorer">
           <div
+            class="file-toolbar"
             style="
               display: flex;
               justify-content: space-between;
@@ -182,6 +183,7 @@
         </div>
 
         <div
+          class="editor-actions"
           style="
             display: flex;
             gap: 5px;
