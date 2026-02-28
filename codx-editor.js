@@ -1888,11 +1888,12 @@ function showSuggestions(editor, suggestions, prefix, mode) {
     const badge = tagMeta.badge
       ? `<span class="suggestion-badge">${escapeHtml(tagMeta.badge)}</span>`
       : "";
+    const safeIcon = mode === "tag-closing" ? "</>" : "<>";
     suggestionItem.innerHTML = `
-      <span class="suggestion-icon">${escapeHtml(tagMeta.icon || "</>")}</span>
+      <span class="suggestion-icon">${escapeHtml(safeIcon)}</span>
       <span class="suggestion-content">
         <div class="suggestion-tag">&lt;${highlightedTag}&gt;${badge}</div>
-        <div class="suggestion-desc">${escapeHtml(tagMeta.desc || "HTML element")}${attrs ? ` â€¢ ${escapeHtml(attrs)}` : ""}</div>
+        <div class="suggestion-desc">${escapeHtml(tagMeta.desc || "HTML element")}${attrs ? ` - ${escapeHtml(attrs)}` : ""}</div>
       </span>
     `;
     suggestionItem.dataset.tag = tagText;

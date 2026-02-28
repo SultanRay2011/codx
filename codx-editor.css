@@ -452,9 +452,9 @@ textarea::-webkit-scrollbar-thumb:hover {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  max-height: 280px;
-  min-width: 240px;
-  max-width: 320px;
+  max-height: 220px;
+  min-width: 200px;
+  max-width: 280px;
   overflow-y: auto;
   font-family: var(--font-ui);
   font-size: 12px;
@@ -473,7 +473,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 .suggestion-header {
-  padding: 10px 14px;
+  padding: 8px 10px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
   font-size: 11px;
@@ -517,13 +517,13 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 .suggestion-item {
-  padding: 10px 14px;
+  padding: 7px 10px;
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
   border-left: 2px solid transparent;
 }
 
@@ -539,8 +539,8 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 .suggestion-icon {
-  font-size: 16px;
-  min-width: 20px;
+  font-size: 13px;
+  min-width: 16px;
   text-align: center;
   opacity: 0.7;
 }
@@ -553,8 +553,8 @@ textarea::-webkit-scrollbar-thumb:hover {
 .suggestion-tag {
   font-family: var(--font-code);
   font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 3px;
+  font-size: 12px;
+  margin-bottom: 2px;
 }
 
 .suggestion-tag .highlight {
@@ -568,7 +568,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 .suggestion-desc {
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.7;
   line-height: 1.4;
   margin-top: 2px;
@@ -588,7 +588,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 #suggestionPopup::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 #suggestionPopup::-webkit-scrollbar-track {
@@ -929,8 +929,8 @@ iframe {
   }
 
   #suggestionPopup {
-    min-width: min(220px, 92vw);
-    max-width: min(340px, 92vw);
+    min-width: min(190px, 90vw);
+    max-width: min(260px, 90vw);
   }
 }
 
