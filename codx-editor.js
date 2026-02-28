@@ -2382,27 +2382,6 @@ closeModalBtn.addEventListener("click", closeModal);
 collabBtn.addEventListener("click", startCollaboration);
 window.addEventListener("load", checkForSession);
 
-function generateNumericSessionId() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const part = () =>
-    Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
-      "",
-    );
-  return `${part()}-${part()}-${part()}-${part()}`;
-}
-
-function isValidSessionId(id) {
-  return /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/.test(id);
-}
-
-function getBaseEditorUrl() {
-  return `${window.location.origin}/codx-editor.html`;
-}
-
-function buildSessionUrl(sessionId) {
-  return `${getBaseEditorUrl()}/${sessionId}`;
-}
-
 function extractSessionIdFromUrl() {
   const pathMatch = window.location.pathname.match(
     /\/codx-editor\.html\/([A-Za-z0-9-]+)$/,
@@ -2410,7 +2389,7 @@ function extractSessionIdFromUrl() {
   if (pathMatch) return pathMatch[1].toUpperCase();
 
   const hash = window.location.hash.substring(1).trim().toUpperCase();
-  if (isValidSessionId(hash)) return hash;
+  if (hash) return hash;
   return null;
 }
 
@@ -2654,21 +2633,15 @@ function promptForTheme(hostName) {
 
 function createNumericSession() {
   if (!ensureCollabSocket()) return;
-  const sid = generateNumericSessionId().toUpperCase();
-  if (!isValidSessionId(sid)) {
-    showNotification("Failed to generate valid session id", "error");
-    return;
-  }
-  const link = buildSessionUrl(sid);
 
   collabSocket.emit(
     "collab:create",
     {
-      sessionId: sid,
       name: sessionData.host,
       theme: sessionData.theme,
       files: projectFiles,
       activeFileName: activeFile ? activeFile.name : null,
+      baseUrl: window.location.origin,
     },
     (res) => {
       if (!res || !res.ok) {
@@ -2676,6 +2649,8 @@ function createNumericSession() {
         return;
       }
 
+      const sid = res.sessionId;
+      const link = res.shareLink || `${window.location.origin}/codx-editor.html/${sid}`;
       activeSessionId = sid;
       myInfo = { name: sessionData.host, theme: sessionData.theme };
       collabParticipants = res.participants || [myInfo];
@@ -2694,7 +2669,7 @@ function createNumericSession() {
 
 function showSessionDetails(sid) {
   setCollabCloseButtonVisible(true);
-  const link = buildSessionUrl(sid);
+  const link = `${window.location.origin}/codx-editor.html/${sid}`;
   const listItems = collabParticipants
     .map(
       (p) =>
@@ -2740,7 +2715,7 @@ function closeModal() {
 
 function checkForSession() {
   const hash = extractSessionIdFromUrl();
-  if (!hash || !isValidSessionId(hash)) return;
+  if (!hash) return;
 
   if (!ensureCollabSocket()) return;
   renderJoinNameStep(hash);

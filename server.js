@@ -14,6 +14,7 @@ const sessions = new Map();
 const socketMeta = new Map();
 const MODERN_SESSION_ID_RE = /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/;
 const LEGACY_SESSION_ID_RE = /^\d{10,}$/;
+const SESSION_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 app.use(express.static(path.join(__dirname)));
 
@@ -37,6 +38,26 @@ function isValidSessionId(value) {
   return MODERN_SESSION_ID_RE.test(value) || LEGACY_SESSION_ID_RE.test(value);
 }
 
+function generateSessionId() {
+  const part = () =>
+    Array.from(
+      { length: 4 },
+      () => SESSION_CHARS[Math.floor(Math.random() * SESSION_CHARS.length)],
+    ).join("");
+
+  let id = "";
+  do {
+    id = `${part()}-${part()}-${part()}-${part()}`;
+  } while (sessions.has(id));
+  return id;
+}
+
+function buildShareLink(baseUrl, sessionId) {
+  const root = String(baseUrl || "").replace(/\/+$/, "");
+  if (root) return `${root}/codx-editor.html/${sessionId}`;
+  return `/codx-editor.html/${sessionId}`;
+}
+
 function emitParticipants(sessionId) {
   const session = sessions.get(sessionId);
   if (!session) return;
@@ -46,11 +67,13 @@ function emitParticipants(sessionId) {
 io.on("connection", (socket) => {
   socket.on("collab:create", (payload, ack) => {
     try {
-      const sessionId = normalizeSessionId(payload?.sessionId);
+      const requestedId = normalizeSessionId(payload?.sessionId);
+      const sessionId = requestedId || generateSessionId();
       const name = String(payload?.name || "").trim();
       const theme = String(payload?.theme || "#4CAF50");
       const files = cloneFiles(payload?.files);
       const activeFileName = payload?.activeFileName || null;
+      const baseUrl = String(payload?.baseUrl || "");
 
       if (!isValidSessionId(sessionId)) {
         ack?.({ ok: false, error: "Invalid session id." });
@@ -77,6 +100,7 @@ io.on("connection", (socket) => {
       ack?.({
         ok: true,
         sessionId,
+        shareLink: buildShareLink(baseUrl, sessionId),
         participants: participants.map((p) => ({ name: p.name, theme: p.theme })),
       });
       emitParticipants(sessionId);
