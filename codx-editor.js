@@ -989,6 +989,151 @@ showConsoleCheckbox.addEventListener("change", () => {
 });
 
 // PART 5 - PREVIEW & LINE NUMBERS
+function getErrorHint(message) {
+  const msg = String(message || "").toLowerCase();
+  if (msg.includes("unexpected token"))
+    return "Check for missing commas, brackets, or quotes near this line.";
+  if (msg.includes("missing )"))
+    return "A closing parenthesis ')' is likely missing.";
+  if (msg.includes("missing ]"))
+    return "A closing bracket ']' is likely missing.";
+  if (msg.includes("missing }"))
+    return "A closing brace '}' is likely missing.";
+  if (msg.includes("is not defined"))
+    return "Declare the variable/function before using it.";
+  if (msg.includes("cannot read properties of"))
+    return "Check if the value is null/undefined before property access.";
+  if (msg.includes("unterminated string"))
+    return "Close your string with matching quotes.";
+  return "Review syntax near the reported line.";
+}
+
+function runPreflightDiagnostics() {
+  // JS syntax checks per JS file
+  projectFiles
+    .filter((f) => f.type === "js")
+    .forEach((file) => {
+      try {
+        // Parse-only check
+        new Function(`${file.content}\n//# sourceURL=${file.name}`);
+      } catch (err) {
+        const stack = String(err && err.stack ? err.stack : "");
+        const lineMatch = stack.match(/<anonymous>:(\d+):(\d+)/);
+        const lineInfo = lineMatch
+          ? `line ${lineMatch[1]}, col ${lineMatch[2]}`
+          : "line unknown";
+        appendConsoleMessage(
+          "error",
+          `[${file.name}] SyntaxError (${lineInfo}): ${err.message}. Fix: ${getErrorHint(err.message)}`,
+        );
+      }
+    });
+
+  // Basic CSS braces check
+  projectFiles
+    .filter((f) => f.type === "css")
+    .forEach((file) => {
+      const text = file.content || "";
+      let depth = 0;
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === "{") depth++;
+        if (text[i] === "}") depth--;
+        if (depth < 0) {
+          const line = text.slice(0, i).split("\n").length;
+          appendConsoleMessage(
+            "warn",
+            `[${file.name}] CSS issue at line ${line}: extra '}' found.`,
+          );
+          return;
+        }
+      }
+      if (depth > 0) {
+        appendConsoleMessage(
+          "warn",
+          `[${file.name}] CSS issue: missing closing '}' brace.`,
+        );
+      }
+    });
+
+  // Basic HTML unclosed-tag check (limited, heuristic)
+  const htmlFile = projectFiles.find((f) => f.type === "html");
+  if (!htmlFile) return;
+  const htmlText = htmlFile.content || "";
+
+  // Inline <script> syntax checks with approximate HTML line mapping
+  const inlineScriptRegex = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+  let scriptMatch;
+  while ((scriptMatch = inlineScriptRegex.exec(htmlText)) !== null) {
+    const scriptCode = scriptMatch[1];
+    const scriptStartLine = htmlText.slice(0, scriptMatch.index).split("\n").length;
+    try {
+      new Function(`${scriptCode}\n//# sourceURL=${htmlFile.name}`);
+    } catch (err) {
+      const stack = String(err && err.stack ? err.stack : "");
+      const lineMatch = stack.match(/<anonymous>:(\d+):(\d+)/);
+      if (lineMatch) {
+        const relLine = Number(lineMatch[1]);
+        const col = Number(lineMatch[2]);
+        const absLine = scriptStartLine + Math.max(0, relLine - 1);
+        appendConsoleMessage(
+          "error",
+          `[${htmlFile.name}] Inline JS SyntaxError (line ${absLine}, col ${col}): ${err.message}. Fix: ${getErrorHint(err.message)}`,
+        );
+      } else {
+        appendConsoleMessage(
+          "error",
+          `[${htmlFile.name}] Inline JS SyntaxError: ${err.message}. Fix: ${getErrorHint(err.message)}`,
+        );
+      }
+    }
+  }
+
+  const selfClosing = new Set([
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+  ]);
+  const stack = [];
+  const re = /<\/?([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*>/g;
+  let match;
+  while ((match = re.exec(htmlText)) !== null) {
+    const full = match[0];
+    const tag = match[1].toLowerCase();
+    if (selfClosing.has(tag) || full.endsWith("/>")) continue;
+    const line = htmlText.slice(0, match.index).split("\n").length;
+    if (full.startsWith("</")) {
+      const last = stack.pop();
+      if (!last || last.tag !== tag) {
+        appendConsoleMessage(
+          "warn",
+          `[${htmlFile.name}] HTML issue at line ${line}: mismatched closing tag </${tag}>.`,
+        );
+        break;
+      }
+    } else {
+      stack.push({ tag, line });
+    }
+  }
+  if (stack.length) {
+    const unclosed = stack[stack.length - 1];
+    appendConsoleMessage(
+      "warn",
+      `[${htmlFile.name}] HTML issue: unclosed <${unclosed.tag}> opened near line ${unclosed.line}.`,
+    );
+  }
+}
+
 function updatePreview() {
   const htmlFile = projectFiles.find((f) => f.type === "html");
   if (!htmlFile) {
@@ -999,6 +1144,7 @@ function updatePreview() {
 
   let html = htmlFile.content;
   consoleOutput.innerHTML = ""; // Clear console
+  runPreflightDiagnostics();
 
   // === 1. Replace <link rel="stylesheet" href="style.css"> (handles both attribute orders)
   html = html.replace(
@@ -1038,32 +1184,10 @@ function updatePreview() {
         (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "js",
       );
       if (jsFile) {
-        // Wrap JS with file markers and line tracking
-        const lines = jsFile.content.split("\n");
-        const numberedContent = lines
-          .map((line, idx) => {
-            return line; // Keep original content
-          })
-          .join("\n");
-
+        // Keep original file line numbers by not wrapping code in extra lines.
         return `<script data-filename="${jsFile.name}">
-/* ===== FILE: ${jsFile.name} ===== */
-(function() {
-  try {
 ${jsFile.content}
-  } catch (e) {
-    console.error('[${jsFile.name}] ' + e.message);
-    if (e.stack) {
-      const stackLines = e.stack.split('\\n');
-      stackLines.forEach(line => {
-        if (line.includes('<anonymous>') || line.includes('eval')) {
-          console.error('  ' + line);
-        }
-      });
-    }
-  }
-})();
-/* ===== END: ${jsFile.name} ===== */
+//# sourceURL=${jsFile.name}
 </script>`;
       } else {
         const fileName = src.split("/").pop();
@@ -1131,6 +1255,8 @@ ${jsFile.content}
     <script>
       (function() {
         try {
+          const CODEX_HTML_FILE = ${JSON.stringify(htmlFile.name)};
+          const CODEX_INJECTED_OFFSET = __CODEX_INJECTED_OFFSET__;
           const parentConsole = window.parent.document.getElementById('consoleOutput');
           if (!parentConsole) return;
 
@@ -1155,6 +1281,59 @@ ${jsFile.content}
             }
           }
 
+          function suggestFix(message) {
+            const msg = String(message || '').toLowerCase();
+            if (msg.includes('unexpected token')) return 'Check missing commas, quotes, or brackets.';
+            if (msg.includes('is not defined')) return 'Declare the variable/function before use.';
+            if (msg.includes('cannot read properties of')) return 'Guard against null/undefined values.';
+            if (msg.includes('missing')) return 'A closing bracket/brace/parenthesis may be missing.';
+            return 'Review code around this line.';
+          }
+
+          function parseStackLocation(error) {
+            if (!error || !error.stack) return null;
+            const stack = String(error.stack);
+            // Prefer explicit source files (e.g. script.js:8:1)
+            let m = stack.match(/\\b([A-Za-z0-9_.-]+\\.(?:js|mjs|html)):(\\d+):(\\d+)\\b/);
+            if (m) {
+              return { file: m[1], line: Number(m[2]), col: Number(m[3]) };
+            }
+            // Fallback to srcdoc/anonymous frames
+            m = stack.match(/\\b(?:about:srcdoc|<anonymous>|eval):?(\\d+):(\\d+)\\b/);
+            if (m) {
+              return { file: null, line: Number(m[1]), col: Number(m[2]) };
+            }
+            return null;
+          }
+
+          function normalizeFilename(source, error) {
+            const loc = parseStackLocation(error);
+            if (loc && loc.file) return loc.file;
+            if (source && !source.startsWith('about:srcdoc') && !source.startsWith('data:text/html')) {
+              return source.split('/').pop();
+            }
+            return CODEX_HTML_FILE;
+          }
+
+          function normalizeLine(source, line, error) {
+            const loc = parseStackLocation(error);
+            if (loc && loc.file) return loc.line;
+            // If error came from srcdoc/html, subtract injected lines
+            if (source && (source.startsWith('about:srcdoc') || source.startsWith('data:text/html'))) {
+              return Math.max(1, Number(line || 1) - Number(CODEX_INJECTED_OFFSET || 0));
+            }
+            if (loc && !loc.file) {
+              return Math.max(1, Number(loc.line || 1) - Number(CODEX_INJECTED_OFFSET || 0));
+            }
+            return Number(line || 1);
+          }
+
+          function normalizeCol(source, col, error) {
+            const loc = parseStackLocation(error);
+            if (loc) return Number(loc.col || col || 1);
+            return Number(col || 1);
+          }
+
           // Override console methods IMMEDIATELY
           console.log = function(...args) { appendMessage('log', '> ', args); };
           console.warn = function(...args) { appendMessage('warn', 'WARNING: ', args); };
@@ -1163,16 +1342,11 @@ ${jsFile.content}
 
           // Capture runtime errors
           window.onerror = function(msg, source, line, col, error) {
-            // Extract filename from source if available
-            let filename = 'unknown';
-            const scripts = document.querySelectorAll('script[data-filename]');
-            scripts.forEach(script => {
-              if (source && source.includes('blob:')) {
-                filename = script.getAttribute('data-filename') || 'inline script';
-              }
-            });
-            
-            appendMessage('error', 'Error: ', ['[' + filename + '] ' + msg]);
+            const filename = normalizeFilename(source || '', error);
+            const mappedLine = normalizeLine(source || '', line, error);
+            const mappedCol = normalizeCol(source || '', col, error);
+            const fix = suggestFix(msg);
+            appendMessage('error', 'Error: ', ['[' + filename + '] line ' + mappedLine + ':' + mappedCol + ' - ' + msg + ' | Fix: ' + fix]);
             return false;
           };
 
@@ -1231,16 +1405,22 @@ ${jsFile.content}
 
   // Insert console script and image CSS at the very beginning
   const injectionContent = imageSizingCSS + consoleScript;
+  const injectedOffset = injectionContent.split("\n").length;
+  const consoleScriptResolved = consoleScript.replace(
+    "__CODEX_INJECTED_OFFSET__",
+    String(injectedOffset),
+  );
+  const injectionResolved = imageSizingCSS + consoleScriptResolved;
 
   if (/<head[^>]*>/i.test(html)) {
-    html = html.replace(/(<head[^>]*>)/i, `$1${injectionContent}`);
+    html = html.replace(/(<head[^>]*>)/i, `$1${injectionResolved}`);
   } else if (/<html[^>]*>/i.test(html)) {
-    html = html.replace(/(<html[^>]*>)/i, `$1${injectionContent}`);
+    html = html.replace(/(<html[^>]*>)/i, `$1${injectionResolved}`);
   } else if (/<body[^>]*>/i.test(html)) {
-    html = html.replace(/(<body[^>]*>)/i, `${injectionContent}$1`);
+    html = html.replace(/(<body[^>]*>)/i, `${injectionResolved}$1`);
   } else {
     // No proper HTML structure, prepend it
-    html = injectionContent + html;
+    html = injectionResolved + html;
   }
 
   iframe.srcdoc = html;
