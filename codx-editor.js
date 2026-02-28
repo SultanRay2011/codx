@@ -450,6 +450,123 @@ htmlTags.forEach((tag) => {
   }
 });
 const tagSuggestionPool = Array.from(htmlTagMetaMap.values());
+let currentSuggestionContext = null;
+
+const cssPropertySuggestions = [
+  "display",
+  "position",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "z-index",
+  "width",
+  "height",
+  "min-width",
+  "max-width",
+  "min-height",
+  "max-height",
+  "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "padding",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "border",
+  "border-radius",
+  "border-color",
+  "border-width",
+  "outline",
+  "box-shadow",
+  "background",
+  "background-color",
+  "background-image",
+  "background-size",
+  "background-position",
+  "background-repeat",
+  "color",
+  "opacity",
+  "font",
+  "font-size",
+  "font-family",
+  "font-weight",
+  "line-height",
+  "letter-spacing",
+  "text-align",
+  "text-decoration",
+  "text-transform",
+  "white-space",
+  "overflow",
+  "overflow-x",
+  "overflow-y",
+  "visibility",
+  "cursor",
+  "transition",
+  "transform",
+  "animation",
+  "grid-template-columns",
+  "grid-template-rows",
+  "gap",
+  "justify-content",
+  "align-items",
+  "flex",
+  "flex-direction",
+];
+
+const cssValueSuggestionsByProperty = {
+  display: ["block", "inline", "inline-block", "flex", "grid", "none"],
+  position: ["static", "relative", "absolute", "fixed", "sticky"],
+  color: ["#000", "#fff", "rgb(0, 0, 0)", "rgba(0, 0, 0, 0.5)", "inherit"],
+  "background-color": ["transparent", "#fff", "#000", "inherit"],
+  "background-repeat": ["no-repeat", "repeat", "repeat-x", "repeat-y"],
+  "background-size": ["cover", "contain", "auto"],
+  "text-align": ["left", "center", "right", "justify"],
+  "font-weight": ["400", "500", "600", "700", "bold", "normal"],
+  overflow: ["hidden", "auto", "scroll", "visible"],
+  "overflow-x": ["hidden", "auto", "scroll", "visible"],
+  "overflow-y": ["hidden", "auto", "scroll", "visible"],
+  cursor: ["pointer", "default", "text", "not-allowed", "move"],
+  "justify-content": [
+    "flex-start",
+    "center",
+    "flex-end",
+    "space-between",
+    "space-around",
+    "space-evenly",
+  ],
+  "align-items": ["stretch", "flex-start", "center", "flex-end", "baseline"],
+  "flex-direction": ["row", "row-reverse", "column", "column-reverse"],
+};
+
+const cssGenericValueSuggestions = [
+  "auto",
+  "inherit",
+  "initial",
+  "unset",
+  "none",
+  "0",
+  "100%",
+  "1rem",
+  "2rem",
+];
+
+const cssSelectorSuggestions = [
+  "body",
+  "html",
+  "main",
+  "header",
+  "section",
+  "article",
+  ".class-name",
+  "#id-name",
+  ":root",
+  "@media",
+  "@keyframes",
+];
 
 let hasUnsavedChanges = false;
 let autoRunTimeout;
@@ -1619,14 +1736,48 @@ function initializeEditor() {
  * Handles the editor's 'input' event to show/hide suggestions.
  */
 function handleSuggestions(e) {
+  const editor = e.target;
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+
+  const isCssFile = activeFile.type === "css";
+  const isHtmlStyleContext =
+    activeFile.type === "html" && isInsideStyleTag(textBefore);
+
+  if (isCssFile || isHtmlStyleContext) {
+    const cssContext = getCssSuggestionContext(textBefore);
+    if (!cssContext) {
+      hideSuggestions();
+      return;
+    }
+    const cssSuggestions = getRankedCssSuggestions(
+      cssContext.prefix,
+      cssContext.mode,
+      cssContext.propertyName,
+    );
+    if (
+      cssContext.prefix &&
+      cssSuggestions.some(
+        (entry) =>
+          entry.value.toLowerCase() === cssContext.prefix.toLowerCase(),
+      )
+    ) {
+      hideSuggestions();
+      return;
+    }
+    if (!cssSuggestions.length) {
+      hideSuggestions();
+      return;
+    }
+    currentSuggestionContext = cssContext;
+    showCssSuggestions(editor, cssSuggestions, cssContext.mode);
+    return;
+  }
+
   if (activeFile.type !== "html") {
     hideSuggestions();
     return;
   }
-
-  const editor = e.target;
-  const pos = editor.selectionStart;
-  const textBefore = editor.value.substring(0, pos);
   const fileContext = getFileSuggestionContext(textBefore);
 
   if (fileContext) {
@@ -1636,6 +1787,13 @@ function handleSuggestions(e) {
       fileContext.tag,
     );
     if (!files.length) {
+      hideSuggestions();
+      return;
+    }
+    if (
+      fileContext.valuePrefix &&
+      files.some((name) => name.toLowerCase() === fileContext.valuePrefix.toLowerCase())
+    ) {
       hideSuggestions();
       return;
     }
@@ -1670,12 +1828,20 @@ function handleSuggestions(e) {
     hideSuggestions();
     return;
   }
+  if (
+    prefix &&
+    suggestions.some((entry) => entry.tag.toLowerCase() === prefix.toLowerCase())
+  ) {
+    hideSuggestions();
+    return;
+  }
 
   const mode = isClosing
     ? "tag-closing"
     : isOpening
       ? "tag-opening"
       : "tag-plain";
+  currentSuggestionContext = null;
   showSuggestions(editor, suggestions, prefix, mode);
 }
 
@@ -1686,6 +1852,7 @@ function hideSuggestions() {
   suggestionPopup.style.display = "none";
   suggestionPopup.innerHTML = "";
   suggestionPopup.dataset.mode = "";
+  currentSuggestionContext = null;
   activeSuggestion = -1;
 }
 
@@ -1702,6 +1869,99 @@ function getRankedTagSuggestions(prefix) {
     return aTag.localeCompare(bTag);
   });
   return matches.slice(0, 40);
+}
+
+function isInsideStyleTag(textBefore) {
+  const opens = (textBefore.match(/<style\b[^>]*>/gi) || []).length;
+  const closes = (textBefore.match(/<\/style>/gi) || []).length;
+  return opens > closes;
+}
+
+function getCssSuggestionContext(textBefore) {
+  const lineStart = textBefore.lastIndexOf("\n") + 1;
+  const lineText = textBefore.substring(lineStart);
+  const valueMatch = lineText.match(/([a-z-]+)\s*:\s*([^;}]*)$/i);
+  if (valueMatch) {
+    const propertyName = valueMatch[1].toLowerCase();
+    const rawValue = valueMatch[2];
+    const trimLeftCount = rawValue.length - rawValue.replace(/^\s+/, "").length;
+    const valuePrefix = rawValue.substring(trimLeftCount);
+    const replaceEnd = textBefore.length;
+    const replaceStart = replaceEnd - valuePrefix.length;
+    return {
+      mode: "css-value",
+      propertyName,
+      prefix: valuePrefix,
+      replaceStart,
+      replaceEnd,
+    };
+  }
+
+  const cssWithoutStrings = textBefore.replace(/"[^"]*"|'[^']*'/g, "");
+  const openBraces = (cssWithoutStrings.match(/\{/g) || []).length;
+  const closeBraces = (cssWithoutStrings.match(/\}/g) || []).length;
+  const insideDeclaration = openBraces > closeBraces;
+
+  if (insideDeclaration) {
+    const propMatch = lineText.match(/([a-z-]*)$/i);
+    const propertyPrefix = propMatch ? propMatch[1] : "";
+    return {
+      mode: "css-property",
+      propertyName: "",
+      prefix: propertyPrefix,
+      replaceStart: textBefore.length - propertyPrefix.length,
+      replaceEnd: textBefore.length,
+    };
+  }
+
+  const selectorMatch = lineText.match(/([@.#a-z0-9_-]*)$/i);
+  const selectorPrefix = selectorMatch ? selectorMatch[1] : "";
+  return {
+    mode: "css-selector",
+    propertyName: "",
+    prefix: selectorPrefix,
+    replaceStart: textBefore.length - selectorPrefix.length,
+    replaceEnd: textBefore.length,
+  };
+}
+
+function getRankedCssSuggestions(prefix, mode, propertyName) {
+  const q = (prefix || "").toLowerCase();
+  let source = [];
+  if (mode === "css-property") {
+    source = cssPropertySuggestions.map((value) => ({
+      value,
+      desc: "CSS property",
+    }));
+  } else if (mode === "css-value") {
+    const propertyValues = cssValueSuggestionsByProperty[propertyName] || [];
+    source = [...propertyValues, ...cssGenericValueSuggestions].map((value) => ({
+      value,
+      desc: `Value for ${propertyName || "property"}`,
+    }));
+  } else {
+    source = cssSelectorSuggestions.map((value) => ({
+      value,
+      desc: "Selector or at-rule",
+    }));
+  }
+
+  const deduped = Array.from(
+    new Map(source.map((entry) => [entry.value.toLowerCase(), entry])).values(),
+  );
+  const matches = deduped.filter((entry) =>
+    entry.value.toLowerCase().includes(q),
+  );
+  matches.sort((a, b) => {
+    const aValue = a.value.toLowerCase();
+    const bValue = b.value.toLowerCase();
+    const aStarts = aValue.startsWith(q) ? 1 : 0;
+    const bStarts = bValue.startsWith(q) ? 1 : 0;
+    if (aStarts !== bStarts) return bStarts - aStarts;
+    if (aValue.length !== bValue.length) return aValue.length - bValue.length;
+    return aValue.localeCompare(bValue);
+  });
+  return matches.slice(0, 30);
 }
 
 function getFileSuggestionContext(textBefore) {
@@ -1854,6 +2114,7 @@ function positionSuggestionPopup(editor) {
 function showSuggestions(editor, suggestions, prefix, mode) {
   suggestionPopup.innerHTML = "";
   suggestionPopup.dataset.mode = mode;
+  currentSuggestionContext = null;
 
   const header = document.createElement("div");
   header.className = "suggestion-header";
@@ -1912,9 +2173,57 @@ function showSuggestions(editor, suggestions, prefix, mode) {
   positionSuggestionPopup(editor);
 }
 
+function showCssSuggestions(editor, suggestions, mode) {
+  suggestionPopup.innerHTML = "";
+  suggestionPopup.dataset.mode = mode;
+
+  const header = document.createElement("div");
+  header.className = "suggestion-header";
+  const title =
+    mode === "css-property"
+      ? "CSS properties"
+      : mode === "css-value"
+        ? "CSS values"
+        : "CSS selectors";
+  header.innerHTML = `
+    <span>${title} (${suggestions.length})</span>
+    <span class="suggestion-shortcuts">
+      <span class="suggestion-shortcut">Enter</span>
+      <span class="suggestion-shortcut">Tab</span>
+      <span class="suggestion-shortcut">Esc</span>
+    </span>
+  `;
+  suggestionPopup.appendChild(header);
+
+  suggestions.forEach((entry) => {
+    const suggestionItem = document.createElement("div");
+    suggestionItem.className = "suggestion-item";
+    suggestionItem.innerHTML = `
+      <span class="suggestion-icon">CSS</span>
+      <span class="suggestion-content">
+        <div class="suggestion-tag">${escapeHtml(entry.value)}</div>
+        <div class="suggestion-desc">${escapeHtml(entry.desc || "CSS suggestion")}</div>
+      </span>
+    `;
+    suggestionItem.dataset.tag = entry.value;
+    suggestionItem.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      selectSuggestion(entry.value);
+    });
+    suggestionPopup.appendChild(suggestionItem);
+  });
+
+  suggestionPopup.style.display = "block";
+  activeSuggestion = 0;
+  const items = suggestionPopup.querySelectorAll(".suggestion-item");
+  updateSuggestionHighlight(items);
+  positionSuggestionPopup(editor);
+}
+
 function showFileSuggestions(editor, fileSuggestions, prefix) {
   suggestionPopup.innerHTML = "";
   suggestionPopup.dataset.mode = "file";
+  currentSuggestionContext = null;
 
   const header = document.createElement("div");
   header.className = "suggestion-header";
@@ -1968,15 +2277,19 @@ function showFileSuggestions(editor, fileSuggestions, prefix) {
  * Inserts the selected suggestion into the editor.
  */
 function selectSuggestion(tag) {
-  if (suggestionPopup.dataset.mode === "file") {
+  const mode = suggestionPopup.dataset.mode;
+  if (mode === "file") {
     selectFileSuggestion(tag);
+    return;
+  }
+  if (mode === "css-property" || mode === "css-value" || mode === "css-selector") {
+    selectCssSuggestion(tag);
     return;
   }
 
   const editor = document.getElementById("activeEditor");
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
-  const mode = suggestionPopup.dataset.mode;
   const isClosing = mode === "tag-closing";
   const isPlain = mode === "tag-plain";
   const triggerMatch = isClosing
@@ -2002,6 +2315,35 @@ function selectSuggestion(tag) {
   editor.selectionStart = editor.selectionEnd = shouldAutoClose
     ? textBeforeTrigger.length + insertedTag.length
     : textBeforeTrigger.length + insertedTag.length;
+
+  hideSuggestions();
+  activeFile.content = editor.value;
+  updateLineNumbers(editor);
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  handleCodeChange({
+    target: { id: activeFile.type + "Code", value: editor.value },
+  });
+  editor.focus();
+}
+
+function selectCssSuggestion(value) {
+  const editor = document.getElementById("activeEditor");
+  if (!currentSuggestionContext) return;
+
+  const { mode, replaceStart, replaceEnd } = currentSuggestionContext;
+  const textAfter = editor.value.substring(replaceEnd);
+  let insertedText = value;
+
+  if (mode === "css-property") {
+    const afterSlice = editor.value.substring(replaceEnd);
+    if (!/^\s*:/.test(afterSlice)) {
+      insertedText = `${value}: `;
+    }
+  }
+
+  editor.value =
+    editor.value.substring(0, replaceStart) + insertedText + textAfter;
+  editor.selectionStart = editor.selectionEnd = replaceStart + insertedText.length;
 
   hideSuggestions();
   activeFile.content = editor.value;
@@ -2386,8 +2728,7 @@ document.addEventListener("mousedown", (e) => {
   const editor = document.getElementById("activeEditor");
   if (!editor) return;
   const clickedInsidePopup = suggestionPopup.contains(e.target);
-  const clickedEditor = e.target === editor;
-  if (!clickedInsidePopup && !clickedEditor) {
+  if (!clickedInsidePopup) {
     hideSuggestions();
   }
 });
