@@ -375,6 +375,52 @@ input:checked + .slider:before {
   color: var(--syntax-punctuation);
 }
 
+body.light #highlightLayer .token.comment,
+body.light #settingsPreview .token.comment {
+  color: #6e7781;
+}
+
+body.light #highlightLayer .token.keyword,
+body.light #settingsPreview .token.keyword {
+  color: #cf222e;
+}
+
+body.light #highlightLayer .token.string,
+body.light #settingsPreview .token.string {
+  color: #0a3069;
+}
+
+body.light #highlightLayer .token.number,
+body.light #settingsPreview .token.number {
+  color: #0550ae;
+}
+
+body.light #highlightLayer .token.tag {
+  color: #116329;
+}
+
+body.light #highlightLayer .token.attr {
+  color: #6f42c1;
+}
+
+body.light #highlightLayer .token.property {
+  color: #953800;
+}
+
+body.light #highlightLayer .token.selector {
+  color: #7a4e00;
+}
+
+body.light #highlightLayer .token.operator,
+body.light #settingsPreview .token.operator {
+  color: #8250df;
+}
+
+body.light #highlightLayer .token.punctuation,
+body.light #settingsPreview .token.punctuation {
+  color: #24292f;
+}
+
 textarea {
   width: 100%;
   height: 100%;

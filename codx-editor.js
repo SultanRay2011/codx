@@ -1021,9 +1021,19 @@ function updatePreviewBox() {
 
 function applySettingsToEditors() {
   const editor = document.getElementById("activeEditor");
+  if (!editor) return;
+  const editorWrapper = editor.closest(".editor-wrapper");
+  const selectedBg = editorBgColorInput.value || defaultSettings.bgColor;
 
   editor.style.fontSize = editorTextSizeInput.value + "px";
   editor.style.fontFamily = editorFontFamilySelect.value;
+  editor.style.backgroundColor = "transparent";
+  if (editorWrapper) {
+    editorWrapper.style.backgroundColor = selectedBg;
+  }
+  if (highlightLayer) {
+    highlightLayer.style.backgroundColor = selectedBg;
+  }
   lineNumbers.style.fontSize = editorTextSizeInput.value + "px";
   syncSyntaxLayerStyle(editor);
   renderSyntaxHighlight(editor);
@@ -1093,6 +1103,11 @@ resetSettingsBtn.addEventListener("click", () => {
 themeToggle.addEventListener("change", () => {
   document.body.classList.toggle("light", themeToggle.checked);
   safeLocalStorage("set", "theme", themeToggle.checked ? "light" : "dark");
+  const editor = document.getElementById("activeEditor");
+  if (editor) {
+    renderSyntaxHighlight(editor);
+  }
+  updatePreviewBox();
 });
 
 const savedTheme = safeLocalStorage("get", "theme");
