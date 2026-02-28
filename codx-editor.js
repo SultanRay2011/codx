@@ -2333,17 +2333,25 @@ function selectCssSuggestion(value) {
   const { mode, replaceStart, replaceEnd } = currentSuggestionContext;
   const textAfter = editor.value.substring(replaceEnd);
   let insertedText = value;
+  let cursorOffset = value.length;
 
   if (mode === "css-property") {
     const afterSlice = editor.value.substring(replaceEnd);
     if (!/^\s*:/.test(afterSlice)) {
       insertedText = `${value}: `;
+      cursorOffset = insertedText.length;
+    }
+  } else if (mode === "css-selector") {
+    const afterSlice = editor.value.substring(replaceEnd);
+    if (!/^\s*\{/.test(afterSlice)) {
+      insertedText = `${value} {\n    \n}`;
+      cursorOffset = value.length + 7;
     }
   }
 
   editor.value =
     editor.value.substring(0, replaceStart) + insertedText + textAfter;
-  editor.selectionStart = editor.selectionEnd = replaceStart + insertedText.length;
+  editor.selectionStart = editor.selectionEnd = replaceStart + cursorOffset;
 
   hideSuggestions();
   activeFile.content = editor.value;

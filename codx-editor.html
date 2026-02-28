@@ -22,14 +22,28 @@
     <link rel="stylesheet" href="/codx-editor.css" />
   </head>
   <body>
+    <a
+      href="#activeEditor"
+      style="
+        position: absolute;
+        left: -9999px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      "
+      onfocus="this.style.left='16px';this.style.top='12px';this.style.width='auto';this.style.height='auto';this.style.padding='8px 12px';this.style.background='var(--accent-color)';this.style.color='#fff';this.style.borderRadius='6px';this.style.zIndex='3000';"
+      onblur="this.style.left='-9999px';this.style.top='auto';this.style.width='1px';this.style.height='1px';this.style.overflow='hidden';"
+      >Skip to editor</a
+    >
     <header>
       <div class="header-switches" style="display: flex; align-items: center; gap: 8px">
-        <span>Auto-Run</span>
+        <label for="autoRun">Auto-Run</label>
         <label class="switch" title="Toggle auto-run feature">
           <input type="checkbox" id="autoRun" checked />
           <span class="slider"></span>
         </label>
-        <span>Console</span>
+        <label for="showConsole">Console</label>
         <label class="switch" title="Show/hide console output">
           <input type="checkbox" id="showConsole" />
           <span class="slider"></span>
@@ -107,12 +121,12 @@
       </button>
 
       <div class="theme-toggle">
-        <span><strong>🌙</strong></span>
+        <span aria-hidden="true"><strong>Dark</strong></span>
         <label class="switch" title="Toggle light/dark theme">
           <input type="checkbox" id="themeToggle" />
           <span class="slider"></span>
         </label>
-        <span><strong>☀️</strong></span>
+        <span aria-hidden="true"><strong>Light</strong></span>
       </div>
     </header>
 
@@ -178,7 +192,7 @@
               "
             ></div>
             <!-- ADDED: Suggestion Popup -->
-            <div id="suggestionPopup"></div>
+            <div id="suggestionPopup" role="listbox" aria-label="Code suggestions"></div>
           </div>
         </div>
 
@@ -260,6 +274,8 @@
             id="consoleOutput"
             class="console-output"
             aria-label="Console output area"
+            role="log"
+            aria-live="polite"
           ></div>
         </div>
       </div>
@@ -268,6 +284,9 @@
     <!-- Settings Modal -->
     <div
       id="settingsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settingsTitle"
       style="
         display: none;
         position: fixed;
@@ -297,7 +316,7 @@
           overflow-y: auto;
         "
       >
-        <span
+        <button type="button"
           id="closeSettingsBtn"
           style="
             position: absolute;
@@ -308,20 +327,20 @@
             color: var(--text-muted);
             cursor: pointer;
             line-height: 1;
+            background: transparent;
+            border: none;
           "
           aria-label="Close settings"
-          >&times;</span
-        >
+          >&times;</button>
 
-        <h2
-          style="margin-top: 0; color: var(--text-primary); margin-bottom: 20px"
-        >
-          ⚙️ Editor Settings
+        <h2 id="settingsTitle" style="margin-top: 0; color: var(--text-primary); margin-bottom: 20px">
+          Editor Settings
         </h2>
 
         <!-- Background Color -->
         <div style="margin-bottom: 20px">
           <label
+            for="editorBgColor"
             style="
               display: block;
               margin-bottom: 8px;
@@ -366,6 +385,7 @@
         <!-- Text Size -->
         <div style="margin-bottom: 20px">
           <label
+            for="editorTextSize"
             style="
               display: block;
               margin-bottom: 8px;
@@ -390,6 +410,7 @@
         <!-- Font Family -->
         <div style="margin-bottom: 20px">
           <label
+            for="editorFontFamily"
             style="
               display: block;
               margin-bottom: 8px;
@@ -486,6 +507,9 @@
     <!-- Collaboration Modal -->
     <div
       id="collabModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
       style="
         display: none;
         position: fixed;
@@ -512,7 +536,7 @@
           border-radius: 8px;
         "
       >
-        <span
+        <button type="button"
           id="closeModalBtn"
           style="
             position: absolute;
@@ -523,10 +547,11 @@
             color: var(--text-muted);
             cursor: pointer;
             line-height: 1;
+            background: transparent;
+            border: none;
           "
           aria-label="Close modal"
-          >&times;</span
-        >
+          >&times;</button>
         <h3 id="modalTitle">Modal Title</h3>
         <div id="modalBody" style="margin: 20px 0"></div>
         <p
@@ -550,6 +575,9 @@
     <!-- Font Picker Modal -->
     <div
       id="fontPickerModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fontPickerTitle"
       style="
         display: none;
         position: fixed;
@@ -579,7 +607,7 @@
           overflow-y: auto;
         "
       >
-        <span
+        <button type="button"
           id="closeFontPickerBtn"
           style="
             position: absolute;
@@ -590,15 +618,14 @@
             color: var(--text-muted);
             cursor: pointer;
             line-height: 1;
+            background: transparent;
+            border: none;
           "
           aria-label="Close font picker"
-          >&times;</span
-        >
+          >&times;</button>
 
-        <h2
-          style="margin-top: 0; color: var(--text-primary); margin-bottom: 10px"
-        >
-          🔤 Font Picker
+        <h2 id="fontPickerTitle" style="margin-top: 0; color: var(--text-primary); margin-bottom: 10px">
+          Font Picker
         </h2>
 
         <div
