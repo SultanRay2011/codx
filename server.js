@@ -194,5 +194,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`CodX server running on http://localhost:${PORT}`);
+  console.log(`CodX Editor server running on http://localhost:${PORT}`);
 });

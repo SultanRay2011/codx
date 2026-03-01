@@ -1,4 +1,4 @@
-﻿// PART 1 - INITIALIZATION & CONSTANTS
+// PART 1 - INITIALIZATION & CONSTANTS
 const iframe = document.getElementById("output");
 const autoRunCheckbox = document.getElementById("autoRun");
 const showConsoleCheckbox = document.getElementById("showConsole");
@@ -68,167 +68,167 @@ const htmlTagsData = {
   structure: [
     {
       tag: "html",
-      icon: "ðŸŒ",
+      icon: "🌐",
       desc: "Root element of HTML document",
       attrs: ["lang"],
     },
-    { tag: "head", icon: "ðŸ“‹", desc: "Container for metadata", attrs: [] },
-    { tag: "body", icon: "ðŸ“„", desc: "Main content container", attrs: [] },
+    { tag: "head", icon: "📋", desc: "Container for metadata", attrs: [] },
+    { tag: "body", icon: "📄", desc: "Main content container", attrs: [] },
     {
       tag: "header",
-      icon: "ðŸŽ¯",
+      icon: "🎯",
       desc: "Header section",
       attrs: ["id", "class"],
     },
     {
       tag: "footer",
-      icon: "ðŸ“Œ",
+      icon: "📌",
       desc: "Footer section",
       attrs: ["id", "class"],
     },
     {
       tag: "main",
-      icon: "ðŸ“°",
+      icon: "📰",
       desc: "Main content area",
       attrs: ["id", "class"],
     },
     {
       tag: "section",
-      icon: "ðŸ“¦",
+      icon: "📦",
       desc: "Generic section",
       attrs: ["id", "class"],
     },
     {
       tag: "article",
-      icon: "ðŸ“",
+      icon: "📝",
       desc: "Self-contained content",
       attrs: ["id", "class"],
     },
     {
       tag: "aside",
-      icon: "ðŸ“Ž",
+      icon: "📎",
       desc: "Sidebar content",
       attrs: ["id", "class"],
     },
     {
       tag: "nav",
-      icon: "ðŸ§­",
+      icon: "🧭",
       desc: "Navigation links",
       attrs: ["id", "class"],
     },
     {
       tag: "div",
-      icon: "â¬œ",
+      icon: "⬜",
       desc: "Generic container",
       attrs: ["id", "class"],
     },
   ],
   text: [
-    { tag: "h1", icon: "ðŸ“°", desc: "Main heading", attrs: ["id", "class"] },
+    { tag: "h1", icon: "📰", desc: "Main heading", attrs: ["id", "class"] },
     {
       tag: "h2",
-      icon: "ðŸ“°",
+      icon: "📰",
       desc: "Subheading level 2",
       attrs: ["id", "class"],
     },
     {
       tag: "h3",
-      icon: "ðŸ“°",
+      icon: "📰",
       desc: "Subheading level 3",
       attrs: ["id", "class"],
     },
     {
       tag: "h4",
-      icon: "ðŸ“°",
+      icon: "📰",
       desc: "Subheading level 4",
       attrs: ["id", "class"],
     },
     {
       tag: "h5",
-      icon: "ðŸ“°",
+      icon: "📰",
       desc: "Subheading level 5",
       attrs: ["id", "class"],
     },
     {
       tag: "h6",
-      icon: "ðŸ“°",
+      icon: "📰",
       desc: "Subheading level 6",
       attrs: ["id", "class"],
     },
-    { tag: "p", icon: "Â¶", desc: "Paragraph", attrs: ["id", "class"] },
+    { tag: "p", icon: "¶", desc: "Paragraph", attrs: ["id", "class"] },
     {
       tag: "span",
-      icon: "âœï¸",
+      icon: "✏️",
       desc: "Inline text container",
       attrs: ["id", "class"],
     },
-    { tag: "strong", icon: "ðŸ’ª", desc: "Strong importance (bold)", attrs: [] },
-    { tag: "em", icon: "âœ¨", desc: "Emphasized text (italic)", attrs: [] },
+    { tag: "strong", icon: "💪", desc: "Strong importance (bold)", attrs: [] },
+    { tag: "em", icon: "✨", desc: "Emphasized text (italic)", attrs: [] },
     { tag: "b", icon: "B", desc: "Bold text", attrs: [] },
     { tag: "i", icon: "I", desc: "Italic text", attrs: [] },
-    { tag: "u", icon: "UÌ²", desc: "Underlined text", attrs: [] },
-    { tag: "mark", icon: "ðŸ–ï¸", desc: "Highlighted text", attrs: [] },
-    { tag: "small", icon: "ðŸ”", desc: "Smaller text", attrs: [] },
-    { tag: "code", icon: "ðŸ’»", desc: "Inline code", attrs: [] },
-    { tag: "pre", icon: "ðŸ“‹", desc: "Preformatted text", attrs: [] },
-    { tag: "blockquote", icon: "ðŸ’¬", desc: "Block quotation", attrs: ["cite"] },
+    { tag: "u", icon: "U̲", desc: "Underlined text", attrs: [] },
+    { tag: "mark", icon: "🖍️", desc: "Highlighted text", attrs: [] },
+    { tag: "small", icon: "🔍", desc: "Smaller text", attrs: [] },
+    { tag: "code", icon: "💻", desc: "Inline code", attrs: [] },
+    { tag: "pre", icon: "📋", desc: "Preformatted text", attrs: [] },
+    { tag: "blockquote", icon: "💬", desc: "Block quotation", attrs: ["cite"] },
   ],
   lists: [
-    { tag: "ul", icon: "â€¢", desc: "Unordered list", attrs: ["id", "class"] },
+    { tag: "ul", icon: "•", desc: "Unordered list", attrs: ["id", "class"] },
     {
       tag: "ol",
       icon: "1.",
       desc: "Ordered list",
       attrs: ["id", "class", "type", "start"],
     },
-    { tag: "li", icon: "â†’", desc: "List item", attrs: ["value"] },
-    { tag: "dl", icon: "ðŸ“–", desc: "Description list", attrs: [] },
-    { tag: "dt", icon: "ðŸ“Œ", desc: "Description term", attrs: [] },
-    { tag: "dd", icon: "ðŸ’¬", desc: "Description details", attrs: [] },
+    { tag: "li", icon: "→", desc: "List item", attrs: ["value"] },
+    { tag: "dl", icon: "📖", desc: "Description list", attrs: [] },
+    { tag: "dt", icon: "📌", desc: "Description term", attrs: [] },
+    { tag: "dd", icon: "💬", desc: "Description details", attrs: [] },
   ],
   media: [
     {
       tag: "img",
-      icon: "ðŸ–¼ï¸",
+      icon: "🖼️",
       desc: "Image",
       badge: "self-closing",
       attrs: ["src", "alt", "width", "height"],
     },
     {
       tag: "video",
-      icon: "ðŸŽ¥",
+      icon: "🎥",
       desc: "Video player",
       attrs: ["src", "controls", "width", "height"],
     },
     {
       tag: "audio",
-      icon: "ðŸ”Š",
+      icon: "🔊",
       desc: "Audio player",
       attrs: ["src", "controls"],
     },
     {
       tag: "source",
-      icon: "ðŸ“‚",
+      icon: "📂",
       desc: "Media source",
       badge: "self-closing",
       attrs: ["src", "type"],
     },
-    { tag: "picture", icon: "ðŸ–¼ï¸", desc: "Responsive images", attrs: [] },
+    { tag: "picture", icon: "🖼️", desc: "Responsive images", attrs: [] },
     {
       tag: "canvas",
-      icon: "ðŸŽ¨",
+      icon: "🎨",
       desc: "Graphics canvas",
       attrs: ["id", "width", "height"],
     },
     {
       tag: "svg",
-      icon: "ðŸŽ¨",
+      icon: "🎨",
       desc: "Vector graphics",
       attrs: ["width", "height", "viewBox"],
     },
     {
       tag: "iframe",
-      icon: "ðŸ–¥ï¸",
+      icon: "🖥️",
       desc: "Embedded frame",
       attrs: ["src", "width", "height"],
     },
@@ -236,59 +236,59 @@ const htmlTagsData = {
   forms: [
     {
       tag: "form",
-      icon: "ðŸ“",
+      icon: "📝",
       desc: "Form container",
       attrs: ["action", "method"],
     },
     {
       tag: "input",
-      icon: "âŒ¨ï¸",
+      icon: "⌨️",
       desc: "Input field",
       badge: "self-closing",
       attrs: ["type", "name", "id", "placeholder", "value"],
     },
     {
       tag: "textarea",
-      icon: "ðŸ“„",
+      icon: "📄",
       desc: "Multi-line text input",
       attrs: ["name", "id", "rows", "cols"],
     },
     {
       tag: "button",
-      icon: "ðŸ”˜",
+      icon: "🔘",
       desc: "Clickable button",
       attrs: ["type", "id", "class"],
     },
-    { tag: "select", icon: "ðŸ“‹", desc: "Dropdown menu", attrs: ["name", "id"] },
+    { tag: "select", icon: "📋", desc: "Dropdown menu", attrs: ["name", "id"] },
     {
       tag: "option",
-      icon: "â€¢",
+      icon: "•",
       desc: "Dropdown option",
       attrs: ["value", "selected"],
     },
-    { tag: "label", icon: "ðŸ·ï¸", desc: "Input label", attrs: ["for"] },
-    { tag: "fieldset", icon: "ðŸ“¦", desc: "Group form elements", attrs: [] },
-    { tag: "legend", icon: "ðŸ“Œ", desc: "Fieldset caption", attrs: [] },
+    { tag: "label", icon: "🏷️", desc: "Input label", attrs: ["for"] },
+    { tag: "fieldset", icon: "📦", desc: "Group form elements", attrs: [] },
+    { tag: "legend", icon: "📌", desc: "Fieldset caption", attrs: [] },
   ],
   table: [
     {
       tag: "table",
-      icon: "ðŸ“Š",
+      icon: "📊",
       desc: "Table container",
       attrs: ["id", "class"],
     },
-    { tag: "thead", icon: "ðŸ“‹", desc: "Table header group", attrs: [] },
-    { tag: "tbody", icon: "ðŸ“„", desc: "Table body group", attrs: [] },
-    { tag: "tfoot", icon: "ðŸ“Œ", desc: "Table footer group", attrs: [] },
-    { tag: "tr", icon: "â†’", desc: "Table row", attrs: [] },
-    { tag: "th", icon: "ðŸ“Œ", desc: "Header cell", attrs: ["scope"] },
-    { tag: "td", icon: "â¬œ", desc: "Data cell", attrs: ["colspan", "rowspan"] },
+    { tag: "thead", icon: "📋", desc: "Table header group", attrs: [] },
+    { tag: "tbody", icon: "📄", desc: "Table body group", attrs: [] },
+    { tag: "tfoot", icon: "📌", desc: "Table footer group", attrs: [] },
+    { tag: "tr", icon: "→", desc: "Table row", attrs: [] },
+    { tag: "th", icon: "📌", desc: "Header cell", attrs: ["scope"] },
+    { tag: "td", icon: "⬜", desc: "Data cell", attrs: ["colspan", "rowspan"] },
   ],
   links: [
-    { tag: "a", icon: "ðŸ”—", desc: "Hyperlink", attrs: ["href", "target"] },
+    { tag: "a", icon: "🔗", desc: "Hyperlink", attrs: ["href", "target"] },
     {
       tag: "link",
-      icon: "ðŸ“Ž",
+      icon: "📎",
       desc: "External resource",
       badge: "self-closing",
       attrs: ["rel", "href"],
@@ -297,16 +297,16 @@ const htmlTagsData = {
   meta: [
     {
       tag: "meta",
-      icon: "â„¹ï¸",
+      icon: "ℹ️",
       desc: "Metadata",
       badge: "self-closing",
       attrs: ["charset", "name", "content"],
     },
-    { tag: "title", icon: "ðŸ“°", desc: "Page title", attrs: [] },
-    { tag: "style", icon: "ðŸŽ¨", desc: "CSS styles", attrs: [] },
+    { tag: "title", icon: "📰", desc: "Page title", attrs: [] },
+    { tag: "style", icon: "🎨", desc: "CSS styles", attrs: [] },
     {
       tag: "script",
-      icon: "âš™ï¸",
+      icon: "⚙️",
       desc: "JavaScript code",
       attrs: ["src", "type"],
     },
@@ -587,7 +587,7 @@ let projectFiles = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodX Starter</title>
+    <title>CodX Editor Starter</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -741,7 +741,7 @@ kbd {
   {
     name: "script.js",
     type: "js",
-    content: `console.log('Hello World from CodX!');`,
+    content: `console.log('Hello World from CodX Editor!');`,
     active: false,
   },
 ];
@@ -2512,7 +2512,7 @@ function handleAutoCloseAndIndent(e, editor) {
       if (textBefore.endsWith("{") || textBefore.endsWith("(")) {
         // Case 1: Cursor immediately after { or (
 
-        // --- ðŸ’¡ MODIFICATION START ---
+        // --- 💡 MODIFICATION START ---
         const autoClosingBracket = textBefore.endsWith("{") ? "}" : ")";
 
         // Check if the corresponding closing bracket already exists right after the cursor
@@ -2537,7 +2537,7 @@ function handleAutoCloseAndIndent(e, editor) {
             textAfter;
           newCursorPos = pos + 1 + nextIndent.length; // Pos + \n + newIndent
         }
-        // --- ðŸ’¡ MODIFICATION END ---
+        // --- 💡 MODIFICATION END ---
       } else if (isTriggered) {
         // Case 2: Cursor inside {} or () where Enter was pressed (e.g., body{ | } )
         // Insert: \n  \n
@@ -3667,7 +3667,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-code",
     title: "Code Editor",
     description:
-      "Write your code here! Features include:\nâ€¢ Auto-closing tags (HTML)\nâ€¢ Auto-closing brackets (CSS/JS)\nâ€¢ Tag suggestions (type < in HTML)\nâ€¢ Tab for 2-space indentation\nâ€¢ Drag & drop files",
+      "Write your code here! Features include:\n• Auto-closing tags (HTML)\n• Auto-closing brackets (CSS/JS)\n• Tag suggestions (type < in HTML)\n• Tab for 2-space indentation\n• Drag & drop files",
     position: "right",
   },
   {
