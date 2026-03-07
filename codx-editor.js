@@ -20,6 +20,7 @@ const editorBgColorText = document.getElementById("editorBgColorText");
 const editorTextSizeInput = document.getElementById("editorTextSize");
 const textSizeValue = document.getElementById("textSizeValue");
 const editorFontFamilySelect = document.getElementById("editorFontFamily");
+const editorFontEmbedInput = document.getElementById("editorFontEmbed");
 const settingsPreview = document.getElementById("settingsPreview");
 const settingsPreviewCode = document.getElementById("settingsPreviewCode");
 const newFileBtn = document.getElementById("newFileBtn");
@@ -30,6 +31,8 @@ const modalTitle = document.getElementById("modalTitle");
 const modalBody = document.getElementById("modalBody");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const typingIndicatorEl = document.getElementById("typingIndicator");
+const exportZipBtn = document.querySelector('button[aria-label="Export project as ZIP"]');
+const importZipBtn = document.querySelector('button[aria-label="Import ZIP file"]');
 const previewFullscreenBtn = document.getElementById("previewFullscreenBtn");
 const previewIframe = document.getElementById("output");
 const errorMsgEl = document.getElementById("errorMsg");
@@ -578,6 +581,53 @@ let collabParticipants = [];
 let activeSessionId = null;
 let isApplyingRemoteState = false;
 let currentTypingIndicator = null;
+let fileErrorCounts = {};
+const defaultCollabPermissions = {
+  disableGroupChat: false,
+  manageSelectedFiles: false,
+  selectedFiles: [],
+  disableExportZip: false,
+  disableImportZip: false,
+  disableNewFile: false,
+};
+let collabPermissions = { ...defaultCollabPermissions };
+let collabHostName = "";
+
+function resetFileErrorCounts() {
+  fileErrorCounts = {};
+}
+
+function resolveProjectFileName(rawName) {
+  const candidate = String(rawName || "").trim().split(/[\\/]/).pop();
+  if (!candidate) return null;
+  const match = projectFiles.find(
+    (f) => f.name.toLowerCase() === candidate.toLowerCase(),
+  );
+  return match ? match.name : null;
+}
+
+function extractFileNameFromConsoleMessage(message) {
+  const text = String(message || "");
+  const bracketMatch = text.match(/\[([^\]]+\.(?:html|css|js))\]/i);
+  if (bracketMatch) return resolveProjectFileName(bracketMatch[1]);
+
+  const plainMatch = text.match(/\b([A-Za-z0-9_.-]+\.(?:html|css|js))\b/i);
+  if (plainMatch) return resolveProjectFileName(plainMatch[1]);
+
+  return null;
+}
+
+function updateFileErrorCountsFromConsole() {
+  const next = {};
+  const errorLines = consoleOutput.querySelectorAll("div.error");
+  errorLines.forEach((line) => {
+    const fileName = extractFileNameFromConsoleMessage(line.textContent);
+    if (!fileName) return;
+    next[fileName] = (next[fileName] || 0) + 1;
+  });
+  fileErrorCounts = next;
+  renderFileList();
+}
 let projectFiles = [
   {
     name: "index.html",
@@ -593,6 +643,7 @@ let projectFiles = [
 <body>
     <main class="shell">
       <section class="hero">
+        <img class="brand-logo" src="cx.png" alt="CodX logo">
         <p class="eyebrow">CodX Editor Starter</p>
         <h1>Build and preview web apps instantly</h1>
         <p class="lead">
@@ -616,7 +667,7 @@ let projectFiles = [
           <ul>
             <li><kbd>Ctrl</kbd> + <kbd>S</kbd> Save current file</li>
             <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Run preview manually</li>
-            <li><kbd>Ctrl</kbd> + <kbd>N</kbd> Create a new file</li>
+            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd> Create a new file</li>
             <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>
           </ul>
         </article>
@@ -632,12 +683,12 @@ let projectFiles = [
     name: "style.css",
     type: "css",
     content: `:root {
-  --bg: #0b1220;
-  --panel: #121b2d;
-  --panel-2: #16233a;
-  --text: #eaf1ff;
-  --muted: #98a8c8;
-  --accent: #3ddc97;
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #f8fafc;
+  --text: #111827;
+  --muted: #4b5563;
+  --accent: #0f766e;
 }
 
 * {
@@ -649,10 +700,7 @@ body {
   min-height: 100vh;
   font-family: "Segoe UI", Tahoma, sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(circle at 85% -10%, rgba(61, 220, 151, 0.2), transparent 45%),
-    radial-gradient(circle at 10% 100%, rgba(61, 153, 220, 0.14), transparent 40%),
-    var(--bg);
+  background: var(--bg);
   display: grid;
   place-items: center;
   padding: 24px;
@@ -660,11 +708,18 @@ body {
 
 .shell {
   width: min(920px, 100%);
-  background: rgba(11, 18, 32, 0.72);
-  border: 1px solid rgba(152, 168, 200, 0.25);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 28px;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.brand-logo {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  margin-bottom: 10px;
 }
 
 .eyebrow {
@@ -696,7 +751,7 @@ h1 {
 
 .card {
   background: linear-gradient(180deg, var(--panel), var(--panel-2));
-  border: 1px solid rgba(152, 168, 200, 0.2);
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 16px;
 }
@@ -717,8 +772,8 @@ li {
 }
 
 kbd {
-  background: #0a1020;
-  border: 1px solid rgba(152, 168, 200, 0.35);
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
   border-bottom-width: 2px;
   border-radius: 6px;
   padding: 2px 6px;
@@ -751,6 +806,7 @@ const defaultSettings = {
   bgColor: "#1E1E1E",
   textSize: "14",
   fontFamily: "'JetBrains Mono', 'Consolas', monospace",
+  fontEmbed: "",
 };
 
 // PART 2 - UTILITY FUNCTIONS
@@ -795,8 +851,20 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+const consoleErrorObserver = new MutationObserver(() => {
+  updateFileErrorCountsFromConsole();
+});
+if (consoleOutput) {
+  consoleErrorObserver.observe(consoleOutput, {
+    childList: true,
+    subtree: false,
+  });
+}
+
 function clearConsole() {
   consoleOutput.innerHTML = "";
+  resetFileErrorCounts();
+  renderFileList();
   showNotification("Console cleared", "info");
 }
 
@@ -823,6 +891,30 @@ function renderFileList() {
       typingSpan.textContent = ` - ${currentTypingIndicator.name} is typing...`;
       typingSpan.style.color = currentTypingIndicator.theme || "var(--accent-color)";
       nameSpan.appendChild(typingSpan);
+    }
+
+    const errorCount = fileErrorCounts[file.name] || 0;
+    if (errorCount > 0) {
+      const errorBadge = document.createElement("span");
+      errorBadge.className = "file-error-badge";
+      errorBadge.textContent = String(errorCount);
+      errorBadge.title = `${errorCount} error${errorCount === 1 ? "" : "s"}`;
+      errorBadge.style.cssText = `
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        min-width:18px;
+        height:18px;
+        margin-left:8px;
+        padding:0 5px;
+        border-radius:999px;
+        background:#e53935;
+        color:#fff;
+        font-size:11px;
+        font-weight:700;
+        line-height:1;
+      `;
+      nameSpan.appendChild(errorBadge);
     }
 
     const renameBtn = document.createElement("button");
@@ -856,6 +948,7 @@ function renderFileList() {
     deleteBtn.addEventListener("click", () => deleteFile(file.name));
     fileList.appendChild(fileItem);
   });
+  enforceCollabPermissionsUI();
 }
 
 function switchFile(fileName) {
@@ -872,10 +965,15 @@ function switchFile(fileName) {
     }
   });
   renderFileList();
+  enforceCollabPermissionsUI();
   syncProjectWithSession();
 }
 
 function createNewFile() {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableNewFile) {
+    showNotification("The host disabled creating new files for participants.", "error");
+    return;
+  }
   const name = prompt("Enter file name (e.g., newfile.html):");
   if (!name) return;
   const ext = name.split(".").pop().toLowerCase();
@@ -991,6 +1089,7 @@ function loadSettings() {
       if (!editorFontFamilySelect.value) {
         editorFontFamilySelect.value = defaultSettings.fontFamily;
       }
+      editorFontEmbedInput.value = settings.fontEmbed || "";
     } catch (e) {
       console.error("Error loading settings:", e);
       resetToDefaultSettings();
@@ -998,6 +1097,7 @@ function loadSettings() {
   } else {
     resetToDefaultSettings();
   }
+  updateFontControlsState();
   updatePreviewBox();
   applySettingsToEditors();
 }
@@ -1008,14 +1108,80 @@ function resetToDefaultSettings() {
   editorTextSizeInput.value = defaultSettings.textSize;
   textSizeValue.textContent = defaultSettings.textSize + "px";
   editorFontFamilySelect.value = defaultSettings.fontFamily;
+  editorFontEmbedInput.value = defaultSettings.fontEmbed;
+  applyGoogleFontImport("");
+  updateFontControlsState();
+}
+
+function extractGoogleFontsCssUrl(rawInput) {
+  const raw = String(rawInput || "").trim();
+  if (!raw) return "";
+
+  const hrefMatch = raw.match(/href=["'](https:\/\/fonts\.googleapis\.com\/css2?[^"']+)["']/i);
+  if (hrefMatch) return hrefMatch[1];
+
+  const importMatch = raw.match(/@import\s+url\((['"]?)(https:\/\/fonts\.googleapis\.com\/css2?[^'")\s]+)\1\)/i);
+  if (importMatch) return importMatch[2];
+
+  const directMatch = raw.match(/https:\/\/fonts\.googleapis\.com\/css2?[^\s"'<>)]*/i);
+  if (directMatch) return directMatch[0];
+
+  return "";
+}
+
+function getGoogleFontFamilyName(cssUrl) {
+  try {
+    const url = new URL(cssUrl);
+    const families = url.searchParams.getAll("family");
+    if (!families.length) return "";
+    const first = decodeURIComponent(families[0]).replace(/\+/g, " ");
+    return first.split(":")[0].trim();
+  } catch {
+    return "";
+  }
+}
+
+function applyGoogleFontImport(cssUrl) {
+  let styleEl = document.getElementById("editorGoogleFontImport");
+  if (!cssUrl) {
+    if (styleEl) styleEl.remove();
+    return;
+  }
+
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "editorGoogleFontImport";
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `@import url("${cssUrl}");`;
+}
+
+function getEffectiveEditorFontFamily() {
+  const cssUrl = extractGoogleFontsCssUrl(editorFontEmbedInput.value);
+  if (cssUrl) {
+    applyGoogleFontImport(cssUrl);
+    const familyName = getGoogleFontFamilyName(cssUrl);
+    if (familyName) {
+      return `'${familyName.replace(/'/g, "\\'")}', 'JetBrains Mono', 'Consolas', monospace`;
+    }
+  }
+  return editorFontFamilySelect.value || defaultSettings.fontFamily;
+}
+
+function updateFontControlsState() {
+  const hasGoogleEmbed = Boolean(extractGoogleFontsCssUrl(editorFontEmbedInput.value));
+  editorFontFamilySelect.disabled = hasGoogleEmbed;
+  editorFontFamilySelect.title = hasGoogleEmbed
+    ? "Disabled because a Google Fonts embed link is active."
+    : "";
 }
 
 function updatePreviewBox() {
   settingsPreview.style.backgroundColor = editorBgColorInput.value;
   settingsPreview.style.fontSize = editorTextSizeInput.value + "px";
-  settingsPreview.style.fontFamily = editorFontFamilySelect.value;
+  settingsPreview.style.fontFamily = getEffectiveEditorFontFamily();
   settingsPreviewCode.style.fontSize = editorTextSizeInput.value + "px";
-  settingsPreviewCode.style.fontFamily = editorFontFamilySelect.value;
+  settingsPreviewCode.style.fontFamily = getEffectiveEditorFontFamily();
   settingsPreviewCode.innerHTML = highlightJs(settingsPreviewSampleCode);
 }
 
@@ -1026,7 +1192,7 @@ function applySettingsToEditors() {
   const selectedBg = editorBgColorInput.value || defaultSettings.bgColor;
 
   editor.style.fontSize = editorTextSizeInput.value + "px";
-  editor.style.fontFamily = editorFontFamilySelect.value;
+  editor.style.fontFamily = getEffectiveEditorFontFamily();
   editor.style.backgroundColor = "transparent";
   if (editorWrapper) {
     editorWrapper.style.backgroundColor = selectedBg;
@@ -1060,6 +1226,10 @@ editorTextSizeInput.addEventListener("input", (e) => {
 });
 
 editorFontFamilySelect.addEventListener("change", updatePreviewBox);
+editorFontEmbedInput.addEventListener("input", () => {
+  updateFontControlsState();
+  updatePreviewBox();
+});
 
 settingsBtn.addEventListener("click", () => {
   loadSettings();
@@ -1075,10 +1245,23 @@ settingsModal.addEventListener("click", (e) => {
 });
 
 applySettingsBtn.addEventListener("click", () => {
+  const cssUrl = extractGoogleFontsCssUrl(editorFontEmbedInput.value);
+  if (editorFontEmbedInput.value.trim() && !cssUrl) {
+    showNotification("Invalid Google Fonts embed link. Paste a valid fonts.googleapis.com URL.", "error");
+    return;
+  }
+
+  applyGoogleFontImport(cssUrl);
+  if (cssUrl) {
+    editorFontEmbedInput.value = cssUrl;
+  }
+  updateFontControlsState();
+
   const settings = {
     bgColor: editorBgColorInput.value,
     textSize: editorTextSizeInput.value,
     fontFamily: editorFontFamilySelect.value,
+    fontEmbed: cssUrl || "",
   };
   if (safeLocalStorage("set", "editorSettings", JSON.stringify(settings))) {
     applySettingsToEditors();
@@ -1276,6 +1459,8 @@ function updatePreview() {
 
   let html = htmlFile.content;
   consoleOutput.innerHTML = ""; // Clear console
+  resetFileErrorCounts();
+  renderFileList();
   runPreflightDiagnostics();
 
   // === 1. Replace <link rel="stylesheet" href="style.css"> (handles both attribute orders)
@@ -1354,24 +1539,33 @@ ${jsFile.content}
     },
   );
 
-  // === 3. Handle media: <img>, <video>, <audio> src attributes
+  // === 3. Handle media: <img>, <video>, <audio>, <source> src attributes
+  const resolveMediaFile = (srcValue) => {
+    const normalizedSrc = (srcValue || "").trim().toLowerCase();
+    const srcFileName = normalizedSrc.split("/").pop();
+    return projectFiles.find((f) => {
+      if (f.type !== "media") return false;
+      const fileName = (f.name || "").toLowerCase();
+      return fileName === normalizedSrc || fileName === srcFileName;
+    });
+  };
+
   html = html.replace(
-    /<(img|video|audio)([^>]*)src=["']([^"']+)["']([^>]*)>/gi,
+    /<(img|video|audio|source)([^>]*)src=["']([^"']+)["']([^>]*)>/gi,
     (match, tag, before, src, after) => {
       // Check if it's a data URL, external URL (http/https), or local file
       if (
         src.startsWith("data:") ||
         src.startsWith("http://") ||
-        src.startsWith("https://")
+        src.startsWith("https://") ||
+        src.startsWith("blob:")
       ) {
         // Keep external URLs and data URLs as-is
         return match;
       }
 
       // Try to find the media file in projectFiles
-      const mediaFile = projectFiles.find(
-        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "media",
-      );
+      const mediaFile = resolveMediaFile(src);
       if (mediaFile && mediaFile.content) {
         return `<${tag}${before} src="${mediaFile.content}"${after}>`;
       } else {
@@ -1565,6 +1759,9 @@ function appendConsoleMessage(type, message) {
   line.textContent = message;
   consoleOutput.appendChild(line);
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
+  if (type === "error") {
+    updateFileErrorCountsFromConsole();
+  }
 }
 
 // Line numbers
@@ -1637,12 +1834,14 @@ function highlightHtml(code) {
     { className: "comment", regex: /<!--[\s\S]*?-->/g },
     { className: "keyword", regex: /<!DOCTYPE[\s\S]*?>/gi },
     { className: "string", regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g },
+    // Ensure full closing tags like </div> are colorized as tags.
+    { className: "tag", regex: /<\/[a-zA-Z][a-zA-Z0-9-]*\s*>/g },
     {
       className: "attr",
       regex: /\b[a-zA-Z-:]+(?=\s*=\s*(?:"[^"]*"|'[^']*'))/g,
     },
-    { className: "tag", regex: /<\/?[a-zA-Z][a-zA-Z0-9-]*/g },
-    { className: "punctuation", regex: /\/?>/g },
+    { className: "tag", regex: /<[a-zA-Z][a-zA-Z0-9-]*/g },
+    { className: "tag", regex: /\/?>/g },
   ];
   return wrapTokens(code, patterns);
 }
@@ -1715,6 +1914,11 @@ function initializeEditor() {
 
   // MODIFIED: Combined input listener
   editor.addEventListener("input", (e) => {
+    if (!canCurrentUserEditFile(activeFile ? activeFile.name : "")) {
+      showNotification("You can only edit files selected by the host.", "error");
+      editor.value = activeFile.content;
+      return;
+    }
     hasUnsavedChanges = true;
     activeFile.content = editor.value;
     updateLineNumbers(editor);
@@ -2722,7 +2926,10 @@ document.addEventListener("keydown", (e) => {
 
   // Prevent shortcuts from firing while suggestion box is open
   if (suggestionPopup.style.display === "block") {
-    if (mod && (key === "s" || key === "enter" || key === "n")) {
+    if (
+      mod &&
+      (key === "s" || key === "enter" || key === "q")
+    ) {
       e.preventDefault();
     }
     return;
@@ -2736,7 +2943,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     updatePreview();
   }
-  if (mod && key === "n") {
+  if (mod && key === "q") {
     e.preventDefault();
     createNewFile();
   }
@@ -2775,6 +2982,10 @@ window.addEventListener("resize", () => {
 });
 
 editorContainer.addEventListener("drop", (e) => {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableNewFile) {
+    showNotification("The host disabled creating new files for participants.", "error");
+    return;
+  }
   for (const file of e.dataTransfer.files) {
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -2804,6 +3015,10 @@ editorContainer.addEventListener("drop", (e) => {
 
 // PART 9 - ZIP EXPORT
 async function exportAsZip() {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableExportZip) {
+    showNotification("The host disabled ZIP export for participants.", "error");
+    return;
+  }
   const zip = new JSZip();
   projectFiles.forEach((file) => {
     zip.file(file.name, file.content);
@@ -2825,10 +3040,19 @@ async function exportAsZip() {
 
 // PART 10 - ZIP IMPORT
 function importZip() {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableImportZip) {
+    showNotification("The host disabled ZIP import for participants.", "error");
+    return;
+  }
   document.getElementById("zipFileInput").click();
 }
 
 function handleZipImport(event) {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableImportZip) {
+    showNotification("The host disabled ZIP import for participants.", "error");
+    event.target.value = "";
+    return;
+  }
   const file = event.target.files[0];
   if (!file) return;
 
@@ -2947,6 +3171,146 @@ function validateUsername(u) {
   return { valid: true };
 }
 
+function getMyParticipant() {
+  return collabParticipants.find((p) => p.name === myInfo.name) || null;
+}
+
+function getCurrentHostName() {
+  const hostParticipant = collabParticipants.find((p) => p.role === "host");
+  if (hostParticipant?.name) return hostParticipant.name;
+  return collabHostName || "";
+}
+
+function getMyRole() {
+  const me = getMyParticipant();
+  if (me?.role) return me.role;
+
+  const hostName = getCurrentHostName();
+  if (hostName && myInfo.name === hostName) return "host";
+  return "participant";
+}
+
+function isHost() {
+  return getMyRole() === "host";
+}
+
+function isCoHost() {
+  return getMyRole() === "co-host";
+}
+
+function normalizeCollabPermissions(raw) {
+  const next = {
+    ...defaultCollabPermissions,
+    ...(raw || {}),
+  };
+  const allNames = new Set(projectFiles.map((f) => f.name));
+  next.selectedFiles = Array.isArray(next.selectedFiles)
+    ? Array.from(
+        new Set(
+          next.selectedFiles
+            .map((name) => String(name || "").trim())
+            .filter((name) => name && allNames.has(name)),
+        ),
+      )
+    : [];
+  return next;
+}
+
+function isReadOnlyParticipant() {
+  return activeSessionId && !isHost() && !isCoHost();
+}
+
+function canCurrentUserEditFile(fileName) {
+  if (!activeSessionId || isHost() || isCoHost()) return true;
+  if (!collabPermissions.manageSelectedFiles) return true;
+  return collabPermissions.selectedFiles.includes(fileName);
+}
+
+function enforceCollabPermissionsUI() {
+  if (!activeSessionId) {
+    if (newFileBtn) {
+      newFileBtn.disabled = false;
+      newFileBtn.title = "";
+    }
+    if (exportZipBtn) {
+      exportZipBtn.disabled = false;
+      exportZipBtn.title = "";
+    }
+    if (importZipBtn) {
+      importZipBtn.disabled = false;
+      importZipBtn.title = "";
+    }
+    const editor = document.getElementById("activeEditor");
+    if (editor) {
+      editor.readOnly = false;
+      editor.title = "";
+    }
+    return;
+  }
+
+  const participantRestricted = isReadOnlyParticipant();
+  const lockNewFile = participantRestricted && collabPermissions.disableNewFile;
+  const lockExport = participantRestricted && collabPermissions.disableExportZip;
+  const lockImport = participantRestricted && collabPermissions.disableImportZip;
+  const lockEditor = !canCurrentUserEditFile(activeFile ? activeFile.name : "");
+
+  if (newFileBtn) {
+    newFileBtn.disabled = lockNewFile;
+    newFileBtn.title = lockNewFile ? "The host disabled new file creation." : "";
+  }
+  if (exportZipBtn) {
+    exportZipBtn.disabled = lockExport;
+    exportZipBtn.title = lockExport ? "The host disabled ZIP export." : "";
+  }
+  if (importZipBtn) {
+    importZipBtn.disabled = lockImport;
+    importZipBtn.title = lockImport ? "The host disabled ZIP import." : "";
+  }
+  const editor = document.getElementById("activeEditor");
+  if (editor) {
+    editor.readOnly = lockEditor;
+    editor.title = lockEditor
+      ? "The host allowed editing only on selected files."
+      : "";
+  }
+}
+
+function pushCollabPermissionsUpdate(partial) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  const next = normalizeCollabPermissions({
+    ...collabPermissions,
+    ...(partial || {}),
+  });
+  collabSocket.emit(
+    "collab:set-permissions",
+    { sessionId: activeSessionId, permissions: next },
+    (res) => {
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to update permissions", "error");
+      }
+    },
+  );
+}
+
+function setCoHost(targetName, makeCoHost) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit(
+    "collab:set-role",
+    {
+      sessionId: activeSessionId,
+      targetName,
+      role: makeCoHost ? "co-host" : "participant",
+    },
+    (res) => {
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to update participant role", "error");
+      } else if (collabModal.style.display === "flex") {
+        showSessionDetails(activeSessionId);
+      }
+    },
+  );
+}
+
 function ensureCollabSocket() {
   if (collabSocket && collabSocket.connected) return true;
   if (typeof io !== "function") {
@@ -2970,6 +3334,24 @@ function ensureCollabSocket() {
 
   collabSocket.on("collab:participants", (participants) => {
     collabParticipants = Array.isArray(participants) ? participants : [];
+    const hostFromParticipants = collabParticipants.find((p) => p.role === "host")?.name;
+    if (hostFromParticipants) {
+      collabHostName = hostFromParticipants;
+    }
+    enforceCollabPermissionsUI();
+    if (collabModal.style.display === "flex" && activeSessionId) {
+      showSessionDetails(activeSessionId);
+    }
+  });
+
+  collabSocket.on("collab:meta", (meta) => {
+    if (!meta) return;
+    collabHostName = meta.hostName || collabHostName;
+    collabPermissions = normalizeCollabPermissions(meta.permissions);
+    enforceCollabPermissionsUI();
+    if (collabModal.style.display === "flex" && activeSessionId) {
+      showSessionDetails(activeSessionId);
+    }
   });
 
   return true;
@@ -2994,6 +3376,7 @@ function applyRemoteSessionState(files, activeFileName) {
     ed.selectionStart = ed.selectionEnd = Math.min(currentPos, ed.value.length);
     updateLineNumbers(ed);
     renderFileList();
+    enforceCollabPermissionsUI();
     if (autoRunCheckbox.checked) updatePreview();
   } finally {
     isApplyingRemoteState = false;
@@ -3101,6 +3484,7 @@ function renderHostNameStep(prefill = "") {
 }
 
 function renderJoinNameStep(sid, prefill = "") {
+  collabHostName = "";
   setCollabCloseButtonVisible(false);
   modalTitle.innerHTML = "<strong>JOIN SESSION</strong>";
   modalBody.innerHTML =
@@ -3186,6 +3570,7 @@ function createNumericSession() {
       theme: sessionData.theme,
       files: projectFiles,
       activeFileName: activeFile ? activeFile.name : null,
+      permissions: defaultCollabPermissions,
       baseUrl: window.location.origin,
     },
     (res) => {
@@ -3199,6 +3584,8 @@ function createNumericSession() {
       activeSessionId = sid;
       myInfo = { name: sessionData.host, theme: sessionData.theme };
       collabParticipants = res.participants || [myInfo];
+      collabHostName = res.hostName || sessionData.host;
+      collabPermissions = normalizeCollabPermissions(res.permissions);
       window.history.replaceState({}, "", `/codx-editor.html/${sid}`);
       setCollabCloseButtonVisible(true);
 
@@ -3207,6 +3594,7 @@ function createNumericSession() {
       document.getElementById("modalActions").innerHTML = `
         <button class="run-button" onclick="copyLink()"><strong>COPY</strong></button>
         <button class="run-button" onclick="closeModal()"><strong>DONE</strong></button>`;
+      enforceCollabPermissionsUI();
       startSyncing();
     },
   );
@@ -3216,10 +3604,11 @@ function showSessionDetails(sid) {
   setCollabCloseButtonVisible(true);
   const link = `${window.location.origin}/codx-editor.html/${sid}`;
   const listItems = collabParticipants
-    .map(
-      (p) =>
-        `<li style="padding:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${p.name}</li>`,
-    )
+    .map((p) => {
+      const roleLabel =
+        p.role === "host" ? " (host)" : p.role === "co-host" ? " (co-host)" : "";
+      return `<li style="padding:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${escapeHtml(p.name)}${roleLabel}</li>`;
+    })
     .join("");
 
   modalTitle.innerHTML = "<strong>SESSION INFO</strong>";
@@ -3227,7 +3616,8 @@ function showSessionDetails(sid) {
     <p><strong>Share:</strong></p>
     <input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">
     <hr style="border-color:var(--border-color);margin:15px 0;">
-    <h4>Participants:</h4>
+    <p style="text-align:left;"><strong>Host:</strong> ${escapeHtml(getCurrentHostName() || "Unknown")}</p>
+    <h4 style="text-align:left;">Participants:</h4>
     <ul style="list-style:none;padding:0;text-align:left;">${listItems}</ul>
   `;
 
@@ -3317,7 +3707,13 @@ function promptJoinTheme(name, sid) {
         activeSessionId = sid;
         myInfo = { name, theme };
         collabParticipants = res.participants || [];
+        collabHostName =
+          (collabParticipants.find((p) => p.role === "host") || {}).name ||
+          res.hostName ||
+          "";
+        collabPermissions = normalizeCollabPermissions(res.permissions);
         applyRemoteSessionState(res.files, res.activeFileName);
+        enforceCollabPermissionsUI();
         showNotification(`Welcome, ${name}!`, "success");
         startSyncing();
         closeModal();
@@ -3343,14 +3739,25 @@ function startSyncing() {
 const addMediaBtn = document.getElementById("addMediaBtn");
 const mediaInput = document.createElement("input");
 mediaInput.type = "file";
-mediaInput.accept = "image/*,video/mp4,audio/mp3";
+mediaInput.accept = "image/*,video/*,audio/*";
 mediaInput.multiple = true;
 mediaInput.style.display = "none";
 document.body.appendChild(mediaInput);
 
-addMediaBtn.addEventListener("click", () => mediaInput.click());
+addMediaBtn.addEventListener("click", () => {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableNewFile) {
+    showNotification("The host disabled creating new files for participants.", "error");
+    return;
+  }
+  mediaInput.click();
+});
 
 mediaInput.addEventListener("change", (e) => {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableNewFile) {
+    showNotification("The host disabled creating new files for participants.", "error");
+    mediaInput.value = "";
+    return;
+  }
   const files = Array.from(e.target.files);
   if (!files.length) return;
 
@@ -3483,43 +3890,66 @@ const fontPickerBtn = document.getElementById("fontPickerBtn");
 const fontPickerModal = document.getElementById("fontPickerModal");
 const closeFontPickerBtn = document.getElementById("closeFontPickerBtn");
 const fontGrid = document.getElementById("fontGrid");
+const fontSearchInput = document.getElementById("fontSearchInput");
 
 const fonts = [
-  { name: "Arial", family: "Arial, sans-serif" },
-  { name: "Helvetica", family: "Helvetica, sans-serif" },
-  { name: "Times New Roman", family: "'Times New Roman', serif" },
-  { name: "Georgia", family: "Georgia, serif" },
-  { name: "Courier New", family: "'Courier New', monospace" },
-  { name: "Verdana", family: "Verdana, sans-serif" },
-  { name: "Trebuchet MS", family: "'Trebuchet MS', sans-serif" },
-  { name: "Comic Sans MS", family: "'Comic Sans MS', cursive" },
-  { name: "Impact", family: "Impact, fantasy" },
-  { name: "Lucida Console", family: "'Lucida Console', monospace" },
-  { name: "Tahoma", family: "Tahoma, sans-serif" },
-  { name: "Palatino", family: "'Palatino Linotype', serif" },
-  { name: "Garamond", family: "Garamond, serif" },
-  { name: "Bookman", family: "'Bookman Old Style', serif" },
-  { name: "Brush Script MT", family: "'Brush Script MT', cursive" },
-  { name: "Consolas", family: "Consolas, monospace" },
-  { name: "Monaco", family: "Monaco, monospace" },
-  { name: "Roboto", family: "'Roboto', sans-serif" },
-  { name: "Open Sans", family: "'Open Sans', sans-serif" },
-  { name: "Lato", family: "'Lato', sans-serif" },
-  { name: "Montserrat", family: "'Montserrat', sans-serif" },
-  { name: "Poppins", family: "'Poppins', sans-serif" },
-  { name: "Source Sans Pro", family: "'Source Sans Pro', sans-serif" },
-  { name: "Raleway", family: "'Raleway', sans-serif" },
-  { name: "Ubuntu", family: "'Ubuntu', sans-serif" },
-  { name: "Playfair Display", family: "'Playfair Display', serif" },
-  { name: "Merriweather", family: "'Merriweather', serif" },
-  { name: "Fira Sans", family: "'Fira Sans', sans-serif" },
-  { name: "Nunito", family: "'Nunito', sans-serif" },
-  { name: "Quicksand", family: "'Quicksand', sans-serif" },
+  { name: "Arial", family: "Arial, sans-serif", keywords: "clean ui sans" },
+  { name: "Verdana", family: "Verdana, sans-serif", keywords: "wide readable sans" },
+  { name: "Trebuchet MS", family: "'Trebuchet MS', sans-serif", keywords: "modern humanist sans" },
+  { name: "Tahoma", family: "Tahoma, sans-serif", keywords: "compact ui sans" },
+  { name: "Century Gothic", family: "'Century Gothic', sans-serif", keywords: "geometric round sans" },
+  { name: "Franklin Gothic", family: "'Franklin Gothic Medium', sans-serif", keywords: "bold editorial sans" },
+  { name: "Times New Roman", family: "'Times New Roman', serif", keywords: "classic newspaper serif" },
+  { name: "Georgia", family: "Georgia, serif", keywords: "screen serif readable" },
+  { name: "Garamond", family: "Garamond, serif", keywords: "elegant book serif" },
+  { name: "Palatino", family: "'Palatino Linotype', serif", keywords: "calligraphic old style serif" },
+  { name: "Cambria", family: "Cambria, serif", keywords: "modern serif body text" },
+  { name: "Courier New", family: "'Courier New', monospace", keywords: "typewriter mono code" },
+  { name: "Consolas", family: "Consolas, monospace", keywords: "programming mono clear" },
+  { name: "Lucida Console", family: "'Lucida Console', monospace", keywords: "terminal monospace" },
+  { name: "Impact", family: "Impact, fantasy", keywords: "heavy headline display" },
+  { name: "Copperplate", family: "'Copperplate', fantasy", keywords: "engraved roman display" },
+  { name: "Comic Sans MS", family: "'Comic Sans MS', cursive", keywords: "casual playful handwritten" },
+  { name: "Brush Script MT", family: "'Brush Script MT', cursive", keywords: "script brush calligraphy" },
+  { name: "Papyrus", family: "'Papyrus', fantasy", keywords: "rough textured display" },
+  { name: "Candara", family: "Candara, sans-serif", keywords: "soft contemporary sans" },
+  { name: "Gill Sans", family: "'Gill Sans', 'Gill Sans MT', sans-serif", keywords: "humanist british sans" },
+  { name: "Optima", family: "Optima, 'Segoe UI', sans-serif", keywords: "flared elegant sans" },
+  { name: "Futura", family: "Futura, 'Century Gothic', sans-serif", keywords: "geometric bauhaus sans" },
+  { name: "Avenir", family: "Avenir, 'Trebuchet MS', sans-serif", keywords: "modern geometric sans" },
+  { name: "Rockwell", family: "Rockwell, 'Courier New', serif", keywords: "slab serif sturdy" },
+  { name: "Bodoni MT", family: "'Bodoni MT', 'Times New Roman', serif", keywords: "high contrast fashion serif" },
+  { name: "Didot", family: "Didot, 'Times New Roman', serif", keywords: "luxury editorial serif" },
+  { name: "Perpetua", family: "Perpetua, Georgia, serif", keywords: "book classical serif" },
+  { name: "Book Antiqua", family: "'Book Antiqua', Palatino, serif", keywords: "old style serif" },
+  { name: "Lucida Bright", family: "'Lucida Bright', Georgia, serif", keywords: "formal serif" },
+  { name: "American Typewriter", family: "'American Typewriter', 'Courier New', monospace", keywords: "retro typewriter mono" },
+  { name: "OCR A", family: "'OCR A Std', 'Lucida Console', monospace", keywords: "machine readable mono" },
+  { name: "Andale Mono", family: "'Andale Mono', Consolas, monospace", keywords: "clean coding mono" },
+  { name: "Bradley Hand", family: "'Bradley Hand', 'Comic Sans MS', cursive", keywords: "casual handwriting script" },
+  { name: "Snell Roundhand", family: "'Snell Roundhand', 'Brush Script MT', cursive", keywords: "formal script calligraphy" },
+  { name: "Chalkduster", family: "Chalkduster, fantasy", keywords: "chalk classroom display" },
+  { name: "Stencil", family: "Stencil, Impact, fantasy", keywords: "military cutout display" },
+  { name: "Cooper Black", family: "'Cooper Black', Impact, serif", keywords: "rounded heavy retro display" },
+  { name: "Segoe Print", family: "'Segoe Print', 'Comic Sans MS', cursive", keywords: "friendly handwritten" },
+  { name: "Segoe Script", family: "'Segoe Script', 'Brush Script MT', cursive", keywords: "flowing script handwriting" },
 ];
 
-function renderFonts() {
+function renderFonts(query = "") {
+  const term = query.trim().toLowerCase();
+  const filteredFonts = fonts.filter((font) => {
+    const haystack = `${font.name} ${font.family} ${font.keywords || ""}`.toLowerCase();
+    return !term || haystack.includes(term);
+  });
+
   fontGrid.innerHTML = "";
-  fonts.forEach((font) => {
+  if (filteredFonts.length === 0) {
+    fontGrid.innerHTML =
+      '<div class="font-card" style="grid-column: 1 / -1; cursor: default;"><div class="font-name">No Results</div><div class="font-preview" style="font-size:16px;">Try a different keyword.</div></div>';
+    return;
+  }
+
+  filteredFonts.forEach((font) => {
     const card = document.createElement("div");
     card.className = "font-card";
     card.innerHTML = `
@@ -3568,6 +3998,10 @@ function fallbackCopy(text, fontName) {
 
 fontPickerBtn.addEventListener("click", () => {
   renderFonts();
+  if (fontSearchInput) {
+    fontSearchInput.value = "";
+    fontSearchInput.focus();
+  }
   fontPickerModal.style.display = "flex";
 });
 
@@ -3580,6 +4014,12 @@ fontPickerModal.addEventListener("click", (e) => {
     fontPickerModal.style.display = "none";
   }
 });
+
+if (fontSearchInput) {
+  fontSearchInput.addEventListener("input", (e) => {
+    renderFonts(e.target.value || "");
+  });
+}
 
 // PART 17 - TUTORIAL SYSTEM
 
@@ -3675,6 +4115,22 @@ const tutorialSteps = [
     icon: "fa-solid fa-play",
     title: "Run Button",
     description: "Click to manually run your code and update the preview.",
+    position: "top-left",
+  },
+  {
+    target: 'button[onclick="exportAsZip()"]',
+    icon: "fa-solid fa-file-zipper",
+    title: "Export ZIP File",
+    description:
+      "Download your current project as a ZIP file so you can back it up or share it.",
+    position: "top-left",
+  },
+  {
+    target: 'button[onclick="importZip()"]',
+    icon: "fa-solid fa-file-import",
+    title: "Import ZIP File",
+    description:
+      "Load an existing ZIP project into the editor. It restores your HTML, CSS, and JS files.",
     position: "top-left",
   },
   {
@@ -4033,7 +4489,7 @@ window.addEventListener("load", () => {
 console.log("Tutorial system loaded!");
 console.log("Ctrl + S: Saves current file.");
 console.log("Ctrl + Enter: Manually triggers an update of the preview pane.");
-console.log("Ctrl + N: Creates a new file in the project.");
+console.log("Ctrl/Cmd + Q: Creates a new file in the project.");
 console.log("Ctrl + Shift + C: Opens the console panel.");
 console.log("CodX Editor loaded with file linking and tag suggestions!");
 

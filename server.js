@@ -15,6 +15,14 @@ const socketMeta = new Map();
 const MODERN_SESSION_ID_RE = /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/;
 const LEGACY_SESSION_ID_RE = /^\d{10,}$/;
 const SESSION_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const DEFAULT_PERMISSIONS = {
+  disableGroupChat: false,
+  manageSelectedFiles: false,
+  selectedFiles: [],
+  disableExportZip: false,
+  disableImportZip: false,
+  disableNewFile: false,
+};
 
 app.use(express.static(path.join(__dirname)));
 
@@ -58,10 +66,52 @@ function buildShareLink(baseUrl, sessionId) {
   return `/codx-editor.html/${sessionId}`;
 }
 
+function sanitizeParticipant(p) {
+  return {
+    name: p.name,
+    theme: p.theme,
+    role: p.role || "participant",
+  };
+}
+
+function normalizePermissions(input, files) {
+  const allNames = new Set((files || []).map((f) => String(f?.name || "")));
+  const raw = input || {};
+  const selected = Array.isArray(raw.selectedFiles) ? raw.selectedFiles : [];
+  const selectedFiles = Array.from(
+    new Set(
+      selected
+        .map((name) => String(name || "").trim())
+        .filter((name) => name && allNames.has(name)),
+    ),
+  );
+
+  return {
+    disableGroupChat: Boolean(raw.disableGroupChat),
+    manageSelectedFiles: Boolean(raw.manageSelectedFiles),
+    selectedFiles,
+    disableExportZip: Boolean(raw.disableExportZip),
+    disableImportZip: Boolean(raw.disableImportZip),
+    disableNewFile: Boolean(raw.disableNewFile),
+  };
+}
+
 function emitParticipants(sessionId) {
   const session = sessions.get(sessionId);
   if (!session) return;
-  io.to(sessionId).emit("collab:participants", session.participants);
+  io.to(sessionId).emit(
+    "collab:participants",
+    session.participants.map(sanitizeParticipant),
+  );
+}
+
+function emitSessionMeta(sessionId) {
+  const session = sessions.get(sessionId);
+  if (!session) return;
+  io.to(sessionId).emit("collab:meta", {
+    hostName: session.hostName,
+    permissions: session.permissions,
+  });
 }
 
 io.on("connection", (socket) => {
@@ -88,11 +138,14 @@ io.on("connection", (socket) => {
         return;
       }
 
-      const participants = [{ socketId: socket.id, name, theme }];
+      const participants = [{ socketId: socket.id, name, theme, role: "host" }];
       sessions.set(sessionId, {
         files,
         activeFileName,
         participants,
+        hostSocketId: socket.id,
+        hostName: name,
+        permissions: normalizePermissions(payload?.permissions, files),
       });
 
       socket.join(sessionId);
@@ -101,9 +154,12 @@ io.on("connection", (socket) => {
         ok: true,
         sessionId,
         shareLink: buildShareLink(baseUrl, sessionId),
-        participants: participants.map((p) => ({ name: p.name, theme: p.theme })),
+        hostName: name,
+        permissions: sessions.get(sessionId).permissions,
+        participants: participants.map(sanitizeParticipant),
       });
       emitParticipants(sessionId);
+      emitSessionMeta(sessionId);
     } catch {
       ack?.({ ok: false, error: "Failed to create session." });
     }
@@ -132,7 +188,7 @@ io.on("connection", (socket) => {
         return;
       }
 
-      session.participants.push({ socketId: socket.id, name, theme });
+      session.participants.push({ socketId: socket.id, name, theme, role: "participant" });
       socket.join(sessionId);
       socketMeta.set(socket.id, { sessionId, name, theme });
 
@@ -140,12 +196,12 @@ io.on("connection", (socket) => {
         ok: true,
         files: cloneFiles(session.files),
         activeFileName: session.activeFileName || null,
-        participants: session.participants.map((p) => ({
-          name: p.name,
-          theme: p.theme,
-        })),
+        hostName: session.hostName,
+        permissions: session.permissions,
+        participants: session.participants.map(sanitizeParticipant),
       });
       emitParticipants(sessionId);
+      emitSessionMeta(sessionId);
     } catch {
       ack?.({ ok: false, error: "Failed to join session." });
     }
@@ -158,12 +214,75 @@ io.on("connection", (socket) => {
 
     session.files = cloneFiles(payload?.files);
     session.activeFileName = payload?.activeFileName || null;
+    session.permissions = normalizePermissions(session.permissions, session.files);
 
     socket.to(sessionId).emit("collab:state", {
       files: cloneFiles(session.files),
       activeFileName: session.activeFileName,
       user: payload?.user || null,
     });
+    emitSessionMeta(sessionId);
+  });
+
+  socket.on("collab:set-role", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can change roles." });
+        return;
+      }
+
+      const role = String(payload?.role || "").trim().toLowerCase();
+      const targetName = String(payload?.targetName || "").trim().toLowerCase();
+      if (!["co-host", "participant"].includes(role) || !targetName) {
+        ack?.({ ok: false, error: "Invalid role update." });
+        return;
+      }
+
+      const target = session.participants.find(
+        (p) => p.name.toLowerCase() === targetName,
+      );
+      if (!target) {
+        ack?.({ ok: false, error: "Participant not found." });
+        return;
+      }
+      if (target.socketId === session.hostSocketId) {
+        ack?.({ ok: false, error: "Host role cannot be changed." });
+        return;
+      }
+
+      target.role = role;
+      emitParticipants(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to update role." });
+    }
+  });
+
+  socket.on("collab:set-permissions", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can update permissions." });
+        return;
+      }
+
+      session.permissions = normalizePermissions(payload?.permissions, session.files);
+      emitSessionMeta(sessionId);
+      ack?.({ ok: true, permissions: session.permissions });
+    } catch {
+      ack?.({ ok: false, error: "Failed to update permissions." });
+    }
   });
 
   socket.on("collab:typing", (payload) => {
@@ -184,12 +303,23 @@ io.on("connection", (socket) => {
       (p) => p.socketId !== socket.id,
     );
 
+    const removedWasHost = meta.sessionId && session.hostSocketId === socket.id;
+
     if (session.participants.length === 0) {
       sessions.delete(meta.sessionId);
       return;
     }
 
+    if (removedWasHost) {
+      const randomIndex = Math.floor(Math.random() * session.participants.length);
+      const nextHost = session.participants[randomIndex];
+      session.hostSocketId = nextHost.socketId;
+      session.hostName = nextHost.name;
+      nextHost.role = "host";
+    }
+
     emitParticipants(meta.sessionId);
+    emitSessionMeta(meta.sessionId);
   });
 });
 

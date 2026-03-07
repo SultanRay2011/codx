@@ -32,12 +32,31 @@
         height: 1px;
         overflow: hidden;
       "
-      onfocus="this.style.left='16px';this.style.top='12px';this.style.width='auto';this.style.height='auto';this.style.padding='8px 12px';this.style.background='var(--accent-color)';this.style.color='#fff';this.style.borderRadius='6px';this.style.zIndex='3000';"
-      onblur="this.style.left='-9999px';this.style.top='auto';this.style.width='1px';this.style.height='1px';this.style.overflow='hidden';"
+      onfocus="
+        this.style.left = '16px';
+        this.style.top = '12px';
+        this.style.width = 'auto';
+        this.style.height = 'auto';
+        this.style.padding = '8px 12px';
+        this.style.background = 'var(--accent-color)';
+        this.style.color = '#fff';
+        this.style.borderRadius = '6px';
+        this.style.zIndex = '3000';
+      "
+      onblur="
+        this.style.left = '-9999px';
+        this.style.top = 'auto';
+        this.style.width = '1px';
+        this.style.height = '1px';
+        this.style.overflow = 'hidden';
+      "
       >Skip to editor</a
     >
     <header>
-      <div class="header-switches" style="display: flex; align-items: center; gap: 8px">
+      <div
+        class="header-switches"
+        style="display: flex; align-items: center; gap: 8px"
+      >
         <label for="autoRun">Auto-Run</label>
         <label class="switch" title="Toggle auto-run feature">
           <input type="checkbox" id="autoRun" checked />
@@ -192,7 +211,11 @@
               "
             ></div>
             <!-- ADDED: Suggestion Popup -->
-            <div id="suggestionPopup" role="listbox" aria-label="Code suggestions"></div>
+            <div
+              id="suggestionPopup"
+              role="listbox"
+              aria-label="Code suggestions"
+            ></div>
           </div>
         </div>
 
@@ -316,7 +339,8 @@
           overflow-y: auto;
         "
       >
-        <button type="button"
+        <button
+          type="button"
           id="closeSettingsBtn"
           style="
             position: absolute;
@@ -331,9 +355,14 @@
             border: none;
           "
           aria-label="Close settings"
-          >&times;</button>
+        >
+          &times;
+        </button>
 
-        <h2 id="settingsTitle" style="margin-top: 0; color: var(--text-primary); margin-bottom: 20px">
+        <h2
+          id="settingsTitle"
+          style="margin-top: 0; color: var(--text-primary); margin-bottom: 20px"
+        >
           Editor Settings
         </h2>
 
@@ -449,6 +478,49 @@
               Lucida Console Mono
             </option>
           </select>
+          <label
+            for="editorFontEmbed"
+            style="
+              display: block;
+              margin: 12px 0 8px;
+              font-weight: bold;
+              color: var(--text-primary);
+            "
+          >
+            Google Fonts Embed Link:
+          </label>
+          <p
+            style="margin: 0 0 8px; color: var(--text-primary); font-size: 12px"
+          >
+            Paste
+            <a
+              href="https://fonts.google.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="color: #7ec8ff; text-decoration: underline"
+              >Google Fonts</a
+            >
+            embed link to change the style of your code editor.
+          </p>
+          <input
+            type="text"
+            id="editorFontEmbed"
+            placeholder="Paste Google Fonts link or @import URL"
+            style="
+              width: 100%;
+              padding: 10px;
+              background: var(--bg-tertiary);
+              border: 1px solid var(--border-color);
+              color: var(--text-primary);
+              border-radius: 4px;
+              font-size: 13px;
+            "
+            aria-label="Google Fonts embed link"
+          />
+          <p style="margin: 8px 0 0; color: var(--text-muted); font-size: 12px">
+            Uses <code>@import</code>. Internet is required for this custom
+            font.
+          </p>
         </div>
         <!-- Preview Box -->
         <div style="margin-bottom: 20px">
@@ -472,22 +544,26 @@
               font-size: 14px;
             "
           >
-            <pre id="settingsPreviewCode" style="margin: 0; white-space: pre"></pre>
+            <pre
+              id="settingsPreviewCode"
+              style="margin: 0; white-space: pre"
+            ></pre>
           </div>
         </div>
         <!-- Action Buttons -->
         <div
           style="
             display: flex;
-            gap: 10px;
-            justify-content: space-between;
+            gap: 18px;
+            justify-content: space-evenly;
+            align-items: center;
             flex-wrap: wrap;
           "
         >
           <button
             id="applySettings"
             class="run-button"
-            style="flex: 1"
+            style="flex: 1 1 220px; max-width: 260px"
             aria-label="Apply settings"
           >
             <strong>APPLY</strong>
@@ -495,7 +571,7 @@
           <button
             id="resetSettings"
             class="run-button"
-            style="flex: 1; background: #ff5722"
+            style="flex: 1 1 220px; max-width: 260px; background: #ff5722"
             aria-label="Reset settings to default"
           >
             <strong>RESET TO DEFAULT</strong>
@@ -536,7 +612,8 @@
           border-radius: 8px;
         "
       >
-        <button type="button"
+        <button
+          type="button"
           id="closeModalBtn"
           style="
             position: absolute;
@@ -551,7 +628,9 @@
             border: none;
           "
           aria-label="Close modal"
-          >&times;</button>
+        >
+          &times;
+        </button>
         <h3 id="modalTitle">Modal Title</h3>
         <div id="modalBody" style="margin: 20px 0"></div>
         <p
@@ -607,7 +686,8 @@
           overflow-y: auto;
         "
       >
-        <button type="button"
+        <button
+          type="button"
           id="closeFontPickerBtn"
           style="
             position: absolute;
@@ -622,9 +702,14 @@
             border: none;
           "
           aria-label="Close font picker"
-          >&times;</button>
+        >
+          &times;
+        </button>
 
-        <h2 id="fontPickerTitle" style="margin-top: 0; color: var(--text-primary); margin-bottom: 10px">
+        <h2
+          id="fontPickerTitle"
+          style="margin-top: 0; color: var(--text-primary); margin-bottom: 10px"
+        >
           Font Picker
         </h2>
 
@@ -642,6 +727,16 @@
             <code>font-family</code> code to your clipboard. Then paste it in
             your CSS!
           </p>
+        </div>
+
+        <div class="font-search-wrap">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input
+            id="fontSearchInput"
+            type="text"
+            placeholder="Search fonts by name or keyword..."
+            aria-label="Search fonts"
+          />
         </div>
 
         <div
