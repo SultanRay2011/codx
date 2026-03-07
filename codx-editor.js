@@ -581,6 +581,10 @@ let collabParticipants = [];
 let activeSessionId = null;
 let isApplyingRemoteState = false;
 let currentTypingIndicator = null;
+let collabGroupMessages = [];
+let collabPrivateMessages = [];
+let collabChatMode = "group";
+let collabChatTarget = "";
 let fileErrorCounts = {};
 const defaultCollabPermissions = {
   disableGroupChat: false,
@@ -1533,9 +1537,9 @@ ${jsFile.content}
         return `<a${before}href="javascript:void(0)" onclick="window.location.href='data:text/html;charset=utf-8,${encodedHTML}'"${after}>`;
       }
 
-      // File doesn't exist - route to preview-specific 404 page
+      // File doesn't exist - route to default 404 page
       const missingFile = encodeURIComponent(fileName);
-      return `<a${before}href="404-for-preview.html?file=${missingFile}"${after}>`;
+      return `<a${before}href="404.html?file=${missingFile}"${after}>`;
     },
   );
 
@@ -3311,6 +3315,250 @@ function setCoHost(targetName, makeCoHost) {
   );
 }
 
+function getPrivateChatCandidates() {
+  return collabParticipants.filter((p) => p.name !== myInfo.name);
+}
+
+function getCurrentChatMessages() {
+  if (collabChatMode === "private") {
+    const target = collabChatTarget;
+    if (!target) return [];
+    return collabPrivateMessages.filter(
+      (m) =>
+        (m.from === myInfo.name && m.to === target) ||
+        (m.from === target && m.to === myInfo.name),
+    );
+  }
+  return collabGroupMessages;
+}
+
+function formatChatTime(ts) {
+  try {
+    return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
+function getParticipantThemeByName(name) {
+  const p = collabParticipants.find((entry) => entry.name === name);
+  return (p && p.theme) || "#4CAF50";
+}
+
+function renderCollabChatMessages() {
+  const listEl = document.getElementById("collabChatMessages");
+  if (!listEl) return;
+
+  const messages = getCurrentChatMessages();
+  if (!messages.length) {
+    listEl.innerHTML = `<div style="color:var(--text-muted);font-size:12px;">No messages yet.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = messages
+    .map((m) => {
+      const mine = m.from === myInfo.name;
+      const senderTheme = m.fromTheme || getParticipantThemeByName(m.from);
+      return `<div style="margin-bottom:8px; padding:8px; border:1px solid var(--border-color); border-radius:8px; background:${mine ? "color-mix(in srgb, var(--accent-color) 15%, var(--bg-tertiary))" : "var(--bg-tertiary)"};">
+        <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--text-muted);">
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${escapeHtml(senderTheme)};margin-right:6px;vertical-align:middle;"></span><strong style="color:${escapeHtml(senderTheme)};">${escapeHtml(m.from)}</strong>${m.to ? ` to <strong>${escapeHtml(m.to)}</strong>` : ""}</span>
+          <span>${escapeHtml(formatChatTime(m.ts || Date.now()))}</span>
+        </div>
+        <div style="margin-top:4px;color:var(--text-primary);white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text || "")}</div>
+      </div>`;
+    })
+    .join("");
+
+  listEl.scrollTop = listEl.scrollHeight;
+}
+
+function buildCollabChatPanelHtml() {
+  const privateCandidates = getPrivateChatCandidates();
+  if (!collabChatTarget && privateCandidates.length) {
+    collabChatTarget = privateCandidates[0].name;
+  }
+  if (collabChatTarget && !privateCandidates.some((p) => p.name === collabChatTarget)) {
+    collabChatTarget = privateCandidates[0] ? privateCandidates[0].name : "";
+  }
+  if (collabChatMode === "private" && !collabChatTarget) {
+    collabChatMode = "group";
+  }
+
+  const groupDisabled = collabPermissions.disableGroupChat;
+  const groupOption = `<option value="group" ${collabChatMode === "group" ? "selected" : ""} ${groupDisabled ? "disabled" : ""}>Group Chat${groupDisabled ? " (disabled)" : ""}</option>`;
+  const privateOption = `<option value="private" ${collabChatMode === "private" ? "selected" : ""}>Private Chat</option>`;
+  const privateOptions = privateCandidates
+    .map((p) => `<option value="${escapeHtml(p.name)}" ${p.name === collabChatTarget ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
+    .join("");
+
+  return `
+    <hr style="border-color:var(--border-color);margin:15px 0;">
+    <h4 style="text-align:left;margin:0 0 10px;">Chat</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <select id="collabChatMode" style="flex:1;min-width:140px;padding:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;">
+        ${groupOption}
+        ${privateOption}
+      </select>
+      <select id="collabChatTarget" style="flex:1;min-width:140px;padding:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;${collabChatMode === "private" ? "" : "display:none;"}">
+        ${privateOptions}
+      </select>
+    </div>
+    <div id="collabChatMessages" style="height:180px;overflow:auto;border:1px solid var(--border-color);border-radius:8px;padding:10px;background:var(--bg-primary);margin-bottom:8px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input id="collabChatInput" type="text" maxlength="500" placeholder="Type a message..." style="flex:1;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;">
+      <button id="collabChatSendBtn" class="run-button" style="padding:8px 12px;"><strong>SEND</strong></button>
+    </div>
+  `;
+}
+
+function bindCollabChatControls() {
+  const modeEl = document.getElementById("collabChatMode");
+  const targetEl = document.getElementById("collabChatTarget");
+  const inputEl = document.getElementById("collabChatInput");
+  const sendBtn = document.getElementById("collabChatSendBtn");
+  if (!modeEl || !inputEl || !sendBtn) return;
+
+  modeEl.onchange = () => {
+    collabChatMode = modeEl.value;
+    if (targetEl) {
+      targetEl.style.display = collabChatMode === "private" ? "" : "none";
+      if (collabChatMode === "private" && !targetEl.value && targetEl.options.length) {
+        targetEl.value = targetEl.options[0].value;
+      }
+      collabChatTarget = targetEl.value || collabChatTarget;
+    }
+    renderCollabChatMessages();
+  };
+
+  if (targetEl) {
+    targetEl.onchange = () => {
+      collabChatTarget = targetEl.value || "";
+      renderCollabChatMessages();
+    };
+  }
+
+  const send = () => {
+    const text = (inputEl.value || "").trim();
+    if (!text) return;
+    if (!collabSocket || !activeSessionId) return;
+    const payload = {
+      sessionId: activeSessionId,
+      mode: collabChatMode,
+      text,
+    };
+    if (collabChatMode === "private") {
+      payload.toName = collabChatTarget;
+      if (!payload.toName) {
+        showNotification("Select a participant for private chat.", "error");
+        return;
+      }
+    }
+    collabSocket.emit("collab:chat:send", payload, (res) => {
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to send message.", "error");
+      } else {
+        inputEl.value = "";
+      }
+    });
+  };
+
+  sendBtn.onclick = send;
+  inputEl.onkeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      send();
+    }
+  };
+}
+
+function requestCollabChatHistory() {
+  if (!collabSocket || !activeSessionId) return;
+  collabSocket.emit("collab:chat:history", { sessionId: activeSessionId }, (res) => {
+    if (!res?.ok) return;
+    collabGroupMessages = Array.isArray(res.groupMessages) ? res.groupMessages : [];
+    collabPrivateMessages = Array.isArray(res.privateMessages) ? res.privateMessages : [];
+    renderCollabChatMessages();
+  });
+}
+
+function requestKickParticipant(targetName) {
+  if (!collabSocket || !activeSessionId || !isHost()) {
+    showNotification("Only the host can kick participants.", "error");
+    return;
+  }
+  const safeName = String(targetName || "").trim();
+  if (!safeName) return;
+
+  let ackReceived = false;
+  const ackTimer = setTimeout(() => {
+    if (!ackReceived) {
+      showNotification(
+        "Kick request timed out. Restart the collaboration server and try again.",
+        "error",
+      );
+    }
+  }, 2500);
+
+  collabSocket.emit(
+    "collab:kick",
+    { sessionId: activeSessionId, targetName: safeName },
+    (res) => {
+      ackReceived = true;
+      clearTimeout(ackTimer);
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to kick participant", "error");
+      } else {
+        showNotification(`${safeName} was removed from the session`, "success");
+        showSessionDetails(activeSessionId);
+      }
+    },
+  );
+}
+
+function showKickConfirmation(targetName) {
+  if (!isHost()) return;
+  const safeName = String(targetName || "").trim();
+  if (!safeName) return;
+
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>KICK PARTICIPANT</strong>";
+  modalBody.innerHTML = `
+    <p style="margin: 8px 0 16px; color: var(--text-primary);">
+      Are you sure you want to kick <strong>${escapeHtml(safeName)}</strong>?
+    </p>
+  `;
+  setModalActions(`
+    <button id="kickYesBtn" class="run-button" style="background:#d32f2f;"><strong>YES</strong></button>
+    <button id="kickNoBtn" class="run-button" style="background:#2e7d32;"><strong>NO</strong></button>
+  `);
+
+  const yesBtn = document.getElementById("kickYesBtn");
+  const noBtn = document.getElementById("kickNoBtn");
+  if (yesBtn) yesBtn.onclick = () => requestKickParticipant(safeName);
+  if (noBtn) noBtn.onclick = () => showSessionDetails(activeSessionId);
+}
+
+function showKickedOutModal() {
+  setCollabCloseButtonVisible(false);
+  modalTitle.innerHTML = "<strong>NOTICE</strong>";
+  modalBody.innerHTML = `
+    <p style="margin: 8px 0 16px; color: var(--text-primary);">
+      You have been kicked out of the group by the host
+    </p>
+  `;
+  setModalActions(`
+    <button id="kickedOkBtn" class="run-button"><strong>OK</strong></button>
+  `);
+  collabModal.style.display = "flex";
+
+  const okBtn = document.getElementById("kickedOkBtn");
+  if (okBtn) {
+    okBtn.onclick = () => {
+      window.location.href = "/codx-editor.html";
+    };
+  }
+}
+
 function ensureCollabSocket() {
   if (collabSocket && collabSocket.connected) return true;
   if (typeof io !== "function") {
@@ -3352,6 +3600,24 @@ function ensureCollabSocket() {
     if (collabModal.style.display === "flex" && activeSessionId) {
       showSessionDetails(activeSessionId);
     }
+  });
+
+  collabSocket.on("collab:kicked", () => {
+    showKickedOutModal();
+  });
+
+  collabSocket.on("collab:chat:group", (message) => {
+    if (!message) return;
+    collabGroupMessages.push(message);
+    if (collabGroupMessages.length > 300) collabGroupMessages.shift();
+    renderCollabChatMessages();
+  });
+
+  collabSocket.on("collab:chat:private", (message) => {
+    if (!message) return;
+    collabPrivateMessages.push(message);
+    if (collabPrivateMessages.length > 500) collabPrivateMessages.shift();
+    renderCollabChatMessages();
   });
 
   return true;
@@ -3586,13 +3852,17 @@ function createNumericSession() {
       collabParticipants = res.participants || [myInfo];
       collabHostName = res.hostName || sessionData.host;
       collabPermissions = normalizeCollabPermissions(res.permissions);
+      collabGroupMessages = [];
+      collabPrivateMessages = [];
+      collabChatMode = "group";
+      collabChatTarget = "";
       window.history.replaceState({}, "", `/codx-editor.html/${sid}`);
       setCollabCloseButtonVisible(true);
 
       modalTitle.innerHTML = "<strong>SHARE LINK</strong>";
       modalBody.innerHTML = `<input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">`;
       document.getElementById("modalActions").innerHTML = `
-        <button class="run-button" onclick="copyLink()"><strong>COPY</strong></button>
+        <button class="run-button" onclick="copyLink()"><strong>COPY LINK</strong></button>
         <button class="run-button" onclick="closeModal()"><strong>DONE</strong></button>`;
       enforceCollabPermissionsUI();
       startSyncing();
@@ -3607,7 +3877,14 @@ function showSessionDetails(sid) {
     .map((p) => {
       const roleLabel =
         p.role === "host" ? " (host)" : p.role === "co-host" ? " (co-host)" : "";
-      return `<li style="padding:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${escapeHtml(p.name)}${roleLabel}</li>`;
+      const canKick = isHost() && p.role !== "host";
+      const kickButton = canKick
+        ? `<button class="run-button kick-btn" data-name="${escapeHtml(p.name)}" style="padding:4px 10px; font-size:11px; background:#d32f2f;"><strong>KICK</strong></button>`
+        : "";
+      return `<li style="padding:5px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${escapeHtml(p.name)}${roleLabel}</span>
+        ${kickButton}
+      </li>`;
     })
     .join("");
 
@@ -3619,12 +3896,25 @@ function showSessionDetails(sid) {
     <p style="text-align:left;"><strong>Host:</strong> ${escapeHtml(getCurrentHostName() || "Unknown")}</p>
     <h4 style="text-align:left;">Participants:</h4>
     <ul style="list-style:none;padding:0;text-align:left;">${listItems}</ul>
+    ${buildCollabChatPanelHtml()}
   `;
 
   document.getElementById("modalActions").innerHTML = `
     <button class="run-button" onclick="copyLink()"><strong>COPY LINK</strong></button>
     <button class="run-button" onclick="closeModal()"><strong>CLOSE</strong></button>`;
   collabModal.style.display = "flex";
+
+  if (isHost()) {
+    const kickButtons = modalBody.querySelectorAll(".kick-btn");
+    kickButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetName = btn.getAttribute("data-name") || "";
+        showKickConfirmation(targetName);
+      });
+    });
+  }
+  bindCollabChatControls();
+  requestCollabChatHistory();
 }
 
 function copyLink() {
@@ -3648,9 +3938,30 @@ function closeModal() {
     `<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`;
 }
 
+function isReloadNavigation() {
+  try {
+    const nav = performance.getEntriesByType("navigation");
+    return Array.isArray(nav) && nav[0] && nav[0].type === "reload";
+  } catch {
+    return false;
+  }
+}
+
+function resetCollabUrlToFreshState() {
+  if (window.location.pathname.includes("/codx-editor.html/") || window.location.hash) {
+    window.history.replaceState({}, "", "/codx-editor.html");
+  }
+}
+
 function checkForSession() {
   const hash = extractSessionIdFromUrl();
   if (!hash) return;
+
+  // On refresh, do not continue prior collaboration flow.
+  if (isReloadNavigation()) {
+    resetCollabUrlToFreshState();
+    return;
+  }
 
   if (!ensureCollabSocket()) return;
   renderJoinNameStep(hash);
@@ -3699,6 +4010,10 @@ function promptJoinTheme(name, sid) {
       { sessionId: sid, name, theme },
       (res) => {
         if (!res || !res.ok) {
+          if (res && String(res.error || "").toLowerCase().includes("session not found")) {
+            window.location.href = "/404.html";
+            return;
+          }
           errorMsgEl.textContent = (res && res.error) || "Cannot join session.";
           errorMsgEl.style.display = "block";
           return;
@@ -3712,6 +4027,10 @@ function promptJoinTheme(name, sid) {
           res.hostName ||
           "";
         collabPermissions = normalizeCollabPermissions(res.permissions);
+        collabGroupMessages = [];
+        collabPrivateMessages = [];
+        collabChatMode = "group";
+        collabChatTarget = "";
         applyRemoteSessionState(res.files, res.activeFileName);
         enforceCollabPermissionsUI();
         showNotification(`Welcome, ${name}!`, "success");
