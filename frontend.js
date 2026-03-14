@@ -2,7 +2,6 @@
 const iframe = document.getElementById("output");
 const autoRunCheckbox = document.getElementById("autoRun");
 const showConsoleCheckbox = document.getElementById("showConsole");
-const themeToggle = document.getElementById("themeToggle");
 const consoleContainer = document.querySelector(".console-container");
 const consoleOutput = document.getElementById("consoleOutput");
 const divider = document.querySelector(".divider");
@@ -37,6 +36,7 @@ const importZipBtn = document.querySelector('button[aria-label="Import ZIP file"
 const previewFullscreenBtn = document.getElementById("previewFullscreenBtn");
 const previewIframe = document.getElementById("output");
 const errorMsgEl = document.getElementById("errorMsg");
+const zenModeBtn = document.getElementById("zenModeBtn");
 
 function getModalDoneBtn() {
   return document.getElementById("modalDoneBtn");
@@ -45,6 +45,22 @@ function getModalDoneBtn() {
 const settingsPreviewSampleCode = `function helloWorld() {
   console.log("Hello, World!");
 }`;
+const INDENT_UNIT = "   ";
+let isZenMode = false;
+const editorTextarea = document.getElementById("activeEditor");
+const editorWrapperEl = editorTextarea
+  ? editorTextarea.closest(".editor-wrapper")
+  : null;
+let errorHighlightLayer = document.getElementById("errorHighlightLayer");
+if (!errorHighlightLayer && editorWrapperEl) {
+  errorHighlightLayer = document.createElement("div");
+  errorHighlightLayer.id = "errorHighlightLayer";
+  errorHighlightLayer.setAttribute("aria-hidden", "true");
+  editorWrapperEl.insertBefore(
+    errorHighlightLayer,
+    document.getElementById("remoteCursorLayer"),
+  );
+}
 
 // ADDED: Tag suggestion elements
 const suggestionPopup = document.getElementById("suggestionPopup");
@@ -434,6 +450,7 @@ const htmlTags = [
   "video",
   "wbr",
 ];
+const knownHtmlTags = new Set([...allHtmlTags, ...htmlTags, ...selfClosingTags]);
 // END: Tag suggestion elements
 
 const htmlTagMetaMap = new Map();
@@ -455,6 +472,58 @@ htmlTags.forEach((tag) => {
 });
 const tagSuggestionPool = Array.from(htmlTagMetaMap.values());
 let currentSuggestionContext = null;
+const globalHtmlAttributes = [
+  "class",
+  "id",
+  "style",
+  "title",
+  "role",
+  "tabindex",
+  "hidden",
+  "aria-label",
+  "aria-labelledby",
+  "aria-describedby",
+  "data-*",
+];
+const htmlAttributeDescriptions = {
+  class: "CSS class names",
+  id: "Unique element identifier",
+  style: "Inline CSS styles",
+  title: "Tooltip text",
+  role: "Accessibility role",
+  tabindex: "Keyboard focus order",
+  hidden: "Hide element",
+  "aria-label": "Accessible label",
+  "aria-labelledby": "Reference another label element",
+  "aria-describedby": "Reference descriptive text",
+  "data-*": "Custom data attribute",
+  href: "Link destination",
+  src: "Source URL or file path",
+  alt: "Image alternative text",
+  width: "Display width",
+  height: "Display height",
+  controls: "Show media controls",
+  type: "Input or resource type",
+  name: "Form field name",
+  placeholder: "Hint text",
+  value: "Current field value",
+  action: "Form submit URL",
+  method: "Form submit method",
+  for: "Associated input id",
+  target: "Open destination target",
+  rel: "Relationship metadata",
+  lang: "Language code",
+  charset: "Character encoding",
+  content: "Meta content value",
+  selected: "Preselect option",
+  rows: "Textarea row count",
+  cols: "Textarea column count",
+  scope: "Header cell scope",
+  colspan: "Cell column span",
+  rowspan: "Cell row span",
+  cite: "Citation URL",
+  controlslist: "Allowed media controls",
+};
 
 const cssPropertySuggestions = [
   "display",
@@ -589,6 +658,7 @@ let collabChatTarget = "";
 let remoteCursorState = {};
 let lastCursorEmitAt = 0;
 let fileErrorCounts = {};
+let fileErrorLocations = {};
 const defaultCollabPermissions = {
   disableGroupChat: false,
   manageSelectedFiles: false,
@@ -603,6 +673,7 @@ const editableTextExtensions = ["html", "css", "js", "env"];
 
 function resetFileErrorCounts() {
   fileErrorCounts = {};
+  fileErrorLocations = {};
 }
 
 function resolveProjectFileName(rawName) {
@@ -625,15 +696,229 @@ function extractFileNameFromConsoleMessage(message) {
   return null;
 }
 
+function extractErrorLocationFromConsoleMessage(message) {
+  const text = String(message || "");
+  const fileName = extractFileNameFromConsoleMessage(text);
+  if (!fileName) return null;
+
+  const lineColMatch =
+    text.match(/\bline\s+(\d+)\s*[: ,]\s*(?:col\s*)?(\d+)\b/i) ||
+    text.match(/\bline\s+(\d+)\s*,\s*col\s+(\d+)\b/i);
+  if (lineColMatch) {
+    return {
+      fileName,
+      line: Number(lineColMatch[1]),
+      col: Number(lineColMatch[2]),
+    };
+  }
+
+  const compactMatch = text.match(/\bline\s+(\d+):(\d+)\b/i);
+  if (compactMatch) {
+    return {
+      fileName,
+      line: Number(compactMatch[1]),
+      col: Number(compactMatch[2]),
+    };
+  }
+
+  const nearLineMatch = text.match(/\bnear line\s+(\d+)\b/i);
+  if (nearLineMatch) {
+    return {
+      fileName,
+      line: Number(nearLineMatch[1]),
+      col: 1,
+    };
+  }
+
+  const atLineMatch = text.match(/\bat line\s+(\d+)\b/i);
+  if (atLineMatch) {
+    return {
+      fileName,
+      line: Number(atLineMatch[1]),
+      col: 1,
+    };
+  }
+
+  return {
+    fileName,
+    line: 1,
+    col: 1,
+  };
+}
+
+function getTextIndexForLineAndColumn(text, line, col) {
+  const lines = String(text || "").split("\n");
+  const safeLine = Math.max(1, Number(line || 1));
+  const safeCol = Math.max(1, Number(col || 1));
+  let index = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const currentLine = i + 1;
+    if (currentLine === safeLine) {
+      return index + Math.min(safeCol - 1, lines[i].length);
+    }
+    index += lines[i].length + 1;
+  }
+
+  return text.length;
+}
+
+function getLineAndColumnFromIndex(text, index) {
+  const safeText = String(text || "");
+  const safeIndex = Math.max(0, Math.min(Number(index || 0), safeText.length));
+  const before = safeText.slice(0, safeIndex);
+  const lines = before.split("\n");
+  return {
+    line: lines.length,
+    col: (lines[lines.length - 1] || "").length + 1,
+  };
+}
+
+function jumpToEditorLocation(fileName, line, col = 1) {
+  const targetFile = projectFiles.find((file) => file.name === fileName);
+  if (!targetFile) return;
+
+  if (!activeFile || activeFile.name !== fileName) {
+    switchFile(fileName);
+  }
+
+  const editor = document.getElementById("activeEditor");
+  if (!editor) return;
+
+  const caretIndex = getTextIndexForLineAndColumn(
+    targetFile.content || "",
+    line,
+    col,
+  );
+
+  editor.focus();
+  editor.setSelectionRange(caretIndex, caretIndex);
+
+  const computed = window.getComputedStyle(editor);
+  const lineHeight = parseFloat(computed.lineHeight) || parseFloat(computed.fontSize) * 1.4 || 20;
+  const targetTop = Math.max(0, (Math.max(1, Number(line || 1)) - 1) * lineHeight - editor.clientHeight / 2);
+  editor.scrollTop = targetTop;
+
+  if (typeof lineNumbers !== "undefined" && lineNumbers) {
+    lineNumbers.scrollTop = editor.scrollTop;
+  }
+  if (highlightLayer) {
+    highlightLayer.scrollTop = editor.scrollTop;
+    highlightLayer.scrollLeft = editor.scrollLeft;
+  }
+}
+
+function jumpToFirstErrorInFile(fileName) {
+  const locations = fileErrorLocations[fileName];
+  if (!locations || !locations.length) {
+    switchFile(fileName);
+    return;
+  }
+  const target = locations[0];
+  jumpToEditorLocation(target.fileName, target.line, target.col);
+}
+
+function getErrorTokenLength(text, line, col) {
+  const targetLine = String(text || "").split("\n")[Math.max(0, line - 1)] || "";
+  if (!targetLine) return 1;
+
+  let index = Math.max(0, Math.min(targetLine.length - 1, (col || 1) - 1));
+  const isTokenChar = (char) => /[A-Za-z0-9_$:-]/.test(char);
+
+  while (index < targetLine.length && /\s/.test(targetLine[index])) {
+    index++;
+  }
+  if (index >= targetLine.length) return 1;
+
+  if (!isTokenChar(targetLine[index])) {
+    if (targetLine[index] === "<" || targetLine[index] === "/") {
+      let lookAhead = index + 1;
+      while (lookAhead < targetLine.length && isTokenChar(targetLine[lookAhead])) {
+        lookAhead++;
+      }
+      return Math.max(1, lookAhead - index);
+    }
+    return 1;
+  }
+
+  let start = index;
+  let end = index;
+  while (start > 0 && isTokenChar(targetLine[start - 1])) start--;
+  while (end < targetLine.length && isTokenChar(targetLine[end])) end++;
+  return Math.max(1, end - start);
+}
+
+function renderErrorHighlights(textarea) {
+  if (!errorHighlightLayer || !textarea || !activeFile) return;
+  errorHighlightLayer.innerHTML = "";
+
+  const locations = (fileErrorLocations[activeFile.name] || [])
+    .filter((item) => item && Number(item.line) > 0)
+    .sort((a, b) => a.line - b.line || a.col - b.col);
+
+  if (!locations.length) return;
+
+  const seen = new Set();
+  const content = activeFile.content || "";
+  const computed = window.getComputedStyle(textarea);
+  const lineHeight =
+    parseFloat(computed.lineHeight) ||
+    parseFloat(computed.fontSize) * 1.5 ||
+    20;
+  const wrapperWidth =
+    (editorWrapperEl && editorWrapperEl.clientWidth) || textarea.clientWidth || 0;
+  const contentWidth = Math.max(0, wrapperWidth - 24);
+
+  locations.forEach((location) => {
+    const key = `${location.line}:${location.col || 1}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    const caretIndex = getTextIndexForLineAndColumn(
+      content,
+      location.line,
+      location.col || 1,
+    );
+    const coords = getCaretCoordinates(textarea, caretIndex);
+    const tokenLength = getErrorTokenLength(
+      content,
+      Number(location.line || 1),
+      Number(location.col || 1),
+    );
+    const endIndex = Math.min(content.length, caretIndex + tokenLength);
+    const endCoords = getCaretCoordinates(textarea, endIndex);
+
+    const lineMarker = document.createElement("div");
+    lineMarker.className = "error-line-highlight";
+    lineMarker.style.top = `${coords.top}px`;
+    lineMarker.style.width = `${contentWidth}px`;
+    lineMarker.style.height = `${Math.max(18, lineHeight)}px`;
+    errorHighlightLayer.appendChild(lineMarker);
+
+    const tokenMarker = document.createElement("div");
+    tokenMarker.className = "error-token-highlight";
+    tokenMarker.style.top = `${coords.top + Math.max(0, lineHeight - 3)}px`;
+    tokenMarker.style.left = `${coords.left}px`;
+    tokenMarker.style.width = `${Math.max(8, endCoords.left - coords.left || 10)}px`;
+    errorHighlightLayer.appendChild(tokenMarker);
+  });
+}
+
 function updateFileErrorCountsFromConsole() {
   const next = {};
+  const locations = {};
   const errorLines = consoleOutput.querySelectorAll("div.error");
   errorLines.forEach((line) => {
-    const fileName = extractFileNameFromConsoleMessage(line.textContent);
-    if (!fileName) return;
-    next[fileName] = (next[fileName] || 0) + 1;
+    const location = extractErrorLocationFromConsoleMessage(line.textContent);
+    if (!location || !location.fileName) return;
+    next[location.fileName] = (next[location.fileName] || 0) + 1;
+    if (!locations[location.fileName]) {
+      locations[location.fileName] = [];
+    }
+    locations[location.fileName].push(location);
   });
   fileErrorCounts = next;
+  fileErrorLocations = locations;
   renderFileList();
 }
 let projectFiles = [
@@ -810,6 +1095,21 @@ kbd {
 ];
 let activeFile = projectFiles[0];
 
+function getDefaultHtmlStarter() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodX Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script src="script.js"></script>
+</body>
+</html>`;
+}
+
 const defaultSettings = {
   bgColor: "#1E1E1E",
   textSize: "14",
@@ -905,13 +1205,13 @@ function renderFileList() {
     if (errorCount > 0) {
       const errorBadge = document.createElement("span");
       errorBadge.className = "file-error-badge";
-      errorBadge.textContent = String(errorCount);
-      errorBadge.title = `${errorCount} error${errorCount === 1 ? "" : "s"}`;
+      errorBadge.textContent = errorCount > 99 ? "99+" : String(errorCount);
+      errorBadge.title = `${errorCount} error${errorCount === 1 ? "" : "s"} - jump to ${errorCount === 1 ? "error" : "first error"}`;
       errorBadge.style.cssText = `
         display:inline-flex;
         align-items:center;
         justify-content:center;
-        min-width:18px;
+        min-width:${errorCount > 99 ? "28px" : "18px"};
         height:18px;
         margin-left:8px;
         padding:0 5px;
@@ -921,7 +1221,25 @@ function renderFileList() {
         font-size:11px;
         font-weight:700;
         line-height:1;
+        cursor:pointer;
       `;
+      errorBadge.setAttribute("role", "button");
+      errorBadge.setAttribute("tabindex", "0");
+      errorBadge.setAttribute(
+        "aria-label",
+        `Jump to ${errorCount} error${errorCount === 1 ? "" : "s"} in ${file.name}`,
+      );
+      const jumpToError = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        jumpToFirstErrorInFile(file.name);
+      };
+      errorBadge.addEventListener("click", jumpToError);
+      errorBadge.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          jumpToError(e);
+        }
+      });
       nameSpan.appendChild(errorBadge);
     }
 
@@ -996,25 +1314,11 @@ function createNewFile() {
   }
 
   // Define the default HTML template
-  const defaultHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodX Editor</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1>Welcome to CodX Editor</h1>
-    <script src="script.js"></script>
-</body>
-</html>`;
-
   const newFile = {
     name,
     type: ext,
     // Use template for HTML files, otherwise empty string
-    content: ext === "html" ? defaultHTML : "",
+    content: ext === "html" ? getDefaultHtmlStarter() : "",
     active: true,
   };
 
@@ -1290,23 +1594,7 @@ resetSettingsBtn.addEventListener("click", () => {
   }
 });
 
-// PART 4 - THEME & UI CONTROLS
-themeToggle.addEventListener("change", () => {
-  document.body.classList.toggle("light", themeToggle.checked);
-  safeLocalStorage("set", "theme", themeToggle.checked ? "light" : "dark");
-  const editor = document.getElementById("activeEditor");
-  if (editor) {
-    renderSyntaxHighlight(editor);
-  }
-  updatePreviewBox();
-});
-
-const savedTheme = safeLocalStorage("get", "theme");
-if (savedTheme === "light") {
-  themeToggle.checked = true;
-  document.body.classList.add("light");
-}
-
+// PART 4 - UI CONTROLS
 showConsoleCheckbox.addEventListener("change", () => {
   consoleContainer.classList.toggle("show", showConsoleCheckbox.checked);
 });
@@ -1358,22 +1646,32 @@ function runPreflightDiagnostics() {
     .forEach((file) => {
       const text = file.content || "";
       let depth = 0;
+      const openBraceLines = [];
       for (let i = 0; i < text.length; i++) {
-        if (text[i] === "{") depth++;
-        if (text[i] === "}") depth--;
+        if (text[i] === "{") {
+          depth++;
+          openBraceLines.push(text.slice(0, i).split("\n").length);
+        }
+        if (text[i] === "}") {
+          depth--;
+          if (openBraceLines.length) {
+            openBraceLines.pop();
+          }
+        }
         if (depth < 0) {
           const line = text.slice(0, i).split("\n").length;
           appendConsoleMessage(
-            "warn",
+            "error",
             `[${file.name}] CSS issue at line ${line}: extra '}' found.`,
           );
           return;
         }
       }
       if (depth > 0) {
+        const line = openBraceLines[openBraceLines.length - 1] || 1;
         appendConsoleMessage(
-          "warn",
-          `[${file.name}] CSS issue: missing closing '}' brace.`,
+          "error",
+          `[${file.name}] CSS issue at line ${line}: missing closing '}' brace.`,
         );
       }
     });
@@ -1434,25 +1732,37 @@ function runPreflightDiagnostics() {
     const full = match[0];
     const tag = match[1].toLowerCase();
     if (selfClosing.has(tag) || full.endsWith("/>")) continue;
-    const line = htmlText.slice(0, match.index).split("\n").length;
+    const location = getLineAndColumnFromIndex(htmlText, match.index);
+    const line = location.line;
+    const col = location.col;
+    const isCustomElement = tag.includes("-");
+
+    if (!isCustomElement && !knownHtmlTags.has(tag)) {
+      appendConsoleMessage(
+        "error",
+        `[${htmlFile.name}] HTML issue at line ${line}:${col}: unknown tag <${tag}>. Check for a misspelled HTML tag.`,
+      );
+      continue;
+    }
+
     if (full.startsWith("</")) {
       const last = stack.pop();
       if (!last || last.tag !== tag) {
         appendConsoleMessage(
-          "warn",
-          `[${htmlFile.name}] HTML issue at line ${line}: mismatched closing tag </${tag}>.`,
+          "error",
+          `[${htmlFile.name}] HTML issue at line ${line}:${col}: mismatched closing tag </${tag}>.`,
         );
         break;
       }
     } else {
-      stack.push({ tag, line });
+      stack.push({ tag, line, col });
     }
   }
   if (stack.length) {
     const unclosed = stack[stack.length - 1];
     appendConsoleMessage(
-      "warn",
-      `[${htmlFile.name}] HTML issue: unclosed <${unclosed.tag}> opened near line ${unclosed.line}.`,
+      "error",
+      `[${htmlFile.name}] HTML issue at line ${unclosed.line}:${unclosed.col}: unclosed <${unclosed.tag}> tag.`,
     );
   }
 }
@@ -1466,16 +1776,54 @@ function updatePreview() {
   }
 
   let html = htmlFile.content;
+  const externalHeadResources = [];
   consoleOutput.innerHTML = ""; // Clear console
   resetFileErrorCounts();
   renderFileList();
   runPreflightDiagnostics();
+
+  // Normalize external font/resource links into <head> so they reliably load in srcdoc.
+  html = html.replace(/<link\b[^>]*>/gi, (match) => {
+    const hrefMatch =
+      match.match(/\bhref=["']([^"']+)["']/i) ||
+      match.match(/\bhref=([^\s>]+)/i);
+    const relMatch =
+      match.match(/\brel=["']([^"']+)["']/i) ||
+      match.match(/\brel=([^\s>]+)/i);
+
+    if (!hrefMatch) return match;
+
+    const href = (hrefMatch[1] || "").trim();
+    const rel = (relMatch ? relMatch[1] : "").trim().toLowerCase();
+    const isExternal = /^(https?:)?\/\//i.test(href);
+    const isGoogleFonts = /^https:\/\/fonts\.googleapis\.com\//i.test(href);
+    const isFontHint =
+      /^https:\/\/fonts\.gstatic\.com\//i.test(href) ||
+      /^https:\/\/fonts\.googleapis\.com\//i.test(href);
+
+    if (!isExternal) return match;
+
+    if (rel === "stylesheet" && isGoogleFonts) {
+      externalHeadResources.push(`<style>@import url("${href}");</style>`);
+      return "";
+    }
+
+    if (rel === "preconnect" || rel === "dns-prefetch" || isFontHint) {
+      externalHeadResources.push(match);
+      return "";
+    }
+
+    return match;
+  });
 
   // === 1. Replace <link rel="stylesheet" href="style.css"> (handles both attribute orders)
   html = html.replace(
     /<link[^>]*(?:rel=["']stylesheet["'][^>]*href=["']([^"']+)["']|href=["']([^"']+)["'][^>]*rel=["']stylesheet["'])[^>]*\/?>/gi,
     (match, href1, href2) => {
       const href = href1 || href2;
+      if (/^(https?:)?\/\//i.test(href)) {
+        return match;
+      }
       const cssFile = projectFiles.find(
         (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "css",
       );
@@ -1744,7 +2092,9 @@ ${jsFile.content}
     "__CODEX_INJECTED_OFFSET__",
     String(injectedOffset),
   );
-  const injectionResolved = imageSizingCSS + consoleScriptResolved;
+  const externalHeadMarkup = Array.from(new Set(externalHeadResources)).join("");
+  const injectionResolved =
+    externalHeadMarkup + imageSizingCSS + consoleScriptResolved;
 
   if (/<head[^>]*>/i.test(html)) {
     html = html.replace(/(<head[^>]*>)/i, `$1${injectionResolved}`);
@@ -1781,6 +2131,7 @@ function updateLineNumbers(textarea) {
     "\n",
   );
   renderSyntaxHighlight(textarea);
+  renderErrorHighlights(textarea);
 }
 
 // Sync scroll
@@ -1793,6 +2144,7 @@ function syncScroll(textarea) {
       highlightLayer.scrollTop = textarea.scrollTop;
       highlightLayer.scrollLeft = textarea.scrollLeft;
     }
+    renderErrorHighlights(textarea);
     if (suggestionPopup.style.display === "block") {
       positionSuggestionPopup(textarea);
     }
@@ -2033,6 +2385,31 @@ function handleSuggestions(e) {
     return;
   }
 
+  const attrContext = getHtmlAttributeSuggestionContext(textBefore);
+  if (attrContext) {
+    const attrSuggestions = getRankedHtmlAttributeSuggestions(
+      attrContext.tag,
+      attrContext.prefix,
+      attrContext.usedAttributes,
+    );
+    if (!attrSuggestions.length) {
+      hideSuggestions();
+      return;
+    }
+    if (
+      attrContext.prefix &&
+      attrSuggestions.some(
+        (entry) => entry.value.toLowerCase() === attrContext.prefix.toLowerCase(),
+      )
+    ) {
+      hideSuggestions();
+      return;
+    }
+    currentSuggestionContext = attrContext;
+    showHtmlAttributeSuggestions(editor, attrSuggestions);
+    return;
+  }
+
   const closingMatch = textBefore.match(/<\/([a-zA-Z0-9-]*)$/);
   const openingMatch = textBefore.match(/<([a-zA-Z0-9-]*)$/);
   const plainMatch = textBefore.match(/(?:^|[\s>])([a-zA-Z][a-zA-Z0-9-]*)$/);
@@ -2206,6 +2583,73 @@ function getFileSuggestionContext(textBefore) {
     attr: match[2].toLowerCase(),
     valuePrefix: match[3],
   };
+}
+
+function getHtmlAttributeSuggestionContext(textBefore) {
+  const lastLt = textBefore.lastIndexOf("<");
+  const lastGt = textBefore.lastIndexOf(">");
+  if (lastLt === -1 || lastGt > lastLt) return null;
+
+  const openTagText = textBefore.slice(lastLt);
+  if (/^<\//.test(openTagText) || /\/\s*$/.test(openTagText)) return null;
+  if (/=\s*["'][^"']*$/.test(openTagText)) return null;
+
+  const tagMatch = openTagText.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b/i);
+  if (!tagMatch) return null;
+
+  const tag = tagMatch[1].toLowerCase();
+  const afterTagName = openTagText.slice(tagMatch[0].length);
+  const usedAttributes = Array.from(
+    afterTagName.matchAll(/\b([a-zA-Z_:][-a-zA-Z0-9_:.]*)\b(?=\s*(?:=|\s|$))/g),
+  ).map((match) => match[1].toLowerCase());
+
+  const attrMatch = openTagText.match(/(?:\s|<)([a-zA-Z_:][-a-zA-Z0-9_:.]*)?$/);
+  if (!attrMatch) return null;
+
+  const prefix = attrMatch[1] || "";
+  const replaceEnd = textBefore.length;
+  const replaceStart = replaceEnd - prefix.length;
+
+  if (!prefix && !/\s$/.test(openTagText)) return null;
+
+  return {
+    mode: "html-attr",
+    tag,
+    prefix,
+    replaceStart,
+    replaceEnd,
+    usedAttributes,
+  };
+}
+
+function getRankedHtmlAttributeSuggestions(tagName, prefix, usedAttributes) {
+  const meta = htmlTagMetaMap.get(tagName) || { attrs: [] };
+  const used = new Set((usedAttributes || []).map((value) => value.toLowerCase()));
+  const source = [...globalHtmlAttributes, ...(meta.attrs || [])];
+  const unique = Array.from(new Set(source));
+  const q = (prefix || "").toLowerCase();
+  const matches = unique
+    .filter((attr) => {
+      const normalized = attr.toLowerCase();
+      if (used.has(normalized) && normalized !== "data-*") return false;
+      return !q || normalized.includes(q);
+    })
+    .map((attr) => ({
+      value: attr,
+      desc: htmlAttributeDescriptions[attr] || `Attribute for <${tagName}>`,
+    }));
+
+  matches.sort((a, b) => {
+    const aValue = a.value.toLowerCase();
+    const bValue = b.value.toLowerCase();
+    const aStarts = q && aValue.startsWith(q) ? 1 : 0;
+    const bStarts = q && bValue.startsWith(q) ? 1 : 0;
+    if (aStarts !== bStarts) return bStarts - aStarts;
+    if (aValue.length !== bValue.length) return aValue.length - bValue.length;
+    return aValue.localeCompare(bValue);
+  });
+
+  return matches.slice(0, 20);
 }
 
 function getFileType(name) {
@@ -2452,6 +2896,47 @@ function showCssSuggestions(editor, suggestions, mode) {
   positionSuggestionPopup(editor);
 }
 
+function showHtmlAttributeSuggestions(editor, suggestions) {
+  suggestionPopup.innerHTML = "";
+  suggestionPopup.dataset.mode = "html-attr";
+
+  const header = document.createElement("div");
+  header.className = "suggestion-header";
+  header.innerHTML = `
+    <span>HTML attributes (${suggestions.length})</span>
+    <span class="suggestion-shortcuts">
+      <span class="suggestion-shortcut">Enter</span>
+      <span class="suggestion-shortcut">Tab</span>
+      <span class="suggestion-shortcut">Esc</span>
+    </span>
+  `;
+  suggestionPopup.appendChild(header);
+
+  suggestions.forEach((entry) => {
+    const suggestionItem = document.createElement("div");
+    suggestionItem.className = "suggestion-item";
+    suggestionItem.innerHTML = `
+      <span class="suggestion-icon">ATTR</span>
+      <span class="suggestion-content">
+        <div class="suggestion-tag">${escapeHtml(entry.value)}</div>
+        <div class="suggestion-desc">${escapeHtml(entry.desc || "HTML attribute")}</div>
+      </span>
+    `;
+    suggestionItem.dataset.tag = entry.value;
+    suggestionItem.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      selectSuggestion(entry.value);
+    });
+    suggestionPopup.appendChild(suggestionItem);
+  });
+
+  suggestionPopup.style.display = "block";
+  activeSuggestion = 0;
+  const items = suggestionPopup.querySelectorAll(".suggestion-item");
+  updateSuggestionHighlight(items);
+  positionSuggestionPopup(editor);
+}
+
 function showFileSuggestions(editor, fileSuggestions, prefix) {
   suggestionPopup.innerHTML = "";
   suggestionPopup.dataset.mode = "file";
@@ -2518,6 +3003,10 @@ function selectSuggestion(tag) {
     selectCssSuggestion(tag);
     return;
   }
+  if (mode === "html-attr") {
+    selectHtmlAttributeSuggestion(tag);
+    return;
+  }
 
   const editor = document.getElementById("activeEditor");
   const pos = editor.selectionStart;
@@ -2558,6 +3047,56 @@ function selectSuggestion(tag) {
   editor.focus();
 }
 
+function selectHtmlAttributeSuggestion(attrName) {
+  const editor = document.getElementById("activeEditor");
+  if (!currentSuggestionContext) return;
+
+  const { replaceStart, replaceEnd } = currentSuggestionContext;
+  const textAfter = editor.value.substring(replaceEnd);
+  const lowerAttr = attrName.toLowerCase();
+  const booleanAttrs = new Set([
+    "controls",
+    "autoplay",
+    "loop",
+    "muted",
+    "required",
+    "disabled",
+    "checked",
+    "selected",
+    "hidden",
+    "readonly",
+    "multiple",
+  ]);
+
+  const needsQuotedValue =
+    !booleanAttrs.has(lowerAttr) && lowerAttr !== "data-*";
+  const insertedText = needsQuotedValue
+    ? `${attrName}=""`
+    : attrName === "data-*"
+      ? 'data-=""'
+      : attrName;
+
+  editor.value =
+    editor.value.substring(0, replaceStart) + insertedText + textAfter;
+
+  const cursorOffset =
+    attrName === "data-*"
+      ? 5
+      : needsQuotedValue
+        ? insertedText.length - 1
+        : insertedText.length;
+  editor.selectionStart = editor.selectionEnd = replaceStart + cursorOffset;
+
+  hideSuggestions();
+  activeFile.content = editor.value;
+  updateLineNumbers(editor);
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  handleCodeChange({
+    target: { id: activeFile.type + "Code", value: editor.value },
+  });
+  editor.focus();
+}
+
 function selectCssSuggestion(value) {
   const editor = document.getElementById("activeEditor");
   if (!currentSuggestionContext) return;
@@ -2576,7 +3115,7 @@ function selectCssSuggestion(value) {
   } else if (mode === "css-selector") {
     const afterSlice = editor.value.substring(replaceEnd);
     if (!/^\s*\{/.test(afterSlice)) {
-      insertedText = `${value} {\n    \n}`;
+      insertedText = `${value} {\n${INDENT_UNIT}\n}`;
       cursorOffset = value.length + 7;
     }
   }
@@ -2724,7 +3263,7 @@ function handleAutoCloseAndIndent(e, editor) {
 
     if (textBefore.endsWith("{") || textBefore.endsWith("(") || isTriggered) {
       // We need to increase indentation for the next line
-      const nextIndent = currentIndent + "  "; // 2 spaces for indentation
+      const nextIndent = currentIndent + INDENT_UNIT;
 
       if (textBefore.endsWith("{") || textBefore.endsWith("(")) {
         // Case 1: Cursor immediately after { or (
@@ -2743,7 +3282,7 @@ function handleAutoCloseAndIndent(e, editor) {
           newCursorPos = pos + 1 + nextIndent.length; // Pos + \n + newIndent
         } else {
           // Scenario: { | -> Newline + Indent + Newline + CurrentIndent + autoClosingBracket
-          // Insert: \n  \n}
+          // Insert: newline + indent + newline + closing bracket
           newContent =
             textBefore +
             "\n" +
@@ -2757,7 +3296,7 @@ function handleAutoCloseAndIndent(e, editor) {
         // --- 💡 MODIFICATION END ---
       } else if (isTriggered) {
         // Case 2: Cursor inside {} or () where Enter was pressed (e.g., body{ | } )
-        // Insert: \n  \n
+        // Insert: newline + indent + newline
         newContent =
           textBefore + "\n" + nextIndent + "\n" + currentIndent + textAfter;
         newCursorPos = pos + 1 + nextIndent.length; // Pos + \n + newIndent
@@ -2819,6 +3358,43 @@ function handleTagClosing(e) {
     if (autoRunCheckbox.checked) debouncedUpdatePreview();
     handleCodeChange();
   }
+}
+
+function expandCxStartShortcut(editor) {
+  if (!activeFile || activeFile.type !== "html") return false;
+
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  const textAfter = editor.value.substring(editor.selectionEnd);
+  const lineStart = textBefore.lastIndexOf("\n") + 1;
+  const currentLine = textBefore.substring(lineStart);
+
+  if (currentLine.trim() !== "cxstart") return false;
+
+  const linePrefix = currentLine.match(/^\s*/)?.[0] || "";
+  const replacement = getDefaultHtmlStarter()
+    .split("\n")
+    .map((line) => (line ? linePrefix + line : line))
+    .join("\n");
+
+  editor.value =
+    editor.value.substring(0, lineStart) + replacement + textAfter;
+
+  const bodyHeading = `${linePrefix}    <h1>Welcome to CodX Editor</h1>`;
+  const caretTarget = editor.value.indexOf(bodyHeading, lineStart);
+  const caretPos =
+    caretTarget > -1
+      ? caretTarget + bodyHeading.length
+      : lineStart + replacement.length;
+
+  editor.selectionStart = editor.selectionEnd = caretPos;
+  activeFile.content = editor.value;
+  updateLineNumbers(editor);
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  handleCodeChange({
+    target: { id: activeFile.type + "Code", value: editor.value },
+  });
+  return true;
 }
 
 /**
@@ -2896,6 +3472,13 @@ function handleEditorKeyDown(e) {
     }
   }
 
+  if (activeFile.type === "html" && e.key === "Enter") {
+    if (expandCxStartShortcut(editor)) {
+      e.preventDefault();
+      return;
+    }
+  }
+
   // --- 3. Auto-Closing & Indentation (CSS and JS) ---
   if (activeFile.type === "css" || activeFile.type === "js") {
     if (handleAutoCloseAndIndent(e, editor)) {
@@ -2914,10 +3497,10 @@ function handleEditorKeyDown(e) {
     e.preventDefault();
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
-    // Insert 2 spaces
+    // Insert 3 spaces
     editor.value =
-      editor.value.substring(0, start) + "  " + editor.value.substring(end);
-    editor.selectionStart = editor.selectionEnd = start + 2;
+      editor.value.substring(0, start) + INDENT_UNIT + editor.value.substring(end);
+    editor.selectionStart = editor.selectionEnd = start + INDENT_UNIT.length;
 
     // Update state
     activeFile.content = editor.value;
@@ -2936,6 +3519,12 @@ function handleEditorKeyDown(e) {
 document.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
   const mod = e.ctrlKey || e.metaKey;
+
+  if (e.key === "Escape" && document.body.classList.contains("zen-mode")) {
+    e.preventDefault();
+    toggleZenMode(false);
+    return;
+  }
 
   // Prevent shortcuts from firing while suggestion box is open
   if (suggestionPopup.style.display === "block") {
@@ -3131,6 +3720,7 @@ function handleZipImport(event) {
 
 // PART 11 - FULLSCREEN
 previewFullscreenBtn.addEventListener("click", togglePreviewFullscreen);
+zenModeBtn.addEventListener("click", toggleZenMode);
 document.addEventListener("fullscreenchange", updateFullscreenButtonState);
 
 function togglePreviewFullscreen() {
@@ -3291,6 +3881,41 @@ function enforceCollabPermissionsUI() {
     editor.title = lockEditor
       ? "The host allowed editing only on selected files."
       : "";
+  }
+}
+
+function updateZenModeButtonState() {
+  if (!zenModeBtn) return;
+  if (isZenMode) {
+    zenModeBtn.innerHTML = `
+      <i class="fa-solid fa-minimize"></i>
+      <strong>EXIT ZEN</strong>
+    `;
+  } else {
+    zenModeBtn.innerHTML = `
+      <i class="fa-solid fa-laptop-code"></i>
+      <strong>ZEN MODE</strong>
+    `;
+  }
+}
+
+function toggleZenMode(forceState) {
+  isZenMode =
+    typeof forceState === "boolean" ? forceState : !document.body.classList.contains("zen-mode");
+  document.body.classList.toggle("zen-mode", isZenMode);
+  updateZenModeButtonState();
+  updateLineNumbers(editorTextarea);
+  renderErrorHighlights(editorTextarea);
+  setTimeout(() => {
+    if (editorTextarea) {
+      editorTextarea.focus();
+      syncSyntaxLayerStyle(editorTextarea);
+      renderSyntaxHighlight(editorTextarea);
+      renderErrorHighlights(editorTextarea);
+    }
+  }, 0);
+  if (isZenMode) {
+    showNotification("Zen Mode enabled. Press Esc to exit.", "success");
   }
 }
 
@@ -4535,7 +5160,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-code",
     title: "Code Editor",
     description:
-      "Write your code here! Features include:\n• Auto-closing tags (HTML)\n• Auto-closing brackets (CSS/JS)\n• Tag suggestions (type < in HTML)\n• Tab for 2-space indentation\n• Drag & drop files",
+      "Write your code here! Features include:\n• Auto-closing tags (HTML)\n• Auto-closing brackets (CSS/JS)\n• Tag suggestions (type < in HTML)\n• Tab for 3-space indentation\n• Drag & drop files",
     position: "right",
   },
   {
