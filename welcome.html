@@ -4,8 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="cx.png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
     <link rel="stylesheet" href="theme.css" />
-    <title>Welcome - CodX Editor</title>
+    <title>Welcome | CodX Editor</title>
     <style>
       * {
         margin: 0;
@@ -447,7 +454,7 @@
     <div class="modal-overlay" id="termsModal">
       <div class="modal-container">
         <div class="modal-header">
-          <h1>Welcome to CodX Editor! 👋</h1>
+          <h1>Welcome to CodX Editor! <i class="fa-solid fa-hand"></i></h1>
           <p>Please review our Terms and Conditions</p>
         </div>
 
@@ -461,7 +468,7 @@
           </div>
 
           <div class="terms-section">
-            <h2>📋 Service Description</h2>
+            <h2><i class="fa-solid fa-clipboard-list"></i> Service Description</h2>
             <p>
               CodX Editor allows you to write, run, and debug HTML, CSS, and
               JavaScript code directly in your browser. The service is provided
@@ -470,7 +477,7 @@
           </div>
 
           <div class="terms-section">
-            <h2>✅ Your Responsibilities</h2>
+            <h2><i class="fa-solid fa-circle-check"></i> Your Responsibilities</h2>
             <ul>
               <li>Use the service only for lawful purposes</li>
               <li>Do not create or distribute malicious code or malware</li>
@@ -480,7 +487,7 @@
           </div>
 
           <div class="terms-section">
-            <h2>🔒 Your Content & Privacy</h2>
+            <h2><i class="fa-solid fa-shield-halved"></i> Your Content & Privacy</h2>
             <p>
               <strong>You own your code.</strong> Your work is stored locally in
               your browser and is never uploaded to our servers.
@@ -502,7 +509,7 @@
           </div>
 
           <div class="terms-section">
-            <h2>⚠️ Disclaimer</h2>
+            <h2><i class="fa-solid fa-triangle-exclamation"></i> Disclaimer</h2>
             <p>
               The service is provided "as is" without guarantees. We are not
               liable for any loss of data, code, or damages resulting from your
@@ -511,7 +518,7 @@
           </div>
 
           <div class="terms-section">
-            <h2>📝 Updates</h2>
+            <h2><i class="fa-solid fa-pen-to-square"></i> Updates</h2>
             <p>
               We may modify these terms at any time. Continued use after changes
               means you accept the new terms.
@@ -543,11 +550,20 @@
       const button = document.getElementById("continueButton");
       const modal = document.getElementById("termsModal");
 
+      function resolveNextEditorRoute() {
+        const savedRoute = localStorage.getItem("codxPendingEditorRoute");
+        if (savedRoute && savedRoute.startsWith("/frontend.html")) {
+          localStorage.removeItem("codxPendingEditorRoute");
+          return savedRoute;
+        }
+        localStorage.removeItem("codxPendingEditorRoute");
+        return "/frontend.html";
+      }
+
       // Check if user has already agreed
       if (localStorage.getItem("codxTermsAgreed") === "true") {
         modal.style.display = "none";
-        // Redirect to editor or show main content
-        window.location.href = "codx-editor.html";
+        window.location.href = resolveNextEditorRoute();
       }
 
       // Enable/disable button based on checkbox
@@ -563,21 +579,20 @@
 
       // Handle continue button click
       button.addEventListener("click", function () {
-        if (checkbox.checked) {
-          // Save agreement to localStorage
-          localStorage.setItem("codxTermsAgreed", "true");
-          localStorage.setItem("codxTermsAgreedDate", new Date().toISOString());
+        if (!checkbox.checked) return;
+        localStorage.setItem("codxTermsAgreed", "true");
+        localStorage.setItem("codxTermsAgreedDate", new Date().toISOString());
 
           // Add success animation
-          button.textContent = "✓ Welcome!";
+          button.textContent = "Welcome!";
           button.style.background = "#2e7d32";
 
           // Redirect to editor after brief delay
           setTimeout(() => {
-            window.location.href = "codx-editor.html";
+            window.location.href = resolveNextEditorRoute();
           }, 800);
-        }
       });
     </script>
   </body>
 </html>
+

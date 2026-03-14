@@ -53,9 +53,9 @@ git push -u origin main
 - `server.js`
 - `package.json`
 - `package-lock.json`
-- `codx-editor.html`
-- `codx-editor.js`
-- `codx-editor.css`
+- `frontend.html`
+- `frontend.js`
+- `frontend.css`
 
 ## Run locally after upload
 
@@ -66,7 +66,7 @@ npm start
 
 Open:
 ```text
-http://localhost:3000/codx-editor.html
+http://localhost:3000/frontend.html
 ```
 
 ## If port 3000 is busy
@@ -77,5 +77,5 @@ $env:PORT=3001; npm start
 
 Then open:
 ```text
-http://localhost:3001/codx-editor.html
+http://localhost:3001/frontend.html
 ```

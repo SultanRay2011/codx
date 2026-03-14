@@ -26,13 +26,13 @@ const DEFAULT_PERMISSIONS = {
 
 app.use(express.static(path.join(__dirname)));
 
-app.get(/^\/codx-editor\.html\/([A-Za-z0-9-]+)$/, (req, res) => {
+app.get(/^\/frontend\.html\/([A-Za-z0-9-]+)$/, (req, res) => {
   const sessionId = normalizeSessionId(req.params[0]);
-  if (!isValidSessionId(sessionId) || !sessions.has(sessionId)) {
+  if (!isValidSessionId(sessionId)) {
     res.status(404).sendFile(path.join(__dirname, "404.html"));
     return;
   }
-  res.sendFile(path.join(__dirname, "codx-editor.html"));
+  res.sendFile(path.join(__dirname, "frontend.html"));
 });
 
 app.get("/health", (_req, res) => {
@@ -76,8 +76,8 @@ function generateSessionId() {
 
 function buildShareLink(baseUrl, sessionId) {
   const root = String(baseUrl || "").replace(/\/+$/, "");
-  if (root) return `${root}/codx-editor.html/${sessionId}`;
-  return `/codx-editor.html/${sessionId}`;
+  if (root) return `${root}/frontend.html/${sessionId}`;
+  return `/frontend.html/${sessionId}`;
 }
 
 function sanitizeParticipant(p) {
@@ -476,6 +476,30 @@ io.on("connection", (socket) => {
     const sessionId = normalizeSessionId(payload?.sessionId);
     if (!sessions.has(sessionId)) return;
     socket.to(sessionId).emit("collab:typing", payload?.indicator || null);
+  });
+
+  socket.on("collab:cursor", (payload) => {
+    const sessionId = normalizeSessionId(payload?.sessionId);
+    const session = sessions.get(sessionId);
+    if (!session) return;
+    const meta = socketMeta.get(socket.id);
+    if (!meta || meta.sessionId !== sessionId) return;
+
+    const cursor = payload?.cursor
+      ? {
+          name: meta.name,
+          theme: meta.theme,
+          fileName: payload.cursor.fileName || null,
+          x: Number(payload.cursor.x || 0),
+          y: Number(payload.cursor.y || 0),
+          ts: Date.now(),
+        }
+      : null;
+
+    socket.to(sessionId).emit("collab:cursor", {
+      name: meta.name,
+      cursor,
+    });
   });
 
   socket.on("disconnect", () => {
