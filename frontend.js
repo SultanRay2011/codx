@@ -477,12 +477,34 @@ const globalHtmlAttributes = [
   "id",
   "style",
   "title",
+  "name",
+  "value",
+  "type",
+  "placeholder",
+  "disabled",
+  "readonly",
+  "required",
+  "checked",
+  "selected",
+  "multiple",
+  "autocomplete",
+  "autofocus",
+  "min",
+  "max",
+  "step",
   "role",
   "tabindex",
   "hidden",
+  "draggable",
+  "contenteditable",
+  "spellcheck",
   "aria-label",
   "aria-labelledby",
   "aria-describedby",
+  "aria-hidden",
+  "aria-expanded",
+  "aria-controls",
+  "aria-live",
   "data-*",
 ];
 const htmlAttributeDescriptions = {
@@ -490,12 +512,34 @@ const htmlAttributeDescriptions = {
   id: "Unique element identifier",
   style: "Inline CSS styles",
   title: "Tooltip text",
+  name: "Form field or element name",
+  value: "Current field value",
+  type: "Input or resource type",
+  placeholder: "Hint text",
+  disabled: "Disable interaction",
+  readonly: "Make field read-only",
+  required: "Require a value before submit",
+  checked: "Pre-check checkbox or radio",
+  selected: "Preselect option",
+  multiple: "Allow multiple values",
+  autocomplete: "Browser autocomplete behavior",
+  autofocus: "Focus automatically on load",
+  min: "Minimum allowed value",
+  max: "Maximum allowed value",
+  step: "Increment step value",
   role: "Accessibility role",
   tabindex: "Keyboard focus order",
   hidden: "Hide element",
+  draggable: "Allow drag behavior",
+  contenteditable: "Make content editable",
+  spellcheck: "Enable spell checking",
   "aria-label": "Accessible label",
   "aria-labelledby": "Reference another label element",
   "aria-describedby": "Reference descriptive text",
+  "aria-hidden": "Hide from assistive tech",
+  "aria-expanded": "Expanded/collapsed state",
+  "aria-controls": "Controlled element id",
+  "aria-live": "Announce dynamic updates",
   "data-*": "Custom data attribute",
   href: "Link destination",
   src: "Source URL or file path",
@@ -503,19 +547,19 @@ const htmlAttributeDescriptions = {
   width: "Display width",
   height: "Display height",
   controls: "Show media controls",
-  type: "Input or resource type",
-  name: "Form field name",
-  placeholder: "Hint text",
-  value: "Current field value",
+  autoplay: "Start media automatically",
+  loop: "Repeat media playback",
+  muted: "Mute media by default",
+  poster: "Preview image for video",
   action: "Form submit URL",
   method: "Form submit method",
+  enctype: "Form encoding type",
   for: "Associated input id",
   target: "Open destination target",
   rel: "Relationship metadata",
   lang: "Language code",
   charset: "Character encoding",
   content: "Meta content value",
-  selected: "Preselect option",
   rows: "Textarea row count",
   cols: "Textarea column count",
   scope: "Header cell scope",
@@ -523,6 +567,25 @@ const htmlAttributeDescriptions = {
   rowspan: "Cell row span",
   cite: "Citation URL",
   controlslist: "Allowed media controls",
+  download: "Download target resource",
+  loading: "Lazy/eager loading behavior",
+  decoding: "Image decoding hint",
+  srcset: "Responsive image sources",
+  sizes: "Responsive image sizes",
+  media: "Media query condition",
+  async: "Load script asynchronously",
+  defer: "Defer script execution",
+  integrity: "Subresource integrity hash",
+  crossorigin: "Cross-origin request mode",
+  referrerpolicy: "Referrer handling policy",
+  sandbox: "Restrict iframe capabilities",
+  allow: "Iframe feature policy",
+  srcdoc: "Inline iframe HTML",
+  open: "Open details/dialog by default",
+  datetime: "Machine-readable date or time",
+  pattern: "Input validation pattern",
+  minlength: "Minimum input length",
+  maxlength: "Maximum input length",
 };
 
 const cssPropertySuggestions = [
@@ -639,6 +702,27 @@ const cssSelectorSuggestions = [
   ":root",
   "@media",
   "@keyframes",
+];
+
+const jsSuggestions = [
+  { value: "const", desc: "Declare a constant", insertText: "const " },
+  { value: "let", desc: "Declare a block variable", insertText: "let " },
+  { value: "function", desc: "Create a function", insertText: "function " },
+  { value: "return", desc: "Return a value", insertText: "return " },
+  { value: "if", desc: "Conditional statement", insertText: "if () {\n" + INDENT_UNIT + "\n}" },
+  { value: "else", desc: "Fallback branch", insertText: "else {\n" + INDENT_UNIT + "\n}" },
+  { value: "for", desc: "Loop over a range", insertText: "for (let i = 0; i < ; i++) {\n" + INDENT_UNIT + "\n}" },
+  { value: "while", desc: "While loop", insertText: "while () {\n" + INDENT_UNIT + "\n}" },
+  { value: "async", desc: "Async function keyword", insertText: "async " },
+  { value: "await", desc: "Wait for a promise", insertText: "await " },
+  { value: "console.log", desc: "Log to console", insertText: "console.log();" },
+  { value: "document.querySelector", desc: "Select one DOM element", insertText: "document.querySelector(\"\");" },
+  { value: "document.querySelectorAll", desc: "Select all matching DOM elements", insertText: "document.querySelectorAll(\"\");" },
+  { value: "addEventListener", desc: "Attach an event listener", insertText: "addEventListener(\"\", () => {\n" + INDENT_UNIT + "\n});" },
+  { value: "fetch", desc: "Make a network request", insertText: "fetch(\"\")\n  .then((response) => response.json())\n  .then((data) => {\n" + INDENT_UNIT + "console.log(data);\n  });" },
+  { value: "setTimeout", desc: "Run code later", insertText: "setTimeout(() => {\n" + INDENT_UNIT + "\n}, 1000);" },
+  { value: "try", desc: "Handle exceptions", insertText: "try {\n" + INDENT_UNIT + "\n} catch (error) {\n" + INDENT_UNIT + "console.error(error);\n}" },
+  { value: "class", desc: "Define a class", insertText: "class Name {\n" + INDENT_UNIT + "constructor() {\n" + INDENT_UNIT + INDENT_UNIT + "\n" + INDENT_UNIT + "}\n}" },
 ];
 
 let hasUnsavedChanges = false;
@@ -1383,6 +1467,7 @@ function deleteFile(fileName) {
     }
     renderFileList();
     syncProjectWithSession();
+    updatePreview();
     showNotification(`File ${fileName} deleted`, "success");
   }
 }
@@ -1871,27 +1956,48 @@ ${jsFile.content}
   );
 
   // === 3. Handle <a href> links to other HTML files
+  const buildPreviewHtmlTarget = (rawHref) => {
+    const fileName = String(rawHref || "").split("/").pop();
+    const linkedFile = projectFiles.find(
+      (f) =>
+        f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html",
+    );
+
+    if (linkedFile) {
+      return {
+        exists: true,
+        url: `data:text/html;charset=utf-8,${encodeURIComponent(linkedFile.content)}`,
+        fileName,
+      };
+    }
+
+    return {
+      exists: false,
+      url: `/404-for-preview.html?file=${encodeURIComponent(fileName)}`,
+      fileName,
+    };
+  };
+
   html = html.replace(
     /<a([^>]*)href=["']([^"']+\.html)["']([^>]*)>/gi,
     (match, before, href, after) => {
-      // Extract just the filename
-      const fileName = href.split("/").pop();
+      const target = buildPreviewHtmlTarget(href);
+      return `<a${before}href="javascript:void(0)" onclick="window.location.href='${target.url}'"${after}>`;
+    },
+  );
 
-      // Check if this HTML file exists in project
-      const linkedFile = projectFiles.find(
-        (f) =>
-          f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html",
+  // === 3b. Handle inline onclick/location assignments to project HTML files
+  html = html.replace(
+    /\bonclick=(["'])([\s\S]*?)\1/gi,
+    (match, quote, handlerCode) => {
+      const rewritten = handlerCode.replace(
+        /((?:window\.)?location(?:\.href)?\s*=\s*|window\.location\.assign\(\s*|window\.open\(\s*)(['"])([^'"]+\.html)(\2)(\s*\))?/gi,
+        (_m, prefix, q, href, _q2, closing = "") => {
+          const target = buildPreviewHtmlTarget(href);
+          return `${prefix}${q}${target.url}${q}${closing}`;
+        },
       );
-
-      if (linkedFile) {
-        // File exists - make the link load that file's content in the preview
-        const encodedHTML = encodeURIComponent(linkedFile.content);
-        return `<a${before}href="javascript:void(0)" onclick="window.location.href='data:text/html;charset=utf-8,${encodedHTML}'"${after}>`;
-      }
-
-      // File doesn't exist - route to default 404 page
-      const missingFile = encodeURIComponent(fileName);
-      return `<a${before}href="404.html?file=${missingFile}"${after}>`;
+      return `onclick=${quote}${rewritten}${quote}`;
     },
   );
 
@@ -2327,6 +2433,9 @@ function handleSuggestions(e) {
   const isCssFile = activeFile.type === "css";
   const isHtmlStyleContext =
     activeFile.type === "html" && isInsideStyleTag(textBefore);
+  const isJsFile = activeFile.type === "js";
+  const isHtmlScriptContext =
+    activeFile.type === "html" && isInsideScriptTag(textBefore);
 
   if (isCssFile || isHtmlStyleContext) {
     const cssContext = getCssSuggestionContext(textBefore);
@@ -2355,6 +2464,31 @@ function handleSuggestions(e) {
     }
     currentSuggestionContext = cssContext;
     showCssSuggestions(editor, cssSuggestions, cssContext.mode);
+    return;
+  }
+
+  if (isJsFile || isHtmlScriptContext) {
+    const jsContext = getJsSuggestionContext(textBefore);
+    if (!jsContext) {
+      hideSuggestions();
+      return;
+    }
+    const jsMatches = getRankedJsSuggestions(jsContext.prefix);
+    if (!jsMatches.length) {
+      hideSuggestions();
+      return;
+    }
+    if (
+      jsContext.prefix &&
+      jsMatches.some(
+        (entry) => entry.value.toLowerCase() === jsContext.prefix.toLowerCase(),
+      )
+    ) {
+      hideSuggestions();
+      return;
+    }
+    currentSuggestionContext = jsContext;
+    showJsSuggestions(editor, jsMatches);
     return;
   }
 
@@ -2486,6 +2620,12 @@ function isInsideStyleTag(textBefore) {
   return opens > closes;
 }
 
+function isInsideScriptTag(textBefore) {
+  const opens = (textBefore.match(/<script\b[^>]*>/gi) || []).length;
+  const closes = (textBefore.match(/<\/script>/gi) || []).length;
+  return opens > closes;
+}
+
 function getCssSuggestionContext(textBefore) {
   const lineStart = textBefore.lastIndexOf("\n") + 1;
   const lineText = textBefore.substring(lineStart);
@@ -2534,6 +2674,24 @@ function getCssSuggestionContext(textBefore) {
   };
 }
 
+function getJsSuggestionContext(textBefore) {
+  const lineStart = textBefore.lastIndexOf("\n") + 1;
+  const lineText = textBefore.substring(lineStart);
+
+  if (/^\s*\/\//.test(lineText)) return null;
+
+  const tokenMatch = lineText.match(/([A-Za-z_$][\w$.]*)$/);
+  if (!tokenMatch) return null;
+
+  const prefix = tokenMatch[1];
+  return {
+    mode: "js",
+    prefix,
+    replaceStart: textBefore.length - prefix.length,
+    replaceEnd: textBefore.length,
+  };
+}
+
 function getRankedCssSuggestions(prefix, mode, propertyName) {
   const q = (prefix || "").toLowerCase();
   let source = [];
@@ -2571,6 +2729,23 @@ function getRankedCssSuggestions(prefix, mode, propertyName) {
     return aValue.localeCompare(bValue);
   });
   return matches.slice(0, 30);
+}
+
+function getRankedJsSuggestions(prefix) {
+  const q = (prefix || "").toLowerCase();
+  const matches = jsSuggestions.filter((entry) =>
+    entry.value.toLowerCase().includes(q),
+  );
+  matches.sort((a, b) => {
+    const aValue = a.value.toLowerCase();
+    const bValue = b.value.toLowerCase();
+    const aStarts = aValue.startsWith(q) ? 1 : 0;
+    const bStarts = bValue.startsWith(q) ? 1 : 0;
+    if (aStarts !== bStarts) return bStarts - aStarts;
+    if (aValue.length !== bValue.length) return aValue.length - bValue.length;
+    return aValue.localeCompare(bValue);
+  });
+  return matches.slice(0, 20);
 }
 
 function getFileSuggestionContext(textBefore) {
@@ -2937,6 +3112,47 @@ function showHtmlAttributeSuggestions(editor, suggestions) {
   positionSuggestionPopup(editor);
 }
 
+function showJsSuggestions(editor, suggestions) {
+  suggestionPopup.innerHTML = "";
+  suggestionPopup.dataset.mode = "js";
+
+  const header = document.createElement("div");
+  header.className = "suggestion-header";
+  header.innerHTML = `
+    <span>JavaScript (${suggestions.length})</span>
+    <span class="suggestion-shortcuts">
+      <span class="suggestion-shortcut">Enter</span>
+      <span class="suggestion-shortcut">Tab</span>
+      <span class="suggestion-shortcut">Esc</span>
+    </span>
+  `;
+  suggestionPopup.appendChild(header);
+
+  suggestions.forEach((entry) => {
+    const suggestionItem = document.createElement("div");
+    suggestionItem.className = "suggestion-item";
+    suggestionItem.innerHTML = `
+      <span class="suggestion-icon">JS</span>
+      <span class="suggestion-content">
+        <div class="suggestion-tag">${escapeHtml(entry.value)}</div>
+        <div class="suggestion-desc">${escapeHtml(entry.desc || "JavaScript suggestion")}</div>
+      </span>
+    `;
+    suggestionItem.dataset.tag = entry.value;
+    suggestionItem.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      selectSuggestion(entry.value);
+    });
+    suggestionPopup.appendChild(suggestionItem);
+  });
+
+  suggestionPopup.style.display = "block";
+  activeSuggestion = 0;
+  const items = suggestionPopup.querySelectorAll(".suggestion-item");
+  updateSuggestionHighlight(items);
+  positionSuggestionPopup(editor);
+}
+
 function showFileSuggestions(editor, fileSuggestions, prefix) {
   suggestionPopup.innerHTML = "";
   suggestionPopup.dataset.mode = "file";
@@ -3003,6 +3219,10 @@ function selectSuggestion(tag) {
     selectCssSuggestion(tag);
     return;
   }
+  if (mode === "js") {
+    selectJsSuggestion(tag);
+    return;
+  }
   if (mode === "html-attr") {
     selectHtmlAttributeSuggestion(tag);
     return;
@@ -3036,6 +3256,46 @@ function selectSuggestion(tag) {
   editor.selectionStart = editor.selectionEnd = shouldAutoClose
     ? textBeforeTrigger.length + insertedTag.length
     : textBeforeTrigger.length + insertedTag.length;
+
+  hideSuggestions();
+  activeFile.content = editor.value;
+  updateLineNumbers(editor);
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  handleCodeChange({
+    target: { id: activeFile.type + "Code", value: editor.value },
+  });
+  editor.focus();
+}
+
+function selectJsSuggestion(value) {
+  const editor = document.getElementById("activeEditor");
+  if (!currentSuggestionContext) return;
+
+  const { replaceStart, replaceEnd } = currentSuggestionContext;
+  const entry = jsSuggestions.find((item) => item.value === value);
+  const insertText = entry ? entry.insertText || entry.value : value;
+  const textAfter = editor.value.substring(replaceEnd);
+
+  editor.value =
+    editor.value.substring(0, replaceStart) + insertText + textAfter;
+
+  let cursorOffset = insertText.length;
+  const quotePos = insertText.indexOf("\"\"");
+  if (quotePos > -1) {
+    cursorOffset = quotePos + 1;
+  } else {
+    const parenPos = insertText.indexOf("()");
+    if (parenPos > -1) {
+      cursorOffset = parenPos + 1;
+    } else {
+      const braceLine = insertText.indexOf("\n" + INDENT_UNIT);
+      if (braceLine > -1) {
+        cursorOffset = braceLine + 1 + INDENT_UNIT.length;
+      }
+    }
+  }
+
+  editor.selectionStart = editor.selectionEnd = replaceStart + cursorOffset;
 
   hideSuggestions();
   activeFile.content = editor.value;
