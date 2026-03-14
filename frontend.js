@@ -1177,6 +1177,43 @@ kbd {
     active: false,
   },
 ];
+let currentPreviewTarget = {
+  mode: "html",
+  fileName: "index.html",
+};
+
+function getPreviewTargetForFile(rawHref) {
+  const fileName = String(rawHref || "").split("/").pop();
+  const linkedFile = projectFiles.find(
+    (f) => f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html",
+  );
+  if (linkedFile) {
+    return {
+      exists: true,
+      mode: "html",
+      fileName: linkedFile.name,
+      url: linkedFile.name,
+    };
+  }
+  return {
+    exists: false,
+    mode: "missing",
+    fileName,
+    url: `/404-for-preview.html?file=${encodeURIComponent(fileName)}`,
+  };
+}
+
+function setPreviewTarget(rawHref) {
+  const nextTarget = getPreviewTargetForFile(rawHref);
+  currentPreviewTarget = {
+    mode: nextTarget.mode,
+    fileName: nextTarget.fileName,
+  };
+  updatePreview();
+  return false;
+}
+
+window.__codxOpenPreviewFile = setPreviewTarget;
 let activeFile = projectFiles[0];
 
 function getDefaultHtmlStarter() {
@@ -1374,6 +1411,9 @@ function switchFile(fileName) {
       hideSuggestions();
     }
   });
+  if (activeFile && activeFile.type === "html") {
+    currentPreviewTarget = { mode: "html", fileName: activeFile.name };
+  }
   renderFileList();
   enforceCollabPermissionsUI();
   syncProjectWithSession();
@@ -1409,6 +1449,9 @@ function createNewFile() {
   projectFiles.forEach((file) => (file.active = false));
   projectFiles.push(newFile);
   activeFile = newFile;
+  if (newFile.type === "html") {
+    currentPreviewTarget = { mode: "html", fileName: newFile.name };
+  }
 
   const editor = document.getElementById("activeEditor");
   editor.value = newFile.content; // Set editor value to the template
@@ -1439,6 +1482,13 @@ function renameFile(oldName) {
 
   file.name = name;
   file.type = ext;
+  if (
+    currentPreviewTarget.mode === "html" &&
+    currentPreviewTarget.fileName &&
+    currentPreviewTarget.fileName.toLowerCase() === oldName.toLowerCase()
+  ) {
+    currentPreviewTarget = { mode: "html", fileName: name };
+  }
 
   if (activeFile && activeFile === file) {
     hideSuggestions();
@@ -1464,6 +1514,15 @@ function deleteFile(fileName) {
       editor.value = activeFile.content;
       updateLineNumbers(editor);
       syncScroll(editor);
+    }
+    if (
+      currentPreviewTarget.fileName &&
+      currentPreviewTarget.fileName.toLowerCase() === fileName.toLowerCase()
+    ) {
+      const nextHtmlFile = projectFiles.find((file) => file.type === "html");
+      currentPreviewTarget = nextHtmlFile
+        ? { mode: "html", fileName: nextHtmlFile.name }
+        : { mode: "html", fileName: "" };
     }
     renderFileList();
     syncProjectWithSession();
@@ -1853,7 +1912,26 @@ function runPreflightDiagnostics() {
 }
 
 function updatePreview() {
-  const htmlFile = projectFiles.find((f) => f.type === "html");
+  if (currentPreviewTarget.mode === "missing" && currentPreviewTarget.fileName) {
+    iframe.src = `/404-for-preview.html?file=${encodeURIComponent(currentPreviewTarget.fileName)}`;
+    return;
+  }
+
+  let htmlFile = null;
+  if (currentPreviewTarget.mode === "html" && currentPreviewTarget.fileName) {
+    htmlFile =
+      projectFiles.find(
+        (f) =>
+          f.type === "html" &&
+          f.name.toLowerCase() === currentPreviewTarget.fileName.toLowerCase(),
+      ) || null;
+  }
+  if (!htmlFile) {
+    htmlFile = projectFiles.find((f) => f.type === "html");
+    if (htmlFile) {
+      currentPreviewTarget = { mode: "html", fileName: htmlFile.name };
+    }
+  }
   if (!htmlFile) {
     iframe.srcdoc =
       '<h3 style="text-align:center;color:#aaa;">No HTML file found</h3>';
@@ -1956,33 +2034,11 @@ ${jsFile.content}
   );
 
   // === 3. Handle <a href> links to other HTML files
-  const buildPreviewHtmlTarget = (rawHref) => {
-    const fileName = String(rawHref || "").split("/").pop();
-    const linkedFile = projectFiles.find(
-      (f) =>
-        f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html",
-    );
-
-    if (linkedFile) {
-      return {
-        exists: true,
-        url: `data:text/html;charset=utf-8,${encodeURIComponent(linkedFile.content)}`,
-        fileName,
-      };
-    }
-
-    return {
-      exists: false,
-      url: `/404-for-preview.html?file=${encodeURIComponent(fileName)}`,
-      fileName,
-    };
-  };
-
   html = html.replace(
     /<a([^>]*)href=["']([^"']+\.html)["']([^>]*)>/gi,
     (match, before, href, after) => {
-      const target = buildPreviewHtmlTarget(href);
-      return `<a${before}href="javascript:void(0)" onclick="window.location.href='${target.url}'"${after}>`;
+      const target = getPreviewTargetForFile(href);
+      return `<a${before}href="javascript:void(0)" onclick="return window.parent.__codxOpenPreviewFile('${target.fileName}')"${after}>`;
     },
   );
 
@@ -1990,7 +2046,7 @@ ${jsFile.content}
   html = html.replace(
     /<form([^>]*)action=["']([^"']+\.html)["']([^>]*)>/gi,
     (match, before, action, after) => {
-      const target = buildPreviewHtmlTarget(action);
+      const target = getPreviewTargetForFile(action);
       const combinedAttrs = `${before}${after}`;
       const onsubmitMatch = combinedAttrs.match(/\bonsubmit=(["'])([\s\S]*?)\1/i);
       const existingOnsubmit = onsubmitMatch ? onsubmitMatch[2].trim() : "";
@@ -2000,7 +2056,7 @@ ${jsFile.content}
         handlerParts.push(existingOnsubmit.replace(/;?\s*$/, ""));
       }
       handlerParts.push("event.preventDefault()");
-      handlerParts.push(`window.location.href='${target.url}'`);
+      handlerParts.push(`return window.parent.__codxOpenPreviewFile('${target.fileName}')`);
       return `<form${cleanedAttrs} action="javascript:void(0)" onsubmit="${handlerParts.join("; ")}">`;
     },
   );
@@ -2012,8 +2068,8 @@ ${jsFile.content}
       const rewritten = handlerCode.replace(
         /((?:window\.)?location(?:\.href)?\s*=\s*|window\.location\.assign\(\s*|window\.open\(\s*)(['"])([^'"]+\.html)(\2)(\s*\))?/gi,
         (_m, prefix, q, href, _q2, closing = "") => {
-          const target = buildPreviewHtmlTarget(href);
-          return `${prefix}${q}${target.url}${q}${closing}`;
+          const target = getPreviewTargetForFile(href);
+          return `window.parent.__codxOpenPreviewFile(${q}${target.fileName}${q})`;
         },
       );
       return `onclick=${quote}${rewritten}${quote}`;
