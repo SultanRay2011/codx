@@ -262,11 +262,30 @@
 
     <script>
       const params = new URLSearchParams(window.location.search);
-      const missingFile = params.get("file");
-      if (missingFile) {
-        document.getElementById(
-          "missingFile",
-        ).textContent = `Missing file: ${decodeURIComponent(missingFile)}`;
+      const rawMissingFile = params.get("file");
+
+      function getDisplayFileName(value) {
+        if (!value) return "";
+        let decoded = value;
+        try {
+          decoded = decodeURIComponent(value);
+        } catch (e) {}
+
+        const nestedMatch = decoded.match(/[?&]file=([^&]+)/i);
+        if (nestedMatch) {
+          try {
+            decoded = decodeURIComponent(nestedMatch[1]);
+          } catch (e) {
+            decoded = nestedMatch[1];
+          }
+        }
+
+        return decoded.split("/").pop();
+      }
+
+      const displayFile = getDisplayFileName(rawMissingFile);
+      if (displayFile) {
+        document.getElementById("missingFile").textContent = displayFile;
       }
     </script>
   </body>

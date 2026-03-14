@@ -1986,6 +1986,25 @@ ${jsFile.content}
     },
   );
 
+  // === 3a. Handle <form action> navigation to project HTML files
+  html = html.replace(
+    /<form([^>]*)action=["']([^"']+\.html)["']([^>]*)>/gi,
+    (match, before, action, after) => {
+      const target = buildPreviewHtmlTarget(action);
+      const combinedAttrs = `${before}${after}`;
+      const onsubmitMatch = combinedAttrs.match(/\bonsubmit=(["'])([\s\S]*?)\1/i);
+      const existingOnsubmit = onsubmitMatch ? onsubmitMatch[2].trim() : "";
+      const cleanedAttrs = combinedAttrs.replace(/\s*\bonsubmit=(["'])[\s\S]*?\1/i, "");
+      const handlerParts = [];
+      if (existingOnsubmit) {
+        handlerParts.push(existingOnsubmit.replace(/;?\s*$/, ""));
+      }
+      handlerParts.push("event.preventDefault()");
+      handlerParts.push(`window.location.href='${target.url}'`);
+      return `<form${cleanedAttrs} action="javascript:void(0)" onsubmit="${handlerParts.join("; ")}">`;
+    },
+  );
+
   // === 3b. Handle inline onclick/location assignments to project HTML files
   html = html.replace(
     /\bonclick=(["'])([\s\S]*?)\1/gi,
@@ -2238,6 +2257,38 @@ function updateLineNumbers(textarea) {
   );
   renderSyntaxHighlight(textarea);
   renderErrorHighlights(textarea);
+}
+
+function commitEditorMutation(editor) {
+  if (!editor || !activeFile) return;
+  hasUnsavedChanges = true;
+  activeFile.content = editor.value;
+  updateLineNumbers(editor);
+  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  handleCodeChange({
+    target: { id: activeFile.type + "Code", value: editor.value },
+  });
+}
+
+function applyEditorMutation(editor, start, end, replacement, selectionStart, selectionEnd) {
+  if (!editor) return;
+  const rangeStart = typeof start === "number" ? start : editor.selectionStart;
+  const rangeEnd = typeof end === "number" ? end : editor.selectionEnd;
+  if (typeof editor.setRangeText === "function") {
+    editor.setRangeText(replacement, rangeStart, rangeEnd, "preserve");
+  } else {
+    editor.value =
+      editor.value.substring(0, rangeStart) +
+      replacement +
+      editor.value.substring(rangeEnd);
+  }
+  editor.selectionStart =
+    typeof selectionStart === "number"
+      ? selectionStart
+      : rangeStart + replacement.length;
+  editor.selectionEnd =
+    typeof selectionEnd === "number" ? selectionEnd : editor.selectionStart;
+  commitEditorMutation(editor);
 }
 
 // Sync scroll
@@ -3251,19 +3302,19 @@ function selectSuggestion(tag) {
   const insertedTag = isPlain ? `<${tag}>` : `${tag}>`;
   const shouldAutoClose = !isClosing && !selfClosingTags.includes(tag);
   const closingTag = shouldAutoClose ? `</${tag}>` : "";
-  editor.value = textBeforeTrigger + insertedTag + closingTag + textAfter;
-
-  editor.selectionStart = editor.selectionEnd = shouldAutoClose
-    ? textBeforeTrigger.length + insertedTag.length
-    : textBeforeTrigger.length + insertedTag.length;
+  const replaceStart = textBefore.length - prefix.length;
+  const insertedText = insertedTag + closingTag;
+  const caretPos = textBeforeTrigger.length + insertedTag.length;
+  applyEditorMutation(
+    editor,
+    replaceStart,
+    editor.selectionEnd,
+    insertedText,
+    caretPos,
+    caretPos,
+  );
 
   hideSuggestions();
-  activeFile.content = editor.value;
-  updateLineNumbers(editor);
-  if (autoRunCheckbox.checked) debouncedUpdatePreview();
-  handleCodeChange({
-    target: { id: activeFile.type + "Code", value: editor.value },
-  });
   editor.focus();
 }
 
@@ -3274,11 +3325,6 @@ function selectJsSuggestion(value) {
   const { replaceStart, replaceEnd } = currentSuggestionContext;
   const entry = jsSuggestions.find((item) => item.value === value);
   const insertText = entry ? entry.insertText || entry.value : value;
-  const textAfter = editor.value.substring(replaceEnd);
-
-  editor.value =
-    editor.value.substring(0, replaceStart) + insertText + textAfter;
-
   let cursorOffset = insertText.length;
   const quotePos = insertText.indexOf("\"\"");
   if (quotePos > -1) {
@@ -3295,15 +3341,16 @@ function selectJsSuggestion(value) {
     }
   }
 
-  editor.selectionStart = editor.selectionEnd = replaceStart + cursorOffset;
-
+  const caretPos = replaceStart + cursorOffset;
+  applyEditorMutation(
+    editor,
+    replaceStart,
+    replaceEnd,
+    insertText,
+    caretPos,
+    caretPos,
+  );
   hideSuggestions();
-  activeFile.content = editor.value;
-  updateLineNumbers(editor);
-  if (autoRunCheckbox.checked) debouncedUpdatePreview();
-  handleCodeChange({
-    target: { id: activeFile.type + "Code", value: editor.value },
-  });
   editor.focus();
 }
 
@@ -3312,7 +3359,6 @@ function selectHtmlAttributeSuggestion(attrName) {
   if (!currentSuggestionContext) return;
 
   const { replaceStart, replaceEnd } = currentSuggestionContext;
-  const textAfter = editor.value.substring(replaceEnd);
   const lowerAttr = attrName.toLowerCase();
   const booleanAttrs = new Set([
     "controls",
@@ -3336,24 +3382,22 @@ function selectHtmlAttributeSuggestion(attrName) {
       ? 'data-=""'
       : attrName;
 
-  editor.value =
-    editor.value.substring(0, replaceStart) + insertedText + textAfter;
-
   const cursorOffset =
     attrName === "data-*"
       ? 5
       : needsQuotedValue
         ? insertedText.length - 1
         : insertedText.length;
-  editor.selectionStart = editor.selectionEnd = replaceStart + cursorOffset;
-
+  const caretPos = replaceStart + cursorOffset;
+  applyEditorMutation(
+    editor,
+    replaceStart,
+    replaceEnd,
+    insertedText,
+    caretPos,
+    caretPos,
+  );
   hideSuggestions();
-  activeFile.content = editor.value;
-  updateLineNumbers(editor);
-  if (autoRunCheckbox.checked) debouncedUpdatePreview();
-  handleCodeChange({
-    target: { id: activeFile.type + "Code", value: editor.value },
-  });
   editor.focus();
 }
 
@@ -3362,7 +3406,6 @@ function selectCssSuggestion(value) {
   if (!currentSuggestionContext) return;
 
   const { mode, replaceStart, replaceEnd } = currentSuggestionContext;
-  const textAfter = editor.value.substring(replaceEnd);
   let insertedText = value;
   let cursorOffset = value.length;
 
@@ -3380,17 +3423,16 @@ function selectCssSuggestion(value) {
     }
   }
 
-  editor.value =
-    editor.value.substring(0, replaceStart) + insertedText + textAfter;
-  editor.selectionStart = editor.selectionEnd = replaceStart + cursorOffset;
-
+  const caretPos = replaceStart + cursorOffset;
+  applyEditorMutation(
+    editor,
+    replaceStart,
+    replaceEnd,
+    insertedText,
+    caretPos,
+    caretPos,
+  );
   hideSuggestions();
-  activeFile.content = editor.value;
-  updateLineNumbers(editor);
-  if (autoRunCheckbox.checked) debouncedUpdatePreview();
-  handleCodeChange({
-    target: { id: activeFile.type + "Code", value: editor.value },
-  });
   editor.focus();
 }
 
@@ -3398,7 +3440,6 @@ function selectFileSuggestion(filePath) {
   const editor = document.getElementById("activeEditor");
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
-  const textAfter = editor.value.substring(editor.selectionEnd);
   const match = textBefore.match(
     /(<[a-zA-Z0-9-]+[^<>]*\b(?:href|src)=["'])([^"']*)$/i,
   );
@@ -3411,17 +3452,16 @@ function selectFileSuggestion(filePath) {
     finalPath = `./${finalPath}`;
   }
 
-  editor.value =
-    editor.value.substring(0, replaceStart) + finalPath + textAfter;
-  editor.selectionStart = editor.selectionEnd = replaceStart + finalPath.length;
-
+  const caretPos = replaceStart + finalPath.length;
+  applyEditorMutation(
+    editor,
+    replaceStart,
+    editor.selectionEnd,
+    finalPath,
+    caretPos,
+    caretPos,
+  );
   hideSuggestions();
-  activeFile.content = editor.value;
-  updateLineNumbers(editor);
-  if (autoRunCheckbox.checked) debouncedUpdatePreview();
-  handleCodeChange({
-    target: { id: activeFile.type + "Code", value: editor.value },
-  });
   editor.focus();
 }
 
@@ -3498,17 +3538,7 @@ function handleAutoCloseAndIndent(e, editor) {
     e.preventDefault(); // Stop default { or ( insertion
 
     const newIndent = currentIndent;
-    const newText = textBefore + autoClosePair + closingChar + textAfter;
-    editor.value = newText;
-
-    // Move cursor before the inserted closing character
-    editor.selectionStart = editor.selectionEnd = pos + 1;
-
-    // Update state
-    activeFile.content = editor.value;
-    updateLineNumbers(editor);
-    if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange();
+    applyEditorMutation(editor, pos, editor.selectionEnd, autoClosePair + closingChar, pos + 1, pos + 1);
 
     return true; // Handled
   }
@@ -3568,14 +3598,14 @@ function handleAutoCloseAndIndent(e, editor) {
     }
 
     // ... (rest of the Enter handler code) ...
-    editor.value = newContent;
-    editor.selectionStart = editor.selectionEnd = newCursorPos;
-
-    // Update state
-    activeFile.content = editor.value;
-    updateLineNumbers(editor);
-    if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange();
+    applyEditorMutation(
+      editor,
+      0,
+      editor.value.length,
+      newContent,
+      newCursorPos,
+      newCursorPos,
+    );
 
     return true; // Handled
   }
@@ -3609,14 +3639,14 @@ function handleTagClosing(e) {
     const closingTag = `</${tagName}>`;
     const textAfter = editor.value.substring(editor.selectionEnd);
 
-    editor.value = textBefore + ">" + closingTag + textAfter;
-
-    editor.selectionStart = editor.selectionEnd = pos + 1;
-
-    activeFile.content = editor.value;
-    updateLineNumbers(editor);
-    if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange();
+    applyEditorMutation(
+      editor,
+      pos,
+      editor.selectionEnd,
+      ">" + closingTag,
+      pos + 1,
+      pos + 1,
+    );
   }
 }
 
@@ -3625,7 +3655,6 @@ function expandCxStartShortcut(editor) {
 
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
-  const textAfter = editor.value.substring(editor.selectionEnd);
   const lineStart = textBefore.lastIndexOf("\n") + 1;
   const currentLine = textBefore.substring(lineStart);
 
@@ -3637,23 +3666,18 @@ function expandCxStartShortcut(editor) {
     .map((line) => (line ? linePrefix + line : line))
     .join("\n");
 
-  editor.value =
-    editor.value.substring(0, lineStart) + replacement + textAfter;
-
-  const bodyHeading = `${linePrefix}    <h1>Welcome to CodX Editor</h1>`;
-  const caretTarget = editor.value.indexOf(bodyHeading, lineStart);
-  const caretPos =
-    caretTarget > -1
-      ? caretTarget + bodyHeading.length
-      : lineStart + replacement.length;
-
-  editor.selectionStart = editor.selectionEnd = caretPos;
-  activeFile.content = editor.value;
-  updateLineNumbers(editor);
-  if (autoRunCheckbox.checked) debouncedUpdatePreview();
-  handleCodeChange({
-    target: { id: activeFile.type + "Code", value: editor.value },
-  });
+  const bodyMatch = replacement.match(/<body>\n([\s\S]*?)\n<\/body>/i);
+  const bodyContentOffset =
+    bodyMatch && bodyMatch[1] ? replacement.indexOf(bodyMatch[1]) : replacement.length;
+  const caretPos = lineStart + bodyContentOffset;
+  applyEditorMutation(
+    editor,
+    lineStart,
+    editor.selectionEnd,
+    replacement,
+    caretPos,
+    caretPos,
+  );
   return true;
 }
 
@@ -3718,16 +3742,7 @@ function handleEditorKeyDown(e) {
     // Trigger only when caret is right after a likely attribute name.
     if (/[\w:-]\s*$/.test(textBefore)) {
       e.preventDefault();
-      editor.value =
-        editor.value.substring(0, start) + '=""' + editor.value.substring(end);
-      editor.selectionStart = editor.selectionEnd = start + 2;
-
-      activeFile.content = editor.value;
-      updateLineNumbers(editor);
-      if (autoRunCheckbox.checked) debouncedUpdatePreview();
-      handleCodeChange({
-        target: { id: activeFile.type + "Code", value: editor.value },
-      });
+      applyEditorMutation(editor, start, end, '=""', start + 2, start + 2);
       return;
     }
   }
@@ -3757,18 +3772,14 @@ function handleEditorKeyDown(e) {
     e.preventDefault();
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
-    // Insert 3 spaces
-    editor.value =
-      editor.value.substring(0, start) + INDENT_UNIT + editor.value.substring(end);
-    editor.selectionStart = editor.selectionEnd = start + INDENT_UNIT.length;
-
-    // Update state
-    activeFile.content = editor.value;
-    updateLineNumbers(editor);
-    if (autoRunCheckbox.checked) debouncedUpdatePreview();
-    handleCodeChange({
-      target: { id: activeFile.type + "Code", value: editor.value },
-    });
+    applyEditorMutation(
+      editor,
+      start,
+      end,
+      INDENT_UNIT,
+      start + INDENT_UNIT.length,
+      start + INDENT_UNIT.length,
+    );
     return;
   }
 
