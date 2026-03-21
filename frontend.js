@@ -39,6 +39,7 @@ const previewIframe = document.getElementById("output");
 const previewTitleEl = document.getElementById("previewTitle");
 const errorMsgEl = document.getElementById("errorMsg");
 const zenModeBtn = document.getElementById("zenModeBtn");
+const zenExitBtn = document.getElementById("zenExitBtn");
 
 function getModalDoneBtn() {
   return document.getElementById("modalDoneBtn");
@@ -742,6 +743,7 @@ let collabPrivateMessages = [];
 let collabChatMode = "group";
 let collabChatTarget = "";
 let remoteCursorState = {};
+let remoteTypingState = {};
 let lastCursorEmitAt = 0;
 let fileErrorCounts = {};
 let fileErrorLocations = {};
@@ -756,7 +758,19 @@ const defaultCollabPermissions = {
 let collabPermissions = { ...defaultCollabPermissions };
 let collabHostName = "";
 let collabModalView = "idle";
+let followedParticipantName = "";
 const editableTextExtensions = ["html", "css", "js", "env"];
+
+function resetTransientCollabUiState() {
+  currentTypingIndicator = null;
+  remoteCursorState = {};
+  remoteTypingState = {};
+  followedParticipantName = "";
+  if (typingIndicatorEl) {
+    typingIndicatorEl.style.display = "none";
+  }
+  renderRemoteCursors();
+}
 
 function resetFileErrorCounts() {
   fileErrorCounts = {};
@@ -902,9 +916,14 @@ function jumpToEditorLocation(fileName, line, col = 1) {
 }
 
 function jumpToFirstErrorInFile(fileName) {
-  const locations = fileErrorLocations[fileName];
+  const normalizedFileName = String(fileName || "").trim().toLowerCase();
+  const resolvedKey =
+    Object.keys(fileErrorLocations).find(
+      (name) => String(name || "").trim().toLowerCase() === normalizedFileName,
+    ) || fileName;
+  const locations = fileErrorLocations[resolvedKey];
   if (!locations || !locations.length) {
-    switchFile(fileName);
+    switchFile(resolvedKey);
     return;
   }
   const target = locations[0];
@@ -945,7 +964,13 @@ function renderErrorHighlights(textarea) {
   if (!errorHighlightLayer || !textarea || !activeFile) return;
   errorHighlightLayer.innerHTML = "";
 
-  const locations = (fileErrorLocations[activeFile.name] || [])
+  const activeErrorKey =
+    Object.keys(fileErrorLocations).find(
+      (name) =>
+        String(name || "").trim().toLowerCase() ===
+        String(activeFile.name || "").trim().toLowerCase(),
+    ) || activeFile.name;
+  const locations = (fileErrorLocations[activeErrorKey] || [])
     .filter((item) => item && Number(item.line) > 0)
     .sort((a, b) => a.line - b.line || a.col - b.col);
 
@@ -2498,6 +2523,7 @@ function syncScroll(textarea) {
       highlightLayer.scrollLeft = textarea.scrollLeft;
     }
     renderErrorHighlights(textarea);
+    renderRemoteCursors();
     if (suggestionPopup.style.display === "block") {
       positionSuggestionPopup(textarea);
     }
@@ -2743,6 +2769,33 @@ function handleSuggestions(e) {
     hideSuggestions();
     return;
   }
+
+  const inlineStyleContext = getHtmlInlineStyleSuggestionContext(textBefore);
+  if (inlineStyleContext) {
+    const cssSuggestions = getRankedCssSuggestions(
+      inlineStyleContext.prefix,
+      inlineStyleContext.mode,
+      inlineStyleContext.propertyName,
+    );
+    if (!cssSuggestions.length) {
+      hideSuggestions();
+      return;
+    }
+    if (
+      inlineStyleContext.prefix &&
+      cssSuggestions.some(
+        (entry) =>
+          entry.value.toLowerCase() === inlineStyleContext.prefix.toLowerCase(),
+      )
+    ) {
+      hideSuggestions();
+      return;
+    }
+    currentSuggestionContext = inlineStyleContext;
+    showCssSuggestions(editor, cssSuggestions, inlineStyleContext.mode);
+    return;
+  }
+
   const fileContext = getFileSuggestionContext(textBefore);
 
   if (fileContext) {
@@ -2951,15 +3004,59 @@ function getJsSuggestionContext(textBefore) {
   };
 }
 
+function getHtmlInlineStyleSuggestionContext(textBefore) {
+  const match = textBefore.match(
+    /<([a-zA-Z][a-zA-Z0-9-]*)[^<>]*\bstyle=(["'])([^"']*)$/i,
+  );
+  if (!match) return null;
+
+  const styleValue = match[3] || "";
+  const sanitizedStyleValue = stripQuotedContent(styleValue);
+  if (/\/\*[^*]*$/.test(sanitizedStyleValue)) return null;
+
+  const declarationStart = sanitizedStyleValue.lastIndexOf(";") + 1;
+  const declarationText = styleValue.slice(declarationStart);
+  const sanitizedDeclarationText = sanitizedStyleValue.slice(declarationStart);
+
+  const valueMatch = sanitizedDeclarationText.match(/([a-z-]+)\s*:\s*([^;]*)$/i);
+  if (valueMatch) {
+    const propertyName = valueMatch[1].toLowerCase();
+    const rawValue = declarationText.slice(
+      valueMatch.index + valueMatch[0].indexOf(valueMatch[2]),
+    );
+    const trimLeftCount = rawValue.length - rawValue.replace(/^\s+/, "").length;
+    const valuePrefix = rawValue.substring(trimLeftCount);
+    const replaceEnd = textBefore.length;
+    const replaceStart = replaceEnd - valuePrefix.length;
+    return {
+      mode: "css-inline-value",
+      propertyName,
+      prefix: valuePrefix,
+      replaceStart,
+      replaceEnd,
+    };
+  }
+
+  const propMatch = sanitizedDeclarationText.match(/([a-z-]*)$/i);
+  const propertyPrefix = propMatch ? propMatch[1] : "";
+  return {
+    mode: "css-inline-property",
+    propertyName: "",
+    prefix: propertyPrefix,
+    replaceStart: textBefore.length - propertyPrefix.length,
+    replaceEnd: textBefore.length,
+  };
+}
+
 function getRankedCssSuggestions(prefix, mode, propertyName) {
   const q = (prefix || "").toLowerCase();
   let source = [];
-  if (mode === "css-property") {
+  if (mode === "css-property" || mode === "css-inline-property") {
     source = cssPropertySuggestions.map((value) => ({
       value,
       desc: "CSS property",
     }));
-  } else if (mode === "css-value") {
+  } else if (mode === "css-value" || mode === "css-inline-value") {
     const propertyValues = cssValueSuggestionsByProperty[propertyName] || [];
     source = [...propertyValues, ...cssGenericValueSuggestions].map((value) => ({
       value,
@@ -3474,7 +3571,13 @@ function selectSuggestion(tag) {
     selectFileSuggestion(tag);
     return;
   }
-  if (mode === "css-property" || mode === "css-value" || mode === "css-selector") {
+  if (
+    mode === "css-property" ||
+    mode === "css-value" ||
+    mode === "css-selector" ||
+    mode === "css-inline-property" ||
+    mode === "css-inline-value"
+  ) {
     selectCssSuggestion(tag);
     return;
   }
@@ -3621,6 +3724,24 @@ function selectCssSuggestion(value) {
     const afterSlice = editor.value.substring(replaceEnd);
     if (!/^\s*:/.test(afterSlice)) {
       insertedText = `${value}: `;
+      cursorOffset = insertedText.length;
+    }
+  } else if (mode === "css-inline-property") {
+    const afterSlice = editor.value.substring(replaceEnd);
+    if (/^\s*:/.test(afterSlice)) {
+      insertedText = value;
+      cursorOffset = insertedText.length;
+    } else {
+      insertedText = `${value}: ;`;
+      cursorOffset = value.length + 2;
+    }
+  } else if (mode === "css-inline-value") {
+    const afterSlice = editor.value.substring(replaceEnd);
+    if (/^\s*;/.test(afterSlice)) {
+      insertedText = value;
+      cursorOffset = insertedText.length;
+    } else {
+      insertedText = `${value}; `;
       cursorOffset = insertedText.length;
     }
   } else if (mode === "css-selector") {
@@ -4012,6 +4133,26 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
+  if (e.key === "Escape") {
+    if (fontPickerModal && fontPickerModal.style.display === "flex") {
+      e.preventDefault();
+      fontPickerModal.style.display = "none";
+      return;
+    }
+    if (settingsModal && settingsModal.style.display === "flex") {
+      e.preventDefault();
+      settingsModal.style.display = "none";
+      return;
+    }
+    if (collabModal && collabModal.style.display === "flex") {
+      e.preventDefault();
+      if (closeModalBtn && closeModalBtn.style.display !== "none") {
+        closeModal();
+      }
+      return;
+    }
+  }
+
   // Prevent shortcuts from firing while suggestion box is open
   if (suggestionPopup.style.display === "block") {
     if (
@@ -4220,6 +4361,7 @@ function handleZipImport(event) {
 // PART 11 - FULLSCREEN
 previewFullscreenBtn.addEventListener("click", togglePreviewFullscreen);
 zenModeBtn.addEventListener("click", toggleZenMode);
+if (zenExitBtn) zenExitBtn.addEventListener("click", () => toggleZenMode(false));
 document.addEventListener("fullscreenchange", updateFullscreenButtonState);
 
 function togglePreviewFullscreen() {
@@ -4283,6 +4425,11 @@ function getMyParticipant() {
   return collabParticipants.find((p) => p.name === myInfo.name) || null;
 }
 
+function getParticipantByName(name) {
+  const safeName = String(name || "").trim().toLowerCase();
+  return collabParticipants.find((p) => String(p.name || "").trim().toLowerCase() === safeName) || null;
+}
+
 function getCurrentHostName() {
   const hostParticipant = collabParticipants.find((p) => p.role === "host");
   if (hostParticipant?.name) return hostParticipant.name;
@@ -4330,8 +4477,15 @@ function isReadOnlyParticipant() {
 
 function canCurrentUserEditFile(fileName) {
   if (!activeSessionId || isHost() || isCoHost()) return true;
-  if (!collabPermissions.manageSelectedFiles) return true;
-  return collabPermissions.selectedFiles.includes(fileName);
+  const me = getMyParticipant();
+  if (me?.frozenEditing) return false;
+  const normalizedFileName = String(fileName || "").trim().toLowerCase();
+  const hasPersonalFileAccess = Array.isArray(me?.allowedFiles);
+  if (!hasPersonalFileAccess && !collabPermissions.manageSelectedFiles) return true;
+  const allowedFiles = hasPersonalFileAccess ? me.allowedFiles : collabPermissions.selectedFiles;
+  return allowedFiles.some(
+    (name) => String(name || "").trim().toLowerCase() === normalizedFileName,
+  );
 }
 
 function enforceCollabPermissionsUI() {
@@ -4361,6 +4515,8 @@ function enforceCollabPermissionsUI() {
   const lockExport = participantRestricted && collabPermissions.disableExportZip;
   const lockImport = participantRestricted && collabPermissions.disableImportZip;
   const lockEditor = !canCurrentUserEditFile(activeFile ? activeFile.name : "");
+  const me = getMyParticipant();
+  const frozenEditing = participantRestricted && Boolean(me?.frozenEditing);
 
   if (newFileBtn) {
     newFileBtn.disabled = lockNewFile;
@@ -4378,7 +4534,9 @@ function enforceCollabPermissionsUI() {
   if (editor) {
     editor.readOnly = lockEditor;
     editor.title = lockEditor
-      ? "The host allowed editing only on selected files."
+      ? frozenEditing
+        ? "The host temporarily froze your editing access."
+        : "The host allowed editing only on selected files."
       : "";
   }
 }
@@ -4452,6 +4610,217 @@ function setCoHost(targetName, makeCoHost) {
       }
     },
   );
+}
+
+function updateParticipantFlags(targetName, partial, successMessage) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit(
+    "collab:set-participant-flags",
+    {
+      sessionId: activeSessionId,
+      targetName,
+      ...(partial || {}),
+    },
+    (res) => {
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to update participant", "error");
+      } else {
+        if (successMessage) showNotification(successMessage, "success");
+        showParticipantActions(targetName);
+      }
+    },
+  );
+}
+
+function transferHostToParticipant(targetName) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit(
+    "collab:transfer-host",
+    { sessionId: activeSessionId, targetName },
+    (res) => {
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to transfer host", "error");
+      } else {
+        showNotification(`${targetName} is now the host.`, "success");
+        showSessionDetails(activeSessionId);
+      }
+    },
+  );
+}
+
+function stopFollowingParticipant(showToast = true) {
+  if (!followedParticipantName) return;
+  const previousName = followedParticipantName;
+  followedParticipantName = "";
+  if (showToast) {
+    showNotification(`Stopped following ${previousName}.`, "info");
+  }
+}
+
+function showTransferHostConfirmation(targetName) {
+  if (!isHost()) return;
+  const safeName = String(targetName || "").trim();
+  if (!safeName) return;
+
+  collabModalView = "participant-actions";
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>TRANSFER HOST</strong>";
+  modalBody.innerHTML = `
+    <p style="margin: 8px 0 16px; color: var(--text-primary);">
+      Are you sure you want to transfer host to <strong>${escapeHtml(safeName)}</strong>?
+    </p>
+  `;
+  setModalActions(`
+    <button id="transferHostYesBtn" class="run-button" style="background:#d32f2f;"><strong>YES</strong></button>
+    <button id="transferHostNoBtn" class="run-button" style="background:#2e7d32;"><strong>NO</strong></button>
+  `);
+  collabModal.style.display = "flex";
+
+  const yesBtn = document.getElementById("transferHostYesBtn");
+  const noBtn = document.getElementById("transferHostNoBtn");
+  if (yesBtn) yesBtn.onclick = () => transferHostToParticipant(safeName);
+  if (noBtn) noBtn.onclick = () => showParticipantActions(safeName);
+}
+
+function updateParticipantAllowedFiles(targetName, allowedFiles, reset = false) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit(
+    "collab:set-participant-files",
+    {
+      sessionId: activeSessionId,
+      targetName,
+      allowedFiles,
+      reset,
+    },
+    (res) => {
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to update file access", "error");
+      } else {
+        showNotification(
+          reset ? `${targetName}'s file access was reset.` : `${targetName}'s file access updated.`,
+          "success",
+        );
+        showParticipantActions(targetName);
+      }
+    },
+  );
+}
+
+function formatParticipantJoinedAt(ts) {
+  if (!ts) return "Unknown";
+  try {
+    return new Date(ts).toLocaleString();
+  } catch {
+    return "Unknown";
+  }
+}
+
+function showParticipantDetails(targetName) {
+  if (!isHost()) return;
+  const participant = getParticipantByName(targetName);
+  if (!participant) return;
+  const allowedText = Array.isArray(participant.allowedFiles)
+    ? participant.allowedFiles.length
+      ? participant.allowedFiles.join(", ")
+      : "No file access"
+    : "Using session file access";
+  collabModalView = "participant-actions";
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>PARTICIPANT DETAILS</strong>";
+  modalBody.innerHTML = `
+    <div style="text-align:left;display:grid;gap:10px;">
+      <p><strong>Name:</strong> ${escapeHtml(participant.name)}</p>
+      <p><strong>Role:</strong> ${escapeHtml(participant.role || "participant")}</p>
+      <p><strong>Current file:</strong> ${escapeHtml(participant.currentFile || "None")}</p>
+      <p><strong>Joined:</strong> ${escapeHtml(formatParticipantJoinedAt(participant.joinedAt))}</p>
+      <p><strong>Chat:</strong> ${participant.mutedChat ? "Muted" : "Enabled"}</p>
+      <p><strong>Editing:</strong> ${participant.frozenEditing ? "Frozen" : "Enabled"}</p>
+      <p><strong>Priority:</strong> ${participant.priority ? "Marked" : "Normal"}</p>
+      <p><strong>File access:</strong> ${escapeHtml(allowedText)}</p>
+    </div>
+  `;
+  setModalActions(`
+    <button id="participantDetailsBackBtn" class="run-button"><strong>BACK</strong></button>
+  `);
+  const backBtn = document.getElementById("participantDetailsBackBtn");
+  if (backBtn) backBtn.onclick = () => showParticipantActions(targetName);
+  collabModal.style.display = "flex";
+}
+
+function showParticipantFileAccessEditor(targetName) {
+  if (!isHost()) return;
+  const participant = getParticipantByName(targetName);
+  if (!participant) return;
+  const currentSet = new Set(Array.isArray(participant.allowedFiles) ? participant.allowedFiles : []);
+  const options = projectFiles
+    .map((file) => `
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+        <input type="checkbox" value="${escapeHtml(file.name)}" ${currentSet.has(file.name) ? "checked" : ""}>
+        <span>${escapeHtml(file.name)}</span>
+      </label>
+    `)
+    .join("");
+  collabModalView = "participant-actions";
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>ALLOW FILE ACCESS</strong>";
+  modalBody.innerHTML = `
+    <p style="margin: 8px 0 12px; color: var(--text-primary);">
+      Choose which files <strong>${escapeHtml(participant.name)}</strong> can edit.
+    </p>
+    <div id="participantFileAccessList" style="text-align:left;max-height:220px;overflow:auto;border:1px solid var(--border-color);border-radius:8px;padding:10px;background:var(--bg-primary);">
+      ${options || `<div style="color:var(--text-muted);">No files available.</div>`}
+    </div>
+  `;
+  setModalActions(`
+    <button id="participantFileAccessSaveBtn" class="run-button"><strong>SAVE</strong></button>
+    <button id="participantFileAccessResetBtn" class="run-button"><strong>RESET ACCESS</strong></button>
+    <button id="participantFileAccessBackBtn" class="run-button"><strong>BACK</strong></button>
+  `);
+  const saveBtn = document.getElementById("participantFileAccessSaveBtn");
+  const resetBtn = document.getElementById("participantFileAccessResetBtn");
+  const backBtn = document.getElementById("participantFileAccessBackBtn");
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      const inputs = Array.from(
+        document.querySelectorAll("#participantFileAccessList input[type='checkbox']:checked"),
+      );
+      updateParticipantAllowedFiles(
+        participant.name,
+        inputs.map((input) => input.value),
+        false,
+      );
+    };
+  }
+  if (resetBtn) {
+    resetBtn.onclick = () => updateParticipantAllowedFiles(participant.name, [], true);
+  }
+  if (backBtn) backBtn.onclick = () => showParticipantActions(targetName);
+  collabModal.style.display = "flex";
+}
+
+function followParticipant(targetName) {
+  const participant = getParticipantByName(targetName);
+  if (!participant || !participant.currentFile) {
+    showNotification("That participant is not on a specific file yet.", "info");
+    return;
+  }
+  followedParticipantName = participant.name;
+  switchFile(participant.currentFile);
+  showNotification(`Following ${participant.name} to ${participant.currentFile}`, "success");
+}
+
+function syncFollowedParticipantView() {
+  if (!followedParticipantName) return;
+  const participant = getParticipantByName(followedParticipantName);
+  if (!participant) {
+    stopFollowingParticipant(false);
+    showNotification("Stopped following because that participant left the session.", "info");
+    return;
+  }
+  if (!participant.currentFile) return;
+  if (!activeFile || activeFile.name !== participant.currentFile) {
+    switchFile(participant.currentFile);
+  }
 }
 
 function getPrivateChatCandidates() {
@@ -4654,6 +5023,198 @@ function requestKickParticipant(targetName) {
   );
 }
 
+function copyTextValue(text, successMessage) {
+  const value = String(text || "");
+  if (!value) {
+    showNotification("Nothing to copy.", "error");
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(value)
+      .then(() => showNotification(successMessage || "Copied!", "success"))
+      .catch(() => fallbackCopy(value, value));
+    return;
+  }
+  fallbackCopy(value, value);
+}
+
+function openPrivateChatWithParticipant(targetName) {
+  const safeName = String(targetName || "").trim();
+  if (!safeName) return;
+  collabChatMode = "private";
+  collabChatTarget = safeName;
+  showSessionDetails(activeSessionId);
+  setTimeout(() => {
+    const targetSelect = document.getElementById("collabChatTarget");
+    const input = document.getElementById("collabChatInput");
+    if (targetSelect) targetSelect.value = safeName;
+    if (input) input.focus();
+  }, 0);
+}
+
+function showParticipantActions(targetName) {
+  if (!isHost()) return;
+  const safeName = String(targetName || "").trim();
+  if (!safeName) return;
+  const participant = getParticipantByName(safeName);
+  if (!participant || participant.role === "host") return;
+
+  collabModalView = "participant-actions";
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>PARTICIPANT OPTIONS</strong>";
+  modalBody.innerHTML = `
+    <p style="margin: 8px 0 16px; color: var(--text-primary);">
+      Manage <strong>${escapeHtml(safeName)}</strong>
+    </p>
+    <p style="margin: -6px 0 14px; color: var(--text-muted); font-size: 13px;">
+      Role: <strong>${escapeHtml(participant.role || "participant")}</strong>
+    </p>
+    <p style="margin: -6px 0 14px; color: var(--text-muted); font-size: 13px;">
+      Color:
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${escapeHtml(participant.theme || "#4CAF50")};margin:0 6px 0 2px;vertical-align:middle;"></span>
+      <strong>${escapeHtml(participant.theme || "#4CAF50")}</strong>
+    </p>
+    <p style="margin: -6px 0 14px; color: var(--text-muted); font-size: 13px;">
+      Current file: <strong>${escapeHtml(participant.currentFile || "None")}</strong>
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch;">
+      <button id="participantRoleBtn" class="run-button">
+        <strong>${participant.role === "co-host" ? "REMOVE CO-HOST" : "MAKE CO-HOST"}</strong>
+      </button>
+      <button id="participantTransferHostBtn" class="run-button">
+        <strong>TRANSFER HOST</strong>
+      </button>
+      <button id="participantMessageBtn" class="run-button">
+        <strong>MESSAGE</strong>
+      </button>
+      <button id="participantMuteChatBtn" class="run-button">
+        <strong>${participant.mutedChat ? "UNMUTE CHAT" : "MUTE CHAT"}</strong>
+      </button>
+      <button id="participantFreezeBtn" class="run-button">
+        <strong>${participant.frozenEditing ? "UNFREEZE EDITING" : "FREEZE EDITING"}</strong>
+      </button>
+      <button id="participantFileAccessBtn" class="run-button">
+        <strong>ALLOW FILE ACCESS</strong>
+      </button>
+      <button id="participantResetAccessBtn" class="run-button">
+        <strong>REMOVE PRIVATE ACCESS</strong>
+      </button>
+      <button id="participantFollowBtn" class="run-button">
+        <strong>${participant.name === followedParticipantName ? "STOP FOLLOWING" : "FOLLOW USER"}</strong>
+      </button>
+      <button id="participantViewDetailsBtn" class="run-button">
+        <strong>VIEW DETAILS</strong>
+      </button>
+      <button id="participantPriorityBtn" class="run-button">
+        <strong>${participant.priority ? "REMOVE PRIORITY" : "MARK AS PRIORITY"}</strong>
+      </button>
+      <button id="participantCopyNameBtn" class="run-button">
+        <strong>COPY NAME</strong>
+      </button>
+      <button id="participantCopyColorBtn" class="run-button">
+        <strong>COPY COLOR</strong>
+      </button>
+      <button id="participantCopyRoleBtn" class="run-button">
+        <strong>COPY ROLE</strong>
+      </button>
+      <button id="participantKickBtn" class="run-button" style="background:#d32f2f;">
+        <strong>KICK</strong>
+      </button>
+      <button id="participantDoneBtn" class="run-button">
+        <strong>DONE</strong>
+      </button>
+    </div>
+  `;
+  setModalActions("");
+  collabModal.style.display = "flex";
+
+  const roleBtn = document.getElementById("participantRoleBtn");
+  const transferHostBtn = document.getElementById("participantTransferHostBtn");
+  const messageBtn = document.getElementById("participantMessageBtn");
+  const muteChatBtn = document.getElementById("participantMuteChatBtn");
+  const freezeBtn = document.getElementById("participantFreezeBtn");
+  const fileAccessBtn = document.getElementById("participantFileAccessBtn");
+  const resetAccessBtn = document.getElementById("participantResetAccessBtn");
+  const followBtn = document.getElementById("participantFollowBtn");
+  const viewDetailsBtn = document.getElementById("participantViewDetailsBtn");
+  const priorityBtn = document.getElementById("participantPriorityBtn");
+  const copyNameBtn = document.getElementById("participantCopyNameBtn");
+  const copyColorBtn = document.getElementById("participantCopyColorBtn");
+  const copyRoleBtn = document.getElementById("participantCopyRoleBtn");
+  const kickBtn = document.getElementById("participantKickBtn");
+  const doneBtn = document.getElementById("participantDoneBtn");
+  if (roleBtn) {
+    roleBtn.onclick = () => setCoHost(safeName, participant.role !== "co-host");
+  }
+  if (transferHostBtn) {
+    transferHostBtn.onclick = () => showTransferHostConfirmation(safeName);
+  }
+  if (messageBtn) {
+    messageBtn.onclick = () => openPrivateChatWithParticipant(safeName);
+  }
+  if (muteChatBtn) {
+    muteChatBtn.onclick = () =>
+      updateParticipantFlags(
+        safeName,
+        { mutedChat: !participant.mutedChat },
+        participant.mutedChat ? `${safeName} can chat again.` : `${safeName} was muted.`,
+      );
+  }
+  if (freezeBtn) {
+    freezeBtn.onclick = () =>
+      updateParticipantFlags(
+        safeName,
+        { frozenEditing: !participant.frozenEditing },
+        participant.frozenEditing ? `${safeName} can edit again.` : `${safeName}'s editing was frozen.`,
+      );
+  }
+  if (fileAccessBtn) {
+    fileAccessBtn.onclick = () => showParticipantFileAccessEditor(safeName);
+  }
+  if (resetAccessBtn) {
+    resetAccessBtn.onclick = () => updateParticipantAllowedFiles(safeName, [], true);
+  }
+  if (followBtn) {
+    followBtn.onclick = () => {
+      if (participant.name === followedParticipantName) {
+        stopFollowingParticipant();
+      } else {
+        followParticipant(safeName);
+      }
+      showParticipantActions(safeName);
+    };
+  }
+  if (viewDetailsBtn) {
+    viewDetailsBtn.onclick = () => showParticipantDetails(safeName);
+  }
+  if (priorityBtn) {
+    priorityBtn.onclick = () =>
+      updateParticipantFlags(
+        safeName,
+        { priority: !participant.priority },
+        participant.priority ? `${safeName} is no longer priority.` : `${safeName} was marked as priority.`,
+      );
+  }
+  if (copyNameBtn) {
+    copyNameBtn.onclick = () => copyTextValue(safeName, `${safeName} copied`);
+  }
+  if (copyColorBtn) {
+    copyColorBtn.onclick = () =>
+      copyTextValue(participant.theme || "#4CAF50", `${safeName}'s color copied`);
+  }
+  if (copyRoleBtn) {
+    copyRoleBtn.onclick = () =>
+      copyTextValue(participant.role || "participant", `${safeName}'s role copied`);
+  }
+  if (kickBtn) {
+    kickBtn.onclick = () => showKickConfirmation(safeName);
+  }
+  if (doneBtn) {
+    doneBtn.onclick = () => showSessionDetails(activeSessionId);
+  }
+}
+
 function showKickConfirmation(targetName) {
   if (!isHost()) return;
   const safeName = String(targetName || "").trim();
@@ -4679,6 +5240,7 @@ function showKickConfirmation(targetName) {
 }
 
 function showKickedOutModal() {
+  resetTransientCollabUiState();
   collabModalView = "kicked";
   setCollabCloseButtonVisible(false);
   modalTitle.innerHTML = "<strong>NOTICE</strong>";
@@ -4713,9 +5275,7 @@ function ensureCollabSocket() {
   });
   collabSocket.on("disconnect", () => {
     clearOwnSessionCursorBroadcast();
-    typingIndicatorEl.style.display = "none";
-    remoteCursorState = {};
-    renderRemoteCursors();
+    resetTransientCollabUiState();
     if (activeSessionId) {
       showNotification("Collaboration connection lost.", "warn");
     }
@@ -4723,7 +5283,7 @@ function ensureCollabSocket() {
   collabSocket.on("reconnect", () => {
     if (!activeSessionId || !myInfo.name) return;
     collabSocket.emit(
-      "collab:join",
+      "collab:resume",
       {
         sessionId: activeSessionId,
         name: myInfo.name,
@@ -4743,7 +5303,7 @@ function ensureCollabSocket() {
           res.hostName ||
           collabHostName;
         collabPermissions = normalizeCollabPermissions(res.permissions);
-        applyRemoteSessionState(res.files, res.activeFileName);
+        applyRemoteSessionState(res.files, res.activeFileName, true);
         enforceCollabPermissionsUI();
         if (collabModal.style.display === "flex" && collabModalView === "session") {
           showSessionDetails(activeSessionId);
@@ -4756,7 +5316,15 @@ function ensureCollabSocket() {
 
   collabSocket.on("collab:state", (payload) => {
     if (!payload || !payload.files) return;
-    applyRemoteSessionState(payload.files, payload.activeFileName);
+    applyRemoteSessionState(payload.files, payload.activeFileName, false);
+    if (
+      followedParticipantName &&
+      payload.user &&
+      String(payload.user.name || "").trim().toLowerCase() ===
+        String(followedParticipantName || "").trim().toLowerCase()
+    ) {
+      syncFollowedParticipantView();
+    }
   });
 
   collabSocket.on("collab:typing", (indicator) => {
@@ -4773,8 +5341,12 @@ function ensureCollabSocket() {
     Object.keys(remoteCursorState).forEach((key) => {
       if (!allowedNames.has(key)) delete remoteCursorState[key];
     });
+    Object.keys(remoteTypingState).forEach((key) => {
+      if (!allowedNames.has(key)) delete remoteTypingState[key];
+    });
     renderRemoteCursors();
     enforceCollabPermissionsUI();
+    syncFollowedParticipantView();
     if (collabModal.style.display === "flex" && activeSessionId && collabModalView === "session") {
       showSessionDetails(activeSessionId);
     }
@@ -4792,6 +5364,18 @@ function ensureCollabSocket() {
 
   collabSocket.on("collab:kicked", () => {
     showKickedOutModal();
+  });
+
+  collabSocket.on("collab:role-notice", (payload) => {
+    const nextRole = String(payload?.role || "").trim().toLowerCase();
+    const actorName = String(payload?.by || "The host").trim() || "The host";
+    if (nextRole === "co-host") {
+      showNotification(`${actorName} made you a co-host.`, "success");
+      return;
+    }
+    if (nextRole === "participant") {
+      showNotification(`${actorName} removed your co-host access.`, "info");
+    }
   });
 
   collabSocket.on("collab:cursor", (payload) => {
@@ -4824,7 +5408,7 @@ function ensureCollabSocket() {
   return true;
 }
 
-function applyRemoteSessionState(files, activeFileName) {
+function applyRemoteSessionState(files, activeFileName, preferRemoteActive = false) {
   if (!Array.isArray(files) || !files.length) return;
   isApplyingRemoteState = true;
   try {
@@ -4832,8 +5416,9 @@ function applyRemoteSessionState(files, activeFileName) {
     const currentActiveName = activeFile ? activeFile.name : null;
     projectFiles = files;
     const nextActive =
-      projectFiles.find((f) => f.name === requestedActiveName) ||
+      (preferRemoteActive ? projectFiles.find((f) => f.name === requestedActiveName) : null) ||
       projectFiles.find((f) => f.name === currentActiveName) ||
+      projectFiles.find((f) => f.name === requestedActiveName) ||
       projectFiles.find((f) => f.active) ||
       projectFiles[0];
     activeFile = nextActive;
@@ -4869,6 +5454,7 @@ function emitSessionUpdate() {
 function announceTyping(activeEditorId) {
   if (!collabSocket || !activeSessionId || !myInfo.name) return;
   clearTimeout(typingTimer);
+  const editor = document.getElementById("activeEditor");
   collabSocket.emit("collab:typing", {
     sessionId: activeSessionId,
     indicator: {
@@ -4876,6 +5462,7 @@ function announceTyping(activeEditorId) {
       theme: myInfo.theme,
       editor: activeEditorId,
       fileName: activeFile ? activeFile.name : null,
+      caretPos: editor ? editor.selectionStart : 0,
     },
   });
 
@@ -4883,17 +5470,28 @@ function announceTyping(activeEditorId) {
     if (!collabSocket || !activeSessionId) return;
     collabSocket.emit("collab:typing", {
       sessionId: activeSessionId,
-      indicator: null,
+      indicator: {
+        stopped: true,
+        fileName: activeFile ? activeFile.name : null,
+      },
     });
   }, 1500);
 }
 
 function updateTypingIndicatorUI(ind) {
-  currentTypingIndicator = ind || null;
+  if (ind && ind.name && ind.name !== myInfo.name) {
+    if (ind.stopped) {
+      delete remoteTypingState[ind.name];
+    } else {
+      remoteTypingState[ind.name] = ind;
+    }
+  }
+  currentTypingIndicator = ind && !ind.stopped ? ind : null;
   const ed = document.getElementById("activeEditor");
   ed.style.boxShadow = "none";
   if (
     ind &&
+    !ind.stopped &&
     ind.name !== myInfo.name &&
     ind.fileName === activeFile.name
   ) {
@@ -4904,6 +5502,7 @@ function updateTypingIndicatorUI(ind) {
   } else {
     typingIndicatorEl.style.display = "none";
   }
+  renderRemoteCursors();
   renderFileList();
 }
 
@@ -4917,6 +5516,17 @@ function getVisibleCursorParticipants() {
   );
 }
 
+function getVisibleTypingParticipants() {
+  return Object.values(remoteTypingState).filter(
+    (entry) =>
+      entry &&
+      !entry.stopped &&
+      entry.name !== myInfo.name &&
+      entry.fileName === (activeFile ? activeFile.name : "") &&
+      Date.now() - Number(entry.ts || 0) < 1800,
+  );
+}
+
 function renderRemoteCursors() {
   if (!remoteCursorLayer) return;
   const wrapper = remoteCursorLayer.parentElement;
@@ -4924,7 +5534,23 @@ function renderRemoteCursors() {
 
   const width = wrapper.clientWidth;
   const height = wrapper.clientHeight;
-  remoteCursorLayer.innerHTML = getVisibleCursorParticipants()
+  const editor = document.getElementById("activeEditor");
+  const typingHtml = editor
+    ? getVisibleTypingParticipants()
+        .map((entry) => {
+          const caretPos = Math.max(0, Math.min(Number(entry.caretPos || 0), editor.value.length));
+          const coords = getCaretCoordinates(editor, caretPos);
+          const left = Math.max(0, coords.left);
+          const top = Math.max(0, coords.top);
+          const widthPx = Math.max(14, Math.min(90, Math.round((coords.lineHeight || 20) * 1.2)));
+          const heightPx = Math.max(16, Math.round((coords.lineHeight || 20) * 0.9));
+          return `<div class="remote-typing-highlight" style="left:${left}px;top:${top}px;width:${widthPx}px;height:${heightPx}px;--typing-color:${escapeHtml(entry.theme || "#4CAF50")};">
+            <span class="remote-typing-label">${escapeHtml(entry.name || "User")} typing</span>
+          </div>`;
+        })
+        .join("")
+    : "";
+  const cursorHtml = getVisibleCursorParticipants()
     .map((entry) => {
       const left = Math.max(0, Math.min(width - 2, Math.round((entry.x || 0) * width)));
       const top = Math.max(0, Math.min(height - 18, Math.round((entry.y || 0) * height)));
@@ -4933,6 +5559,7 @@ function renderRemoteCursors() {
       </div>`;
     })
     .join("");
+  remoteCursorLayer.innerHTML = typingHtml + cursorHtml;
 }
 
 function pruneRemoteCursors() {
@@ -4941,6 +5568,12 @@ function pruneRemoteCursors() {
   Object.keys(remoteCursorState).forEach((key) => {
     if (now - Number(remoteCursorState[key]?.ts || 0) > 4000) {
       delete remoteCursorState[key];
+      changed = true;
+    }
+  });
+  Object.keys(remoteTypingState).forEach((key) => {
+    if (now - Number(remoteTypingState[key]?.ts || 0) > 1800) {
+      delete remoteTypingState[key];
       changed = true;
     }
   });
@@ -5110,6 +5743,7 @@ function promptForTheme(hostName) {
 
 function createNumericSession() {
   if (!ensureCollabSocket()) return;
+  resetTransientCollabUiState();
 
   collabSocket.emit(
     "collab:create",
@@ -5151,17 +5785,23 @@ function showSessionDetails(sid) {
   collabModalView = "session";
   setCollabCloseButtonVisible(true);
   const link = `${window.location.origin}/frontend.html/${sid}`;
-  const listItems = collabParticipants
+  const orderedParticipants = [...collabParticipants].sort((a, b) => {
+    if ((a.role || "") === "host") return -1;
+    if ((b.role || "") === "host") return 1;
+    if (Boolean(a.priority) !== Boolean(b.priority)) return a.priority ? -1 : 1;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+  const listItems = orderedParticipants
     .map((p) => {
       const roleLabel =
         p.role === "host" ? " (host)" : p.role === "co-host" ? " (co-host)" : "";
-      const canKick = isHost() && p.role !== "host";
-      const kickButton = canKick
-        ? `<button class="run-button kick-btn" data-name="${escapeHtml(p.name)}" style="padding:4px 10px; font-size:11px; background:#d32f2f;"><strong>KICK</strong></button>`
+      const canManage = isHost() && p.role !== "host";
+      const moreButton = canManage
+        ? `<button class="run-button participant-more-btn" data-name="${escapeHtml(p.name)}" style="padding:4px 10px; font-size:11px;"><strong>MORE</strong></button>`
         : "";
       return `<li style="padding:5px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${escapeHtml(p.name)}${roleLabel}</span>
-        ${kickButton}
+        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${escapeHtml(p.name)}${roleLabel}${p.priority ? " [priority]" : ""}</span>
+        ${moreButton}
       </li>`;
     })
     .join("");
@@ -5183,11 +5823,11 @@ function showSessionDetails(sid) {
   collabModal.style.display = "flex";
 
   if (isHost()) {
-    const kickButtons = modalBody.querySelectorAll(".kick-btn");
-    kickButtons.forEach((btn) => {
+    const moreButtons = modalBody.querySelectorAll(".participant-more-btn");
+    moreButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         const targetName = btn.getAttribute("data-name") || "";
-        showKickConfirmation(targetName);
+        showParticipantActions(targetName);
       });
     });
   }
@@ -5204,8 +5844,12 @@ function copyLink() {
   el.select();
   el.setSelectionRange(0, 99999);
   try {
-    document.execCommand("copy");
-    showNotification("Copied!", "success");
+    const copied = document.execCommand("copy");
+    if (copied) {
+      showNotification("Copied!", "success");
+      return;
+    }
+    throw new Error("execCommand copy returned false");
   } catch {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard
@@ -5292,6 +5936,7 @@ function promptJoinTheme(name, sid) {
   if (!doneBtn) return;
   doneBtn.onclick = () => {
     const theme = document.getElementById("userThemeInput").value;
+    resetTransientCollabUiState();
 
     collabSocket.emit(
       "collab:join",
@@ -5319,7 +5964,7 @@ function promptJoinTheme(name, sid) {
         collabPrivateMessages = [];
         collabChatMode = "group";
         collabChatTarget = "";
-        applyRemoteSessionState(res.files, res.activeFileName);
+        applyRemoteSessionState(res.files, res.activeFileName, true);
         enforceCollabPermissionsUI();
         showNotification(`Welcome, ${name}!`, "success");
         startSyncing();
@@ -5388,7 +6033,7 @@ mediaInput.addEventListener("change", (e) => {
         active: false,
       };
 
-      if (!projectFiles.some((f) => f.name === name)) {
+      if (!projectFiles.some((f) => String(f.name || "").trim().toLowerCase() === name.toLowerCase())) {
         projectFiles.push(newFile);
         showNotification(`Added: ${name}`, "success");
       } else {
@@ -5540,6 +6185,30 @@ const fonts = [
   { name: "Cooper Black", family: "'Cooper Black', Impact, serif", keywords: "rounded heavy retro display" },
   { name: "Segoe Print", family: "'Segoe Print', 'Comic Sans MS', cursive", keywords: "friendly handwritten" },
   { name: "Segoe Script", family: "'Segoe Script', 'Brush Script MT', cursive", keywords: "flowing script handwriting" },
+  { name: "Avant Garde", family: "'Avant Garde', Futura, sans-serif", keywords: "futurist geometric display sans" },
+  { name: "Baskerville", family: "Baskerville, Georgia, serif", keywords: "literary refined serif" },
+  { name: "Big Caslon", family: "'Big Caslon', 'Times New Roman', serif", keywords: "classical dramatic serif" },
+  { name: "Monaco", family: "Monaco, 'Lucida Console', monospace", keywords: "compact terminal mono" },
+  { name: "Menlo", family: "Menlo, Consolas, monospace", keywords: "developer coding mono" },
+  { name: "Geneva", family: "Geneva, Tahoma, sans-serif", keywords: "neat swiss sans" },
+  { name: "Hoefler Text", family: "'Hoefler Text', Garamond, serif", keywords: "editorial elegant serif" },
+  { name: "Marker Felt", family: "'Marker Felt', 'Comic Sans MS', cursive", keywords: "marker playful handwritten" },
+  { name: "Noteworthy", family: "Noteworthy, 'Segoe Print', cursive", keywords: "notebook handdrawn notes" },
+  { name: "DIN", family: "DIN, 'Franklin Gothic Medium', sans-serif", keywords: "industrial signage sans" },
+  { name: "Eurostile", family: "Eurostile, 'Century Gothic', sans-serif", keywords: "tech square futuristic sans" },
+  { name: "Univers", family: "Univers, Arial, sans-serif", keywords: "neutral swiss sans" },
+  { name: "Frutiger", family: "Frutiger, Arial, sans-serif", keywords: "wayfinding humanist sans" },
+  { name: "Albertus", family: "Albertus, Palatino, serif", keywords: "inscription carved serif" },
+  { name: "Trajan", family: "Trajan, 'Times New Roman', serif", keywords: "cinematic roman capitals" },
+  { name: "Aptos", family: "Aptos, Calibri, sans-serif", keywords: "modern office sans" },
+  { name: "Calisto MT", family: "'Calisto MT', Georgia, serif", keywords: "bookish readable serif" },
+  { name: "Bell MT", family: "'Bell MT', Baskerville, serif", keywords: "traditional formal serif" },
+  { name: "Kristen ITC", family: "'Kristen ITC', 'Comic Sans MS', cursive", keywords: "quirky playful handwritten" },
+  { name: "Rage Italic", family: "'Rage Italic', 'Brush Script MT', cursive", keywords: "dramatic flourish script" },
+  { name: "Bookman", family: "Bookman, Georgia, serif", keywords: "friendly oldstyle serif" },
+  { name: "Wide Latin", family: "'Wide Latin', Impact, fantasy", keywords: "western poster display" },
+  { name: "Berlin Sans FB", family: "'Berlin Sans FB', 'Trebuchet MS', sans-serif", keywords: "rounded art deco sans" },
+  { name: "MS Gothic", family: "'MS Gothic', monospace", keywords: "pixel japanese mono" },
 ];
 
 function renderFonts(query = "") {
@@ -5595,8 +6264,12 @@ function fallbackCopy(text, fontName) {
   document.body.appendChild(textarea);
   textarea.select();
   try {
-    document.execCommand("copy");
-    showNotification(`Copied: ${fontName}`, "success");
+    const copied = document.execCommand("copy");
+    if (copied) {
+      showNotification(`Copied: ${fontName}`, "success");
+    } else {
+      showNotification("Failed to copy", "error");
+    }
   } catch (err) {
     showNotification("Failed to copy", "error");
   }

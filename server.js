@@ -85,6 +85,12 @@ function sanitizeParticipant(p) {
     name: p.name,
     theme: p.theme,
     role: p.role || "participant",
+    mutedChat: Boolean(p.mutedChat),
+    frozenEditing: Boolean(p.frozenEditing),
+    priority: Boolean(p.priority),
+    currentFile: p.currentFile || null,
+    joinedAt: p.joinedAt || Date.now(),
+    allowedFiles: Array.isArray(p.allowedFiles) ? [...p.allowedFiles] : null,
   };
 }
 
@@ -143,6 +149,25 @@ function normalizePermissions(input, files) {
   };
 }
 
+function normalizeAllowedFiles(files, input) {
+  const allNames = new Set((files || []).map((f) => String(f?.name || "")));
+  if (!Array.isArray(input)) return null;
+  return Array.from(
+    new Set(
+      input
+        .map((name) => String(name || "").trim())
+        .filter((name) => name && allNames.has(name)),
+    ),
+  );
+}
+
+function getChangedFileNames(previousFiles, nextFiles) {
+  const prevMap = new Map((previousFiles || []).map((file) => [String(file?.name || ""), String(file?.content || "")]));
+  const nextMap = new Map((nextFiles || []).map((file) => [String(file?.name || ""), String(file?.content || "")]));
+  const names = new Set([...prevMap.keys(), ...nextMap.keys()]);
+  return Array.from(names).filter((name) => prevMap.get(name) !== nextMap.get(name));
+}
+
 function emitParticipants(sessionId) {
   const session = sessions.get(sessionId);
   if (!session) return;
@@ -185,7 +210,18 @@ io.on("connection", (socket) => {
         return;
       }
 
-      const participants = [{ socketId: socket.id, name, theme, role: "host" }];
+      const participants = [{
+        socketId: socket.id,
+        name,
+        theme,
+        role: "host",
+        mutedChat: false,
+        frozenEditing: false,
+        priority: false,
+        currentFile: activeFileName || null,
+        joinedAt: Date.now(),
+        allowedFiles: null,
+      }];
       sessions.set(sessionId, {
         files,
         activeFileName,
@@ -236,7 +272,18 @@ io.on("connection", (socket) => {
         return;
       }
 
-      session.participants.push({ socketId: socket.id, name, theme, role: "participant" });
+      session.participants.push({
+        socketId: socket.id,
+        name,
+        theme,
+        role: "participant",
+        mutedChat: false,
+        frozenEditing: false,
+        priority: false,
+        currentFile: session.activeFileName || null,
+        joinedAt: Date.now(),
+        allowedFiles: null,
+      });
       socket.join(sessionId);
       socketMeta.set(socket.id, { sessionId, name, theme });
 
@@ -252,6 +299,68 @@ io.on("connection", (socket) => {
       emitSessionMeta(sessionId);
     } catch {
       ack?.({ ok: false, error: "Failed to join session." });
+    }
+  });
+
+  socket.on("collab:resume", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const name = String(payload?.name || "").trim();
+      const theme = String(payload?.theme || "#2196F3");
+
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (!name) {
+        ack?.({ ok: false, error: "Name is required." });
+        return;
+      }
+
+      let participant = session.participants.find(
+        (p) => p.name.toLowerCase() === name.toLowerCase(),
+      );
+
+      if (participant) {
+        participant.socketId = socket.id;
+        participant.theme = theme || participant.theme;
+      } else {
+        participant = {
+          socketId: socket.id,
+          name,
+          theme,
+          role: "participant",
+          mutedChat: false,
+          frozenEditing: false,
+          priority: false,
+          currentFile: session.activeFileName || null,
+          joinedAt: Date.now(),
+          allowedFiles: null,
+        };
+        session.participants.push(participant);
+      }
+
+      if (session.hostName && session.hostName.toLowerCase() === name.toLowerCase()) {
+        session.hostSocketId = socket.id;
+        participant.role = "host";
+      }
+
+      socket.join(sessionId);
+      socketMeta.set(socket.id, { sessionId, name: participant.name, theme: participant.theme });
+
+      ack?.({
+        ok: true,
+        files: cloneFiles(session.files),
+        activeFileName: session.activeFileName || null,
+        hostName: session.hostName,
+        permissions: session.permissions,
+        participants: session.participants.map(sanitizeParticipant),
+      });
+      emitParticipants(sessionId);
+      emitSessionMeta(sessionId);
+    } catch {
+      ack?.({ ok: false, error: "Failed to resume session." });
     }
   });
 
@@ -307,6 +416,10 @@ io.on("connection", (socket) => {
           ack?.({ ok: false, error: "Group chat is disabled by host." });
           return;
         }
+        if (member.mutedChat) {
+          ack?.({ ok: false, error: "The host muted your chat access." });
+          return;
+        }
         session.chat.group.push(message);
         if (session.chat.group.length > 300) session.chat.group.shift();
         io.to(sessionId).emit("collab:chat:group", message);
@@ -316,6 +429,10 @@ io.on("connection", (socket) => {
 
       if (mode !== "private") {
         ack?.({ ok: false, error: "Invalid chat mode." });
+        return;
+      }
+      if (member.mutedChat) {
+        ack?.({ ok: false, error: "The host muted your chat access." });
         return;
       }
 
@@ -353,6 +470,14 @@ io.on("connection", (socket) => {
     const access = canUseSession(sessionId, socket.id);
     if (!access) return;
     const { session, member } = access;
+    if (member.frozenEditing) {
+      socket.emit("collab:state", {
+        files: cloneFiles(session.files),
+        activeFileName: session.activeFileName,
+        user: { name: member.name, theme: member.theme, role: member.role || "participant" },
+      });
+      return;
+    }
 
     const meta = socketMeta.get(socket.id);
     const safeUser =
@@ -360,15 +485,42 @@ io.on("connection", (socket) => {
         ? { name: member.name, theme: member.theme, role: member.role || "participant" }
         : null;
 
-    session.files = cloneFiles(payload?.files);
-    session.activeFileName = payload?.activeFileName || null;
+    const incomingFiles = cloneFiles(payload?.files);
+    const requestedActiveFileName = payload?.activeFileName || null;
+    const allowedFiles = Array.isArray(member.allowedFiles) ? member.allowedFiles : null;
+    if (allowedFiles) {
+      const changedFileNames = getChangedFileNames(session.files, incomingFiles);
+      const attemptedOutsideAllowedFiles = changedFileNames.some(
+        (name) => !allowedFiles.includes(name),
+      );
+      if (attemptedOutsideAllowedFiles) {
+        socket.emit("collab:state", {
+          files: cloneFiles(session.files),
+          activeFileName: session.activeFileName,
+          user: { name: member.name, theme: member.theme, role: member.role || "participant" },
+        });
+        return;
+      }
+    }
+
+    session.files = incomingFiles;
+    member.currentFile = requestedActiveFileName || null;
+    if (!session.activeFileName || member.role === "host" || member.role === "co-host") {
+      session.activeFileName = requestedActiveFileName;
+    }
     session.permissions = normalizePermissions(session.permissions, session.files);
+    session.participants.forEach((participant) => {
+      if (Array.isArray(participant.allowedFiles)) {
+        participant.allowedFiles = normalizeAllowedFiles(session.files, participant.allowedFiles);
+      }
+    });
 
     socket.to(sessionId).emit("collab:state", {
       files: cloneFiles(session.files),
       activeFileName: session.activeFileName,
       user: safeUser,
     });
+    emitParticipants(sessionId);
     emitSessionMeta(sessionId);
   });
 
@@ -405,10 +557,121 @@ io.on("connection", (socket) => {
       }
 
       target.role = role;
+      io.to(target.socketId).emit("collab:role-notice", {
+        role,
+        by: session.hostName || "Host",
+      });
       emitParticipants(sessionId);
       ack?.({ ok: true });
     } catch {
       ack?.({ ok: false, error: "Failed to update role." });
+    }
+  });
+
+  socket.on("collab:transfer-host", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can transfer host." });
+        return;
+      }
+      const targetName = normalizeName(payload?.targetName);
+      const target = session.participants.find((p) => normalizeName(p.name) === targetName);
+      if (!target) {
+        ack?.({ ok: false, error: "Participant not found." });
+        return;
+      }
+      if (target.socketId === session.hostSocketId) {
+        ack?.({ ok: false, error: "That participant is already the host." });
+        return;
+      }
+      const currentHost = session.participants.find((p) => p.socketId === session.hostSocketId);
+      if (currentHost) currentHost.role = "participant";
+      target.role = "host";
+      session.hostSocketId = target.socketId;
+      session.hostName = target.name;
+      io.to(target.socketId).emit("collab:role-notice", {
+        role: "host",
+        by: currentHost?.name || "Host",
+      });
+      emitParticipants(sessionId);
+      emitSessionMeta(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to transfer host." });
+    }
+  });
+
+  socket.on("collab:set-participant-flags", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can update participants." });
+        return;
+      }
+      const targetName = normalizeName(payload?.targetName);
+      const target = session.participants.find((p) => normalizeName(p.name) === targetName);
+      if (!target) {
+        ack?.({ ok: false, error: "Participant not found." });
+        return;
+      }
+      if (target.socketId === session.hostSocketId) {
+        ack?.({ ok: false, error: "Host cannot be updated here." });
+        return;
+      }
+      if (typeof payload?.mutedChat === "boolean") target.mutedChat = payload.mutedChat;
+      if (typeof payload?.frozenEditing === "boolean") target.frozenEditing = payload.frozenEditing;
+      if (typeof payload?.priority === "boolean") target.priority = payload.priority;
+      emitParticipants(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to update participant state." });
+    }
+  });
+
+  socket.on("collab:set-participant-files", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can change file access." });
+        return;
+      }
+      const targetName = normalizeName(payload?.targetName);
+      const target = session.participants.find((p) => normalizeName(p.name) === targetName);
+      if (!target) {
+        ack?.({ ok: false, error: "Participant not found." });
+        return;
+      }
+      if (target.socketId === session.hostSocketId) {
+        ack?.({ ok: false, error: "Host already has full file access." });
+        return;
+      }
+
+      const reset = Boolean(payload?.reset);
+      if (reset) {
+        target.allowedFiles = null;
+      } else {
+        target.allowedFiles = normalizeAllowedFiles(session.files, payload?.allowedFiles);
+      }
+      emitParticipants(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to update file access." });
     }
   });
 
@@ -483,7 +746,21 @@ io.on("connection", (socket) => {
     const sessionId = normalizeSessionId(payload?.sessionId);
     const access = canUseSession(sessionId, socket.id);
     if (!access) return;
-    socket.to(sessionId).emit("collab:typing", payload?.indicator || null);
+    const { member } = access;
+    const rawIndicator = payload?.indicator;
+    const stopped =
+      rawIndicator === null ||
+      rawIndicator === undefined ||
+      Boolean(rawIndicator?.stopped);
+    socket.to(sessionId).emit("collab:typing", {
+      name: member.name,
+      theme: member.theme,
+      editor: rawIndicator?.editor || null,
+      fileName: rawIndicator?.fileName || member.currentFile || null,
+      caretPos: Number(rawIndicator?.caretPos || 0),
+      stopped,
+      ts: Date.now(),
+    });
   });
 
   socket.on("collab:cursor", (payload) => {
@@ -530,8 +807,10 @@ io.on("connection", (socket) => {
     }
 
     if (removedWasHost) {
-      const randomIndex = Math.floor(Math.random() * session.participants.length);
-      const nextHost = session.participants[randomIndex];
+      const availableCoHost = session.participants.find((p) => p.role === "co-host");
+      const nextHost =
+        availableCoHost ||
+        session.participants[Math.floor(Math.random() * session.participants.length)];
       session.hostSocketId = nextHost.socketId;
       session.hostName = nextHost.name;
       nextHost.role = "host";

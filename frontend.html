@@ -199,6 +199,16 @@
           <div class="editor-wrapper">
             <pre id="highlightLayer" aria-hidden="true"></pre>
             <div id="remoteCursorLayer" aria-hidden="true"></div>
+            <button
+              id="zenExitBtn"
+              class="run-button"
+              type="button"
+              aria-label="Exit zen mode"
+              style="display: none; position: absolute; top: 12px; right: 12px; z-index: 12;"
+            >
+              <i class="fa-solid fa-xmark"></i>
+              <strong>EXIT ZEN</strong>
+            </button>
             <div id="editorWatermark" aria-hidden="true">
               Type <strong>cxstart</strong> and hit enter for a html code setup.
             </div>
@@ -626,8 +636,8 @@
           margin: auto;
           padding: 18px 20px;
           border: 1px solid var(--border-color);
-          width: min(760px, 88vw);
-          max-width: 760px;
+          width: min(600px, 76vw);
+          max-width: 600px;
           max-height: 72vh;
           overflow-y: auto;
           text-align: center;
