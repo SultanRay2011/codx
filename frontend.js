@@ -31,10 +31,12 @@ const modalTitle = document.getElementById("modalTitle");
 const modalBody = document.getElementById("modalBody");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const typingIndicatorEl = document.getElementById("typingIndicator");
+const editorWatermark = document.getElementById("editorWatermark");
 const exportZipBtn = document.querySelector('button[aria-label="Export project as ZIP"]');
 const importZipBtn = document.querySelector('button[aria-label="Import ZIP file"]');
 const previewFullscreenBtn = document.getElementById("previewFullscreenBtn");
 const previewIframe = document.getElementById("output");
+const previewTitleEl = document.getElementById("previewTitle");
 const errorMsgEl = document.getElementById("errorMsg");
 const zenModeBtn = document.getElementById("zenModeBtn");
 
@@ -753,6 +755,7 @@ const defaultCollabPermissions = {
 };
 let collabPermissions = { ...defaultCollabPermissions };
 let collabHostName = "";
+let collabModalView = "idle";
 const editableTextExtensions = ["html", "css", "js", "env"];
 
 function resetFileErrorCounts() {
@@ -859,11 +862,17 @@ function getLineAndColumnFromIndex(text, index) {
 }
 
 function jumpToEditorLocation(fileName, line, col = 1) {
-  const targetFile = projectFiles.find((file) => file.name === fileName);
+  const normalizedFileName = String(fileName || "").trim().toLowerCase();
+  const targetFile = projectFiles.find(
+    (file) => String(file.name || "").trim().toLowerCase() === normalizedFileName,
+  );
   if (!targetFile) return;
 
-  if (!activeFile || activeFile.name !== fileName) {
-    switchFile(fileName);
+  if (
+    !activeFile ||
+    String(activeFile.name || "").trim().toLowerCase() !== normalizedFileName
+  ) {
+    switchFile(targetFile.name);
   }
 
   const editor = document.getElementById("activeEditor");
@@ -1183,10 +1192,17 @@ let currentPreviewTarget = {
 };
 
 function getPreviewTargetForFile(rawHref) {
-  const fileName = String(rawHref || "").split("/").pop();
-  const linkedFile = projectFiles.find(
-    (f) => f.name.toLowerCase() === fileName.toLowerCase() && f.type === "html",
-  );
+  const normalizedHref = String(rawHref || "").trim().replace(/^\.\/+/, "");
+  const fileName = normalizedHref.split("/").pop();
+  const linkedFile = projectFiles.find((f) => {
+    if (f.type !== "html") return false;
+    const candidate = String(f.name || "").trim().replace(/^\.\/+/, "").toLowerCase();
+    return (
+      candidate === normalizedHref.toLowerCase() ||
+      candidate.endsWith(`/${normalizedHref.toLowerCase()}`) ||
+      candidate.split("/").pop() === fileName.toLowerCase()
+    );
+  });
   if (linkedFile) {
     return {
       exists: true,
@@ -1231,6 +1247,23 @@ function getDefaultHtmlStarter() {
 </html>`;
 }
 
+function updatePreviewTitle(text) {
+  if (!previewTitleEl) return;
+  const next = String(text || "").trim();
+  previewTitleEl.textContent = next || "Preview";
+}
+
+function extractHtmlTitle(htmlText) {
+  const match = String(htmlText || "").match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  if (!match) return "";
+  const temp = document.createElement("textarea");
+  temp.innerHTML = match[1]
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return temp.value.trim();
+}
+
 const defaultSettings = {
   bgColor: "#1E1E1E",
   textSize: "14",
@@ -1256,10 +1289,17 @@ function safeLocalStorage(method, key, value = null) {
 }
 
 function showNotification(message, type = "info") {
+  const existing = document.querySelectorAll(".codx-notification");
+  existing.forEach((item, index) => {
+    item.style.top = `${80 + index * 62}px`;
+  });
+
   const notification = document.createElement("div");
+  notification.className = "codx-notification";
   notification.textContent = message;
+  const offsetTop = 80 + existing.length * 62;
   notification.style.cssText = `
-    position: fixed; top: 80px; right: 20px; padding: 15px 20px;
+    position: fixed; top: ${offsetTop}px; right: 20px; padding: 15px 20px;
     background: ${
       type === "error" ? "#ff5555" : type === "success" ? "#4CAF50" : "#2196F3"
     };
@@ -1269,7 +1309,12 @@ function showNotification(message, type = "info") {
   document.body.appendChild(notification);
   setTimeout(() => {
     notification.style.animation = "slideOut 0.3s ease";
-    setTimeout(() => notification.remove(), 300);
+    setTimeout(() => {
+      notification.remove();
+      document.querySelectorAll(".codx-notification").forEach((item, index) => {
+        item.style.top = `${80 + index * 62}px`;
+      });
+    }, 300);
   }, 3000);
 }
 
@@ -1399,8 +1444,10 @@ function renderFileList() {
 }
 
 function switchFile(fileName) {
+  const previousPreviewTarget = { ...currentPreviewTarget };
+  const normalizedFileName = String(fileName || "").trim().toLowerCase();
   projectFiles.forEach((file) => {
-    file.active = file.name === fileName;
+    file.active = String(file.name || "").trim().toLowerCase() === normalizedFileName;
     if (file.active) {
       activeFile = file;
       const editor = document.getElementById("activeEditor");
@@ -1413,9 +1460,12 @@ function switchFile(fileName) {
   });
   if (activeFile && activeFile.type === "html") {
     currentPreviewTarget = { mode: "html", fileName: activeFile.name };
+  } else {
+    currentPreviewTarget = previousPreviewTarget;
   }
   renderFileList();
   enforceCollabPermissionsUI();
+  if (autoRunCheckbox.checked) updatePreview();
   syncProjectWithSession();
 }
 
@@ -1426,20 +1476,22 @@ function createNewFile() {
   }
   const name = prompt("Enter file name (e.g., newfile.html or .env):");
   if (!name) return;
-  const ext = name.split(".").pop().toLowerCase();
+  const trimmedName = name.trim();
+  if (!trimmedName) return;
+  const ext = trimmedName.split(".").pop().toLowerCase();
 
   if (!editableTextExtensions.includes(ext)) {
     showNotification("File must be .html, .css, .js, or .env", "error");
     return;
   }
-  if (projectFiles.some((file) => file.name === name)) {
+  if (projectFiles.some((file) => file.name.toLowerCase() === trimmedName.toLowerCase())) {
     showNotification("File name already exists", "error");
     return;
   }
 
   // Define the default HTML template
   const newFile = {
-    name,
+    name: trimmedName,
     type: ext,
     // Use template for HTML files, otherwise empty string
     content: ext === "html" ? getDefaultHtmlStarter() : "",
@@ -1457,12 +1509,16 @@ function createNewFile() {
   editor.value = newFile.content; // Set editor value to the template
   updateLineNumbers(editor);
   renderFileList();
+  if (autoRunCheckbox.checked) updatePreview();
   syncProjectWithSession();
-  showNotification(`File ${name} created`, "success");
+  showNotification(`File ${trimmedName} created`, "success");
 }
 
 function renameFile(oldName) {
-  const file = projectFiles.find((f) => f.name === oldName);
+  const normalizedOldName = String(oldName || "").trim().toLowerCase();
+  const file = projectFiles.find(
+    (f) => String(f.name || "").trim().toLowerCase() === normalizedOldName,
+  );
   if (!file) return;
 
   const nextName = prompt("Rename file:", oldName);
@@ -1475,11 +1531,18 @@ function renameFile(oldName) {
     showNotification("File must be .html, .css, .js, or .env", "error");
     return;
   }
-  if (projectFiles.some((f) => f.name === name && f.name !== oldName)) {
+  if (
+    projectFiles.some(
+      (f) =>
+        String(f.name || "").trim().toLowerCase() === name.toLowerCase() &&
+        String(f.name || "").trim().toLowerCase() !== normalizedOldName,
+    )
+  ) {
     showNotification("File name already exists", "error");
     return;
   }
 
+  const previousType = file.type;
   file.name = name;
   file.type = ext;
   if (
@@ -1492,12 +1555,18 @@ function renameFile(oldName) {
 
   if (activeFile && activeFile === file) {
     hideSuggestions();
+    const editor = document.getElementById("activeEditor");
+    if (editor) {
+      updateLineNumbers(editor);
+    }
   }
 
   renderFileList();
   syncProjectWithSession();
   showNotification(`File renamed to ${name}`, "success");
-  if (autoRunCheckbox.checked) debouncedUpdatePreview();
+  if (autoRunCheckbox.checked || previousType !== ext) {
+    updatePreview();
+  }
 }
 
 function deleteFile(fileName) {
@@ -1506,8 +1575,14 @@ function deleteFile(fileName) {
     return;
   }
   if (confirm(`Delete ${fileName}?`)) {
-    projectFiles = projectFiles.filter((file) => file.name !== fileName);
-    if (activeFile.name === fileName) {
+    const normalizedFileName = String(fileName || "").trim().toLowerCase();
+    projectFiles = projectFiles.filter(
+      (file) => String(file.name || "").trim().toLowerCase() !== normalizedFileName,
+    );
+    if (
+      activeFile &&
+      String(activeFile.name || "").trim().toLowerCase() === normalizedFileName
+    ) {
       activeFile = projectFiles[0];
       activeFile.active = true;
       const editor = document.getElementById("activeEditor");
@@ -1789,14 +1864,18 @@ function runPreflightDiagnostics() {
     .filter((f) => f.type === "css")
     .forEach((file) => {
       const text = file.content || "";
+      const normalizedText = text.replace(
+        /\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g,
+        (match) => " ".repeat(match.length),
+      );
       let depth = 0;
       const openBraceLines = [];
-      for (let i = 0; i < text.length; i++) {
-        if (text[i] === "{") {
+      for (let i = 0; i < normalizedText.length; i++) {
+        if (normalizedText[i] === "{") {
           depth++;
           openBraceLines.push(text.slice(0, i).split("\n").length);
         }
-        if (text[i] === "}") {
+        if (normalizedText[i] === "}") {
           depth--;
           if (openBraceLines.length) {
             openBraceLines.pop();
@@ -1820,39 +1899,7 @@ function runPreflightDiagnostics() {
       }
     });
 
-  // Basic HTML unclosed-tag check (limited, heuristic)
-  const htmlFile = projectFiles.find((f) => f.type === "html");
-  if (!htmlFile) return;
-  const htmlText = htmlFile.content || "";
-
-  // Inline <script> syntax checks with approximate HTML line mapping
-  const inlineScriptRegex = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
-  let scriptMatch;
-  while ((scriptMatch = inlineScriptRegex.exec(htmlText)) !== null) {
-    const scriptCode = scriptMatch[1];
-    const scriptStartLine = htmlText.slice(0, scriptMatch.index).split("\n").length;
-    try {
-      new Function(`${scriptCode}\n//# sourceURL=${htmlFile.name}`);
-    } catch (err) {
-      const stack = String(err && err.stack ? err.stack : "");
-      const lineMatch = stack.match(/<anonymous>:(\d+):(\d+)/);
-      if (lineMatch) {
-        const relLine = Number(lineMatch[1]);
-        const col = Number(lineMatch[2]);
-        const absLine = scriptStartLine + Math.max(0, relLine - 1);
-        appendConsoleMessage(
-          "error",
-          `[${htmlFile.name}] Inline JS SyntaxError (line ${absLine}, col ${col}): ${err.message}. Fix: ${getErrorHint(err.message)}`,
-        );
-      } else {
-        appendConsoleMessage(
-          "error",
-          `[${htmlFile.name}] Inline JS SyntaxError: ${err.message}. Fix: ${getErrorHint(err.message)}`,
-        );
-      }
-    }
-  }
-
+  // Basic HTML checks for every HTML file in the project.
   const selfClosing = new Set([
     "area",
     "base",
@@ -1869,52 +1916,105 @@ function runPreflightDiagnostics() {
     "track",
     "wbr",
   ]);
-  const stack = [];
-  const re = /<\/?([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*>/g;
-  let match;
-  while ((match = re.exec(htmlText)) !== null) {
-    const full = match[0];
-    const tag = match[1].toLowerCase();
-    if (selfClosing.has(tag) || full.endsWith("/>")) continue;
-    const location = getLineAndColumnFromIndex(htmlText, match.index);
-    const line = location.line;
-    const col = location.col;
-    const isCustomElement = tag.includes("-");
 
-    if (!isCustomElement && !knownHtmlTags.has(tag)) {
-      appendConsoleMessage(
-        "error",
-        `[${htmlFile.name}] HTML issue at line ${line}:${col}: unknown tag <${tag}>. Check for a misspelled HTML tag.`,
-      );
-      continue;
-    }
+  projectFiles
+    .filter((f) => f.type === "html")
+    .forEach((htmlFile) => {
+      const htmlText = htmlFile.content || "";
 
-    if (full.startsWith("</")) {
-      const last = stack.pop();
-      if (!last || last.tag !== tag) {
+      const inlineScriptRegex = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+      let scriptMatch;
+      while ((scriptMatch = inlineScriptRegex.exec(htmlText)) !== null) {
+        const scriptCode = scriptMatch[1];
+        const scriptStartLine = htmlText.slice(0, scriptMatch.index).split("\n").length;
+        try {
+          new Function(`${scriptCode}\n//# sourceURL=${htmlFile.name}`);
+        } catch (err) {
+          const stack = String(err && err.stack ? err.stack : "");
+          const lineMatch = stack.match(/<anonymous>:(\d+):(\d+)/);
+          if (lineMatch) {
+            const relLine = Number(lineMatch[1]);
+            const col = Number(lineMatch[2]);
+            const absLine = scriptStartLine + Math.max(0, relLine - 1);
+            appendConsoleMessage(
+              "error",
+              `[${htmlFile.name}] Inline JS SyntaxError (line ${absLine}, col ${col}): ${err.message}. Fix: ${getErrorHint(err.message)}`,
+            );
+          } else {
+            appendConsoleMessage(
+              "error",
+              `[${htmlFile.name}] Inline JS SyntaxError: ${err.message}. Fix: ${getErrorHint(err.message)}`,
+            );
+          }
+        }
+      }
+
+      const stack = [];
+      const re = /<\/?([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*>/g;
+      let match;
+      while ((match = re.exec(htmlText)) !== null) {
+        const full = match[0];
+        const tag = match[1].toLowerCase();
+        if (selfClosing.has(tag) || full.endsWith("/>")) continue;
+        const location = getLineAndColumnFromIndex(htmlText, match.index);
+        const line = location.line;
+        const col = location.col;
+        const isCustomElement = tag.includes("-");
+
+        if (!isCustomElement && !knownHtmlTags.has(tag)) {
+          appendConsoleMessage(
+            "error",
+            `[${htmlFile.name}] HTML issue at line ${line}:${col}: unknown tag <${tag}>. Check for a misspelled HTML tag.`,
+          );
+          continue;
+        }
+
+        if (full.startsWith("</")) {
+          const last = stack.pop();
+          if (!last || last.tag !== tag) {
+            appendConsoleMessage(
+              "error",
+              `[${htmlFile.name}] HTML issue at line ${line}:${col}: mismatched closing tag </${tag}>.`,
+            );
+            break;
+          }
+        } else {
+          stack.push({ tag, line, col });
+        }
+      }
+
+      if (stack.length) {
+        const unclosed = stack[stack.length - 1];
         appendConsoleMessage(
           "error",
-          `[${htmlFile.name}] HTML issue at line ${line}:${col}: mismatched closing tag </${tag}>.`,
+          `[${htmlFile.name}] HTML issue at line ${unclosed.line}:${unclosed.col}: unclosed <${unclosed.tag}> tag.`,
         );
-        break;
       }
-    } else {
-      stack.push({ tag, line, col });
-    }
-  }
-  if (stack.length) {
-    const unclosed = stack[stack.length - 1];
-    appendConsoleMessage(
-      "error",
-      `[${htmlFile.name}] HTML issue at line ${unclosed.line}:${unclosed.col}: unclosed <${unclosed.tag}> tag.`,
-    );
-  }
+    });
 }
 
 function updatePreview() {
+  consoleOutput.innerHTML = "";
+  resetFileErrorCounts();
+  renderFileList();
+  runPreflightDiagnostics();
+
   if (currentPreviewTarget.mode === "missing" && currentPreviewTarget.fileName) {
-    iframe.src = `/404-for-preview.html?file=${encodeURIComponent(currentPreviewTarget.fileName)}`;
-    return;
+    const recoveredTarget = getPreviewTargetForFile(currentPreviewTarget.fileName);
+    if (recoveredTarget.exists) {
+      currentPreviewTarget = {
+        mode: "html",
+        fileName: recoveredTarget.fileName,
+      };
+    } else {
+      updatePreviewTitle(currentPreviewTarget.fileName || "Preview");
+      iframe.src = `/404-for-preview.html?file=${encodeURIComponent(currentPreviewTarget.fileName)}`;
+      appendConsoleMessage(
+        "warn",
+        `WARNING: Preview page not found: ${currentPreviewTarget.fileName}`,
+      );
+      return;
+    }
   }
 
   let htmlFile = null;
@@ -1933,17 +2033,15 @@ function updatePreview() {
     }
   }
   if (!htmlFile) {
+    updatePreviewTitle("Preview");
     iframe.srcdoc =
       '<h3 style="text-align:center;color:#aaa;">No HTML file found</h3>';
     return;
   }
 
   let html = htmlFile.content;
+  updatePreviewTitle(extractHtmlTitle(html) || htmlFile.name);
   const externalHeadResources = [];
-  consoleOutput.innerHTML = ""; // Clear console
-  resetFileErrorCounts();
-  renderFileList();
-  runPreflightDiagnostics();
 
   // Normalize external font/resource links into <head> so they reliably load in srcdoc.
   html = html.replace(/<link\b[^>]*>/gi, (match) => {
@@ -1983,12 +2081,22 @@ function updatePreview() {
   html = html.replace(
     /<link[^>]*(?:rel=["']stylesheet["'][^>]*href=["']([^"']+)["']|href=["']([^"']+)["'][^>]*rel=["']stylesheet["'])[^>]*\/?>/gi,
     (match, href1, href2) => {
-      const href = href1 || href2;
+      const href = (href1 || href2 || "").trim();
       if (/^(https?:)?\/\//i.test(href)) {
         return match;
       }
+      const normalizedHref = href.replace(/^\.\/+/, "").toLowerCase();
+      const hrefFileName = normalizedHref.split("/").pop();
       const cssFile = projectFiles.find(
-        (f) => f.name.toLowerCase() === href.toLowerCase() && f.type === "css",
+        (f) => {
+          if (f.type !== "css") return false;
+          const candidate = String(f.name || "").trim().replace(/^\.\/+/, "").toLowerCase();
+          return (
+            candidate === normalizedHref ||
+            candidate.endsWith(`/${normalizedHref}`) ||
+            candidate.split("/").pop() === hrefFileName
+          );
+        },
       );
       if (cssFile) {
         return `<style>${cssFile.content}</style>`;
@@ -2007,17 +2115,28 @@ function updatePreview() {
   html = html.replace(
     /<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,
     (match, src) => {
+      const normalizedSrc = String(src || "").trim();
       // Preserve external scripts exactly (including API-key query params).
       if (
-        /^(https?:)?\/\//i.test(src) ||
-        src.startsWith("data:") ||
-        src.startsWith("blob:")
+        /^(https?:)?\/\//i.test(normalizedSrc) ||
+        normalizedSrc.startsWith("data:") ||
+        normalizedSrc.startsWith("blob:")
       ) {
         return match;
       }
 
+      const resolvedSrc = normalizedSrc.replace(/^\.\/+/, "").toLowerCase();
+      const srcFileName = resolvedSrc.split("/").pop();
       const jsFile = projectFiles.find(
-        (f) => f.name.toLowerCase() === src.toLowerCase() && f.type === "js",
+        (f) => {
+          if (f.type !== "js") return false;
+          const candidate = String(f.name || "").trim().replace(/^\.\/+/, "").toLowerCase();
+          return (
+            candidate === resolvedSrc ||
+            candidate.endsWith(`/${resolvedSrc}`) ||
+            candidate.split("/").pop() === srcFileName
+          );
+        },
       );
       if (jsFile) {
         // Keep original file line numbers by not wrapping code in extra lines.
@@ -2215,7 +2334,20 @@ ${jsFile.content}
 
           // Capture unhandled promise rejections
           window.addEventListener('unhandledrejection', function(e) {
-            appendMessage('error', 'Promise rejected: ', [e.reason]);
+            const reason = e && e.reason;
+            const message =
+              reason && typeof reason === 'object' && 'message' in reason
+                ? reason.message
+                : String(reason || 'Unknown promise rejection');
+            const filename = normalizeFilename('', reason);
+            const mappedLine = normalizeLine('', 1, reason);
+            const mappedCol = normalizeCol('', 1, reason);
+            const fix = suggestFix(message);
+            appendMessage(
+              'error',
+              'Promise rejected: ',
+              ['[' + filename + '] line ' + mappedLine + ':' + mappedCol + ' - ' + message + ' | Fix: ' + fix],
+            );
           });
 
           // Capture resource load errors
@@ -2313,6 +2445,14 @@ function updateLineNumbers(textarea) {
   );
   renderSyntaxHighlight(textarea);
   renderErrorHighlights(textarea);
+  renderEditorWatermark(textarea);
+}
+
+function renderEditorWatermark(textarea) {
+  if (!editorWatermark || !textarea || !activeFile) return;
+  const shouldShow =
+    activeFile.type === "html" && String(textarea.value || "").trim() === "";
+  editorWatermark.style.display = shouldShow ? "block" : "none";
 }
 
 function commitEditorMutation(editor) {
@@ -2733,13 +2873,23 @@ function isInsideScriptTag(textBefore) {
   return opens > closes;
 }
 
+function stripQuotedContent(text) {
+  return String(text || "").replace(
+    /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g,
+    (match) => " ".repeat(match.length),
+  );
+}
+
 function getCssSuggestionContext(textBefore) {
+  const sanitizedText = stripQuotedContent(textBefore);
   const lineStart = textBefore.lastIndexOf("\n") + 1;
   const lineText = textBefore.substring(lineStart);
-  const valueMatch = lineText.match(/([a-z-]+)\s*:\s*([^;}]*)$/i);
+  const sanitizedLineText = sanitizedText.substring(lineStart);
+  if (/^\s*\/\//.test(lineText) || /\/\*[^*]*$/.test(sanitizedText)) return null;
+  const valueMatch = sanitizedLineText.match(/([a-z-]+)\s*:\s*([^;}]*)$/i);
   if (valueMatch) {
     const propertyName = valueMatch[1].toLowerCase();
-    const rawValue = valueMatch[2];
+    const rawValue = lineText.slice(valueMatch.index + valueMatch[0].indexOf(valueMatch[2]));
     const trimLeftCount = rawValue.length - rawValue.replace(/^\s+/, "").length;
     const valuePrefix = rawValue.substring(trimLeftCount);
     const replaceEnd = textBefore.length;
@@ -2753,13 +2903,13 @@ function getCssSuggestionContext(textBefore) {
     };
   }
 
-  const cssWithoutStrings = textBefore.replace(/"[^"]*"|'[^']*'/g, "");
+  const cssWithoutStrings = sanitizedText;
   const openBraces = (cssWithoutStrings.match(/\{/g) || []).length;
   const closeBraces = (cssWithoutStrings.match(/\}/g) || []).length;
   const insideDeclaration = openBraces > closeBraces;
 
   if (insideDeclaration) {
-    const propMatch = lineText.match(/([a-z-]*)$/i);
+    const propMatch = sanitizedLineText.match(/([a-z-]*)$/i);
     const propertyPrefix = propMatch ? propMatch[1] : "";
     return {
       mode: "css-property",
@@ -2770,7 +2920,7 @@ function getCssSuggestionContext(textBefore) {
     };
   }
 
-  const selectorMatch = lineText.match(/([@.#a-z0-9_-]*)$/i);
+  const selectorMatch = sanitizedLineText.match(/([@.#a-z0-9_-]*)$/i);
   const selectorPrefix = selectorMatch ? selectorMatch[1] : "";
   return {
     mode: "css-selector",
@@ -2782,12 +2932,14 @@ function getCssSuggestionContext(textBefore) {
 }
 
 function getJsSuggestionContext(textBefore) {
+  const sanitizedText = stripQuotedContent(textBefore);
   const lineStart = textBefore.lastIndexOf("\n") + 1;
   const lineText = textBefore.substring(lineStart);
+  const sanitizedLineText = sanitizedText.substring(lineStart);
 
-  if (/^\s*\/\//.test(lineText)) return null;
+  if (/^\s*\/\//.test(lineText) || /\/\*[^*]*$/.test(sanitizedText)) return null;
 
-  const tokenMatch = lineText.match(/([A-Za-z_$][\w$.]*)$/);
+  const tokenMatch = sanitizedLineText.match(/([A-Za-z_$][\w$.]*)$/);
   if (!tokenMatch) return null;
 
   const prefix = tokenMatch[1];
@@ -3846,6 +3998,13 @@ function handleEditorKeyDown(e) {
 document.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
   const mod = e.ctrlKey || e.metaKey;
+  const target = e.target;
+  const isTypingIntoFormControl =
+    target &&
+    target !== document.getElementById("activeEditor") &&
+    ((typeof target.closest === "function" &&
+      target.closest("input, textarea, select, button, [contenteditable='true']")) ||
+      target.isContentEditable);
 
   if (e.key === "Escape" && document.body.classList.contains("zen-mode")) {
     e.preventDefault();
@@ -3861,6 +4020,10 @@ document.addEventListener("keydown", (e) => {
     ) {
       e.preventDefault();
     }
+    return;
+  }
+
+  if (isTypingIntoFormControl) {
     return;
   }
 
@@ -3921,7 +4084,7 @@ editorContainer.addEventListener("drop", (e) => {
       const content = ev.target.result;
       const ext = file.name.split(".").pop().toLowerCase();
       if (editableTextExtensions.includes(ext)) {
-        if (projectFiles.some((f) => f.name === file.name)) {
+        if (projectFiles.some((f) => f.name.toLowerCase() === file.name.toLowerCase())) {
           showNotification(`File ${file.name} already exists`, "error");
           return;
         }
@@ -3954,6 +4117,14 @@ async function exportAsZip() {
     showNotification("The host disabled ZIP export for participants.", "error");
     return;
   }
+  const requestedName = prompt("Name your ZIP file:", "codx-project.zip");
+  if (!requestedName) return;
+  const trimmedName = requestedName.trim();
+  if (!trimmedName) {
+    showNotification("ZIP file name cannot be empty.", "error");
+    return;
+  }
+  const zipFileName = /\.zip$/i.test(trimmedName) ? trimmedName : `${trimmedName}.zip`;
   const zip = new JSZip();
   projectFiles.forEach((file) => {
     zip.file(file.name, file.content);
@@ -3963,10 +4134,10 @@ async function exportAsZip() {
     const url = URL.createObjectURL(content);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "codx-project.zip";
+    a.download = zipFileName;
     a.click();
     URL.revokeObjectURL(url);
-    showNotification("Project exported as ZIP!", "success");
+    showNotification(`Project exported as ${zipFileName}!`, "success");
   } catch (err) {
     console.error("Export error:", err);
     showNotification("Error creating ZIP file", "error");
@@ -3999,7 +4170,7 @@ function handleZipImport(event) {
   JSZip.loadAsync(file)
     .then((zip) => {
       const promises = [];
-      projectFiles = [];
+      const importedFiles = [];
       const foundFiles = [];
 
       zip.forEach((path, entry) => {
@@ -4008,7 +4179,7 @@ function handleZipImport(event) {
           foundFiles.push(path);
           promises.push(
             entry.async("string").then((content) => {
-              projectFiles.push({
+              importedFiles.push({
                 name: path,
                 type: ext,
                 content,
@@ -4020,10 +4191,11 @@ function handleZipImport(event) {
       });
 
       Promise.all(promises).then(() => {
-        if (projectFiles.length === 0) {
+        if (importedFiles.length === 0) {
           showNotification("No valid files found in ZIP", "error");
           return;
         }
+        projectFiles = importedFiles;
         projectFiles[0].active = true;
         activeFile = projectFiles[0];
         const editor = document.getElementById("activeEditor");
@@ -4487,6 +4659,7 @@ function showKickConfirmation(targetName) {
   const safeName = String(targetName || "").trim();
   if (!safeName) return;
 
+  collabModalView = "kick";
   setCollabCloseButtonVisible(true);
   modalTitle.innerHTML = "<strong>KICK PARTICIPANT</strong>";
   modalBody.innerHTML = `
@@ -4506,6 +4679,7 @@ function showKickConfirmation(targetName) {
 }
 
 function showKickedOutModal() {
+  collabModalView = "kicked";
   setCollabCloseButtonVisible(false);
   modalTitle.innerHTML = "<strong>NOTICE</strong>";
   modalBody.innerHTML = `
@@ -4537,6 +4711,48 @@ function ensureCollabSocket() {
   collabSocket.on("connect_error", () => {
     showNotification("Unable to connect to collaboration server", "error");
   });
+  collabSocket.on("disconnect", () => {
+    clearOwnSessionCursorBroadcast();
+    typingIndicatorEl.style.display = "none";
+    remoteCursorState = {};
+    renderRemoteCursors();
+    if (activeSessionId) {
+      showNotification("Collaboration connection lost.", "warn");
+    }
+  });
+  collabSocket.on("reconnect", () => {
+    if (!activeSessionId || !myInfo.name) return;
+    collabSocket.emit(
+      "collab:join",
+      {
+        sessionId: activeSessionId,
+        name: myInfo.name,
+        theme: myInfo.theme || "#4CAF50",
+      },
+      (res) => {
+        if (!res?.ok) {
+          showNotification(
+            (res && res.error) || "Collaboration reconnected, but session resume failed.",
+            "error",
+          );
+          return;
+        }
+        collabParticipants = res.participants || [];
+        collabHostName =
+          (collabParticipants.find((p) => p.role === "host") || {}).name ||
+          res.hostName ||
+          collabHostName;
+        collabPermissions = normalizeCollabPermissions(res.permissions);
+        applyRemoteSessionState(res.files, res.activeFileName);
+        enforceCollabPermissionsUI();
+        if (collabModal.style.display === "flex" && collabModalView === "session") {
+          showSessionDetails(activeSessionId);
+        }
+        requestCollabChatHistory();
+        showNotification("Collaboration reconnected.", "success");
+      },
+    );
+  });
 
   collabSocket.on("collab:state", (payload) => {
     if (!payload || !payload.files) return;
@@ -4559,7 +4775,7 @@ function ensureCollabSocket() {
     });
     renderRemoteCursors();
     enforceCollabPermissionsUI();
-    if (collabModal.style.display === "flex" && activeSessionId) {
+    if (collabModal.style.display === "flex" && activeSessionId && collabModalView === "session") {
       showSessionDetails(activeSessionId);
     }
   });
@@ -4569,7 +4785,7 @@ function ensureCollabSocket() {
     collabHostName = meta.hostName || collabHostName;
     collabPermissions = normalizeCollabPermissions(meta.permissions);
     enforceCollabPermissionsUI();
-    if (collabModal.style.display === "flex" && activeSessionId) {
+    if (collabModal.style.display === "flex" && activeSessionId && collabModalView === "session") {
       showSessionDetails(activeSessionId);
     }
   });
@@ -4612,14 +4828,19 @@ function applyRemoteSessionState(files, activeFileName) {
   if (!Array.isArray(files) || !files.length) return;
   isApplyingRemoteState = true;
   try {
+    const requestedActiveName = String(activeFileName || "").trim();
     const currentActiveName = activeFile ? activeFile.name : null;
     projectFiles = files;
     const nextActive =
+      projectFiles.find((f) => f.name === requestedActiveName) ||
       projectFiles.find((f) => f.name === currentActiveName) ||
       projectFiles.find((f) => f.active) ||
       projectFiles[0];
     activeFile = nextActive;
     projectFiles.forEach((f) => (f.active = f.name === nextActive.name));
+    if (activeFile && activeFile.type === "html") {
+      currentPreviewTarget = { mode: "html", fileName: activeFile.name };
+    }
 
     const ed = document.getElementById("activeEditor");
     const currentPos = ed.selectionStart;
@@ -4919,19 +5140,15 @@ function createNumericSession() {
       collabChatTarget = "";
       window.history.replaceState({}, "", `/frontend.html/${sid}`);
       setCollabCloseButtonVisible(true);
-
-      modalTitle.innerHTML = "<strong>SHARE LINK</strong>";
-      modalBody.innerHTML = `<input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">`;
-      document.getElementById("modalActions").innerHTML = `
-        <button class="run-button" onclick="copyLink()"><strong>COPY LINK</strong></button>
-        <button class="run-button" onclick="closeModal()"><strong>DONE</strong></button>`;
       enforceCollabPermissionsUI();
       startSyncing();
+      showSessionDetails(sid);
     },
   );
 }
 
 function showSessionDetails(sid) {
+  collabModalView = "session";
   setCollabCloseButtonVisible(true);
   const link = `${window.location.origin}/frontend.html/${sid}`;
   const listItems = collabParticipants
@@ -4980,19 +5197,29 @@ function showSessionDetails(sid) {
 
 function copyLink() {
   const el = document.getElementById("collabLinkInput");
+  if (!el) {
+    showNotification("No collaboration link available to copy.", "error");
+    return;
+  }
   el.select();
   el.setSelectionRange(0, 99999);
   try {
     document.execCommand("copy");
     showNotification("Copied!", "success");
   } catch {
-    navigator.clipboard
-      .writeText(el.value)
-      .then(() => showNotification("Copied!", "success"));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(el.value)
+        .then(() => showNotification("Copied!", "success"))
+        .catch(() => showNotification("Failed to copy link.", "error"));
+    } else {
+      showNotification("Failed to copy link.", "error");
+    }
   }
 }
 
 function closeModal() {
+  collabModalView = "idle";
   collabModal.style.display = "none";
   setCollabCloseButtonVisible(true);
   document.getElementById("modalActions").innerHTML =

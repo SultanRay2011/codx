@@ -350,8 +350,15 @@ io.on("connection", (socket) => {
 
   socket.on("collab:update", (payload) => {
     const sessionId = normalizeSessionId(payload?.sessionId);
-    const session = sessions.get(sessionId);
-    if (!session) return;
+    const access = canUseSession(sessionId, socket.id);
+    if (!access) return;
+    const { session, member } = access;
+
+    const meta = socketMeta.get(socket.id);
+    const safeUser =
+      meta && meta.sessionId === sessionId
+        ? { name: member.name, theme: member.theme, role: member.role || "participant" }
+        : null;
 
     session.files = cloneFiles(payload?.files);
     session.activeFileName = payload?.activeFileName || null;
@@ -360,7 +367,7 @@ io.on("connection", (socket) => {
     socket.to(sessionId).emit("collab:state", {
       files: cloneFiles(session.files),
       activeFileName: session.activeFileName,
-      user: payload?.user || null,
+      user: safeUser,
     });
     emitSessionMeta(sessionId);
   });
@@ -474,7 +481,8 @@ io.on("connection", (socket) => {
 
   socket.on("collab:typing", (payload) => {
     const sessionId = normalizeSessionId(payload?.sessionId);
-    if (!sessions.has(sessionId)) return;
+    const access = canUseSession(sessionId, socket.id);
+    if (!access) return;
     socket.to(sessionId).emit("collab:typing", payload?.indicator || null);
   });
 

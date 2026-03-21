@@ -199,6 +199,9 @@
           <div class="editor-wrapper">
             <pre id="highlightLayer" aria-hidden="true"></pre>
             <div id="remoteCursorLayer" aria-hidden="true"></div>
+            <div id="editorWatermark" aria-hidden="true">
+              Type <strong>cxstart</strong> and hit enter for a html code setup.
+            </div>
             <textarea
               id="activeEditor"
               class="active"
@@ -285,6 +288,9 @@
       <div class="divider"></div>
 
       <div class="preview">
+        <div class="preview-header">
+          <strong id="previewTitle">Preview</strong>
+        </div>
         <iframe id="output" title="Preview output"></iframe>
         <div class="console-container" id="consoleContainer">
           <div
