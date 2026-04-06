@@ -391,6 +391,15 @@ function buildPublishedHtml(project) {
     );
   }
 
+  const publishBaseReset =
+    '<style data-codx-publish-reset>html,body{margin:0;padding:0;min-height:100%;}body{box-sizing:border-box;}*,*::before,*::after{box-sizing:inherit;}</style>';
+
+  if (/<head\b[^>]*>/i.test(html)) {
+    html = html.replace(/<head([^>]*)>/i, `<head$1>${publishBaseReset}`);
+  } else {
+    html = `${publishBaseReset}${html}`;
+  }
+
   return html;
 }
 
