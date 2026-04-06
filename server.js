@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require("http");
 const path = require("path");
+const fs = require("fs");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -12,19 +13,39 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const sessions = new Map();
 const socketMeta = new Map();
+const adminActivity = [];
+const adminSessions = new Map();
+const publishedProjects = new Map();
+const PUBLISHED_PROJECTS_FILE = path.join(__dirname, "published-projects.json");
+const ADMIN_PIN = String(process.env.ADMIN_PIN || "1579");
+const ADMIN_COOKIE = "codx_admin_session";
 const MODERN_SESSION_ID_RE = /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/;
 const LEGACY_SESSION_ID_RE = /^\d{10,}$/;
 const SESSION_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const DEFAULT_PERMISSIONS = {
   disableGroupChat: false,
+  disableAllChat: false,
   manageSelectedFiles: false,
   selectedFiles: [],
   disableExportZip: false,
   disableImportZip: false,
   disableNewFile: false,
+  disableRunCode: false,
+  disableConsoleAccess: false,
+  readOnlyAll: false,
+  roomLocked: false,
+  pauseCollab: false,
+  quietMode: false,
+  requireJoinApproval: false,
+  pinnedFile: "",
+  groupHighlightFile: "",
+  announcementBar: "",
+  sessionEndsAt: null,
 };
 
+app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+loadPublishedProjects();
 
 app.get(/^\/frontend\.html\/([A-Za-z0-9-]+)$/, (req, res) => {
   const sessionId = normalizeSessionId(req.params[0]);
@@ -39,6 +60,204 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, sessions: sessions.size });
 });
 
+app.post("/admin/api/auth", (req, res) => {
+  const pin = String(req.body?.pin || "").trim();
+  if (pin !== ADMIN_PIN) {
+    res.status(401).json({ ok: false, error: "Invalid admin PIN." });
+    return;
+  }
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  adminSessions.set(token, Date.now());
+  res.setHeader(
+    "Set-Cookie",
+    `${ADMIN_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200`,
+  );
+  res.json({ ok: true });
+});
+
+app.post("/admin/api/logout", (req, res) => {
+  const token = parseCookies(req)[ADMIN_COOKIE];
+  if (token) adminSessions.delete(token);
+  res.setHeader(
+    "Set-Cookie",
+    `${ADMIN_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`,
+  );
+  res.json({ ok: true });
+});
+
+app.use("/admin/api", (req, res, next) => {
+  if (req.path === "/auth") {
+    next();
+    return;
+  }
+  const token = parseCookies(req)[ADMIN_COOKIE];
+  if (!token || !adminSessions.has(token)) {
+    res.status(401).json({ ok: false, error: "Admin authentication required." });
+    return;
+  }
+  next();
+});
+
+app.get("/admin/api/overview", (_req, res) => {
+  res.json(buildAdminOverview());
+});
+
+app.get("/admin/api/sessions", (_req, res) => {
+  res.json({
+    sessions: Array.from(sessions.entries())
+      .map(([sessionId, session]) => summarizeSession(sessionId, session))
+      .sort((a, b) => b.participantCount - a.participantCount || b.createdAt - a.createdAt),
+  });
+});
+
+app.get("/admin/api/session/:sessionId", (req, res) => {
+  const sessionId = normalizeSessionId(req.params.sessionId);
+  const session = sessions.get(sessionId);
+  if (!session) {
+    res.status(404).json({ ok: false, error: "Session not found." });
+    return;
+  }
+  res.json({
+    ok: true,
+    session: buildAdminSessionDetail(sessionId, session),
+  });
+});
+
+app.get("/admin/api/activity", (_req, res) => {
+  res.json({
+    activity: adminActivity.slice(0, 30),
+  });
+});
+
+app.post("/admin/api/session/:sessionId/lock-toggle", (req, res) => {
+  const sessionId = normalizeSessionId(req.params.sessionId);
+  const session = sessions.get(sessionId);
+  if (!session) {
+    res.status(404).json({ ok: false, error: "Session not found." });
+    return;
+  }
+  const nextLocked = !Boolean(session.permissions?.roomLocked);
+  session.permissions = normalizePermissions(
+    { ...session.permissions, roomLocked: nextLocked },
+    session.files,
+  );
+  emitSessionMeta(sessionId);
+  logAdminEvent(
+    nextLocked ? "Room locked" : "Room unlocked",
+    `Session ${sessionId} was ${nextLocked ? "locked" : "unlocked"} from the admin panel.`,
+    sessionId,
+  );
+  res.json({ ok: true, session: summarizeSession(sessionId, session) });
+});
+
+app.post("/admin/api/session/:sessionId/freeze-toggle", (req, res) => {
+  const sessionId = normalizeSessionId(req.params.sessionId);
+  const session = sessions.get(sessionId);
+  if (!session) {
+    res.status(404).json({ ok: false, error: "Session not found." });
+    return;
+  }
+  const nextPaused = !Boolean(session.permissions?.pauseCollab);
+  session.permissions = normalizePermissions(
+    { ...session.permissions, pauseCollab: nextPaused },
+    session.files,
+  );
+  emitSessionMeta(sessionId);
+  logAdminEvent(
+    nextPaused ? "Collaboration paused" : "Collaboration resumed",
+    `Session ${sessionId} is now ${nextPaused ? "paused" : "active"} from the admin panel.`,
+    sessionId,
+  );
+  res.json({ ok: true, session: summarizeSession(sessionId, session) });
+});
+
+app.post("/admin/api/session/:sessionId/regenerate-link", (req, res) => {
+  const oldSessionId = normalizeSessionId(req.params.sessionId);
+  const session = sessions.get(oldSessionId);
+  if (!session) {
+    res.status(404).json({ ok: false, error: "Session not found." });
+    return;
+  }
+  const nextSessionId = generateSessionId();
+  sessions.delete(oldSessionId);
+  sessions.set(nextSessionId, session);
+  (session.participants || []).forEach((participant) => {
+    const socketRef = io.sockets.sockets.get(participant.socketId);
+    if (socketRef) {
+      socketRef.leave(oldSessionId);
+      socketRef.join(nextSessionId);
+    }
+    const meta = socketMeta.get(participant.socketId);
+    if (meta) meta.sessionId = nextSessionId;
+  });
+  (session.pendingJoins || []).forEach((entry) => {
+    const meta = socketMeta.get(entry.socketId);
+    if (meta) meta.sessionId = nextSessionId;
+  });
+  const shareLink = buildShareLink(session.baseUrl || "", nextSessionId);
+  io.to(nextSessionId).emit("collab:link-regenerated", {
+    sessionId: nextSessionId,
+    shareLink,
+  });
+  emitSessionMeta(nextSessionId);
+  logAdminEvent(
+    "Invite link regenerated",
+    `Session ${oldSessionId} was moved to new session id ${nextSessionId}.`,
+    nextSessionId,
+  );
+  res.json({ ok: true, sessionId: nextSessionId, shareLink });
+});
+
+app.post("/admin/api/session/:sessionId/end", (req, res) => {
+  const sessionId = normalizeSessionId(req.params.sessionId);
+  const session = sessions.get(sessionId);
+  if (!session) {
+    res.status(404).json({ ok: false, error: "Session not found." });
+    return;
+  }
+  logAdminEvent(
+    "Session ended",
+    `Session ${sessionId} was ended from the admin panel.`,
+    sessionId,
+  );
+  endSession(sessionId, "An admin ended this collaboration session.");
+  res.json({ ok: true });
+});
+
+app.post("/api/publish", (req, res) => {
+  const files = cloneFiles(req.body?.files);
+  const activeFileName = String(req.body?.activeFileName || "");
+  const projectName = String(req.body?.projectName || "CodX Project").trim().slice(0, 80);
+  if (!Array.isArray(files) || !files.length) {
+    res.status(400).json({ ok: false, error: "No project files to publish." });
+    return;
+  }
+  const id = `PUB-${Math.random().toString(36).slice(2, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+  publishedProjects.set(id, {
+    id,
+    projectName,
+    files,
+    activeFileName,
+    createdAt: Date.now(),
+  });
+  savePublishedProjects();
+  res.json({
+    ok: true,
+    id,
+    shareLink: `${req.protocol}://${req.get("host")}/published/${id}`,
+  });
+});
+
+app.get("/published/:id", (req, res) => {
+  const id = String(req.params.id || "").trim();
+  const project = publishedProjects.get(id);
+  if (!project) {
+    res.status(404).sendFile(path.join(__dirname, "404.html"));
+    return;
+  }
+  res.send(buildPublishedHtml(project));
+});
+
 // Fallback: unknown GET routes go to custom 404 page.
 app.get(/^(?!\/socket\.io\/).*/, (req, res) => {
   if (req.path === "/404.html") {
@@ -50,6 +269,47 @@ app.get(/^(?!\/socket\.io\/).*/, (req, res) => {
 
 function cloneFiles(files) {
   return JSON.parse(JSON.stringify(files || []));
+}
+
+function loadPublishedProjects() {
+  try {
+    if (!fs.existsSync(PUBLISHED_PROJECTS_FILE)) return;
+    const raw = fs.readFileSync(PUBLISHED_PROJECTS_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+    parsed.forEach((entry) => {
+      if (!entry || !entry.id || !Array.isArray(entry.files)) return;
+      publishedProjects.set(String(entry.id), {
+        id: String(entry.id),
+        projectName: String(entry.projectName || "CodX Project"),
+        files: cloneFiles(entry.files),
+        activeFileName: String(entry.activeFileName || ""),
+        createdAt: Number(entry.createdAt || Date.now()),
+      });
+    });
+  } catch (error) {
+    console.error("Failed to load published projects:", error);
+  }
+}
+
+function savePublishedProjects() {
+  try {
+    const serialized = JSON.stringify(Array.from(publishedProjects.values()), null, 2);
+    fs.writeFileSync(PUBLISHED_PROJECTS_FILE, serialized, "utf8");
+  } catch (error) {
+    console.error("Failed to save published projects:", error);
+  }
+}
+
+function parseCookies(req) {
+  const header = String(req.headers?.cookie || "");
+  return header.split(";").reduce((acc, part) => {
+    const [rawKey, ...rawValue] = part.split("=");
+    const key = String(rawKey || "").trim();
+    if (!key) return acc;
+    acc[key] = decodeURIComponent(rawValue.join("=").trim());
+    return acc;
+  }, {});
 }
 
 function normalizeSessionId(value) {
@@ -78,6 +338,170 @@ function buildShareLink(baseUrl, sessionId) {
   const root = String(baseUrl || "").replace(/\/+$/, "");
   if (root) return `${root}/frontend.html/${sessionId}`;
   return `/frontend.html/${sessionId}`;
+}
+
+function buildPublishedHtml(project) {
+  const files = Array.isArray(project?.files) ? project.files : [];
+  const activeFileName = String(project?.activeFileName || "");
+  const normalizeFileName = (value) => String(value || "").trim().replace(/^\.\/+/, "").toLowerCase();
+  const resolveFile = (rawName, typeHint = "") => {
+    const target = normalizeFileName(rawName);
+    if (!target) return null;
+    return files.find((file) => {
+      const candidate = normalizeFileName(file.name);
+      const sameName =
+        candidate === target ||
+        candidate.endsWith(`/${target}`) ||
+        candidate.split("/").pop() === target.split("/").pop();
+      if (!sameName) return false;
+      if (!typeHint) return true;
+      return String(file.type || "").toLowerCase() === typeHint.toLowerCase();
+    }) || null;
+  };
+
+  const htmlFile =
+    files.find((file) => String(file?.name || "") === activeFileName && String(file?.type || "").toLowerCase() === "html") ||
+    files.find((file) => String(file?.type || "").toLowerCase() === "html");
+
+  if (!htmlFile) {
+    return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtmlAttribute(project?.projectName || "Published Project")}</title><style>body{font-family:Segoe UI,Tahoma,sans-serif;background:#f6fff7;color:#18211b;padding:32px}.box{max-width:760px;margin:0 auto;background:#fff;border:1px solid rgba(20,41,27,.12);border-radius:20px;padding:24px;box-shadow:0 18px 40px rgba(24,46,31,.08)}h1{margin:0 0 12px}p{color:#5b675f;line-height:1.7}</style></head><body><div class="box"><h1>No HTML file to publish</h1><p>This project does not contain an HTML file, so there is nothing previewable to publish yet.</p></div></body></html>`;
+  }
+
+  let html = String(htmlFile.content || "");
+  html = html.replace(/<link\b([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi, (full, before, href) => {
+    const cssFile = resolveFile(href, "css");
+    if (!cssFile) return full;
+    return `<style data-published-source="${escapeHtmlAttribute(cssFile.name)}">\n${String(cssFile.content || "")}\n</style>`;
+  });
+
+  html = html.replace(/<script\b([^>]*?)src=["']([^"']+)["']([^>]*)><\/script>/gi, (full, before, src) => {
+    const jsFile = resolveFile(src, "js");
+    if (!jsFile) return full;
+    return `<script data-published-source="${escapeHtmlAttribute(jsFile.name)}">\n${String(jsFile.content || "")}\n<\/script>`;
+  });
+
+  if (!/<title\b/i.test(html)) {
+    html = html.replace(
+      /<head([^>]*)>/i,
+      `<head$1><title>${escapeHtmlAttribute(project?.projectName || htmlFile.name)}</title>`,
+    );
+  }
+
+  return html;
+}
+
+function escapeHtmlAttribute(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function emitAdminUpdate(reason = "state") {
+  io.emit("admin:update", {
+    reason: String(reason || "state"),
+    ts: Date.now(),
+  });
+}
+
+function logAdminEvent(title, detail, sessionId = "") {
+  adminActivity.unshift({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: String(title || "").trim(),
+    detail: String(detail || "").trim(),
+    sessionId: String(sessionId || "").trim(),
+    ts: Date.now(),
+  });
+  if (adminActivity.length > 120) {
+    adminActivity.length = 120;
+  }
+  emitAdminUpdate("activity");
+}
+
+function summarizeSession(sessionId, session) {
+  const participants = Array.isArray(session?.participants) ? session.participants : [];
+  const permissions = session?.permissions || DEFAULT_PERMISSIONS;
+  const chatState = session?.chat || { group: [], private: {} };
+  const pendingJoins = Array.isArray(session?.pendingJoins) ? session.pendingJoins : [];
+  return {
+    sessionId,
+    hostName: session?.hostName || "Unknown",
+    shareLink: buildShareLink(session?.baseUrl || "", sessionId),
+    participantCount: participants.length,
+    pendingJoinCount: pendingJoins.length,
+    fileCount: Array.isArray(session?.files) ? session.files.length : 0,
+    groupMessageCount: Array.isArray(chatState.group) ? chatState.group.length : 0,
+    privateThreadCount: Object.keys(chatState.private || {}).length,
+    createdAt: Math.min(
+      ...participants.map((participant) => Number(participant.joinedAt) || Date.now()),
+      Date.now(),
+    ),
+    activeFileName: session?.activeFileName || "",
+    roomLocked: Boolean(permissions.roomLocked),
+    paused: Boolean(permissions.pauseCollab),
+    readOnlyAll: Boolean(permissions.readOnlyAll),
+    requireJoinApproval: Boolean(permissions.requireJoinApproval),
+    disableAllChat: Boolean(permissions.disableAllChat),
+    pinnedFile: permissions.pinnedFile || "",
+    hostRoleCount: participants.filter((participant) => String(participant.role) === "co-host").length,
+    flaggedParticipants: participants.filter(
+      (participant) =>
+        participant.mutedChat ||
+        participant.frozenEditing ||
+        participant.priority ||
+        Array.isArray(participant.allowedFiles),
+    ).length,
+  };
+}
+
+function buildAdminOverview() {
+  const summaryList = Array.from(sessions.entries()).map(([sessionId, session]) =>
+    summarizeSession(sessionId, session),
+  );
+  const participants = summaryList.reduce((sum, item) => sum + item.participantCount, 0);
+  const pending = summaryList.reduce((sum, item) => sum + item.pendingJoinCount, 0);
+  const flagged = summaryList.reduce((sum, item) => sum + item.flaggedParticipants, 0);
+  const locked = summaryList.filter((item) => item.roomLocked).length;
+  return {
+    health: {
+      ok: true,
+      uptimeSeconds: Math.floor(process.uptime()),
+      sessions: sessions.size,
+      connectedSockets: io.engine.clientsCount,
+    },
+    stats: {
+      activeUsers: participants,
+      liveSessions: sessions.size,
+      moderationItems: pending + flagged,
+      capacityLoad: sessions.size === 0 ? 0 : Math.min(100, Math.round((participants / 200) * 100)),
+      pendingJoins: pending,
+      lockedRooms: locked,
+    },
+    queue: {
+      pendingJoinApprovals: pending,
+      flaggedParticipants: flagged,
+      lockedRooms: locked,
+      pausedRooms: summaryList.filter((item) => item.paused).length,
+    },
+    sessions: summaryList
+      .sort((a, b) => b.participantCount - a.participantCount || b.pendingJoinCount - a.pendingJoinCount)
+      .slice(0, 6),
+  };
+}
+
+function buildAdminSessionDetail(sessionId, session) {
+  const summary = summarizeSession(sessionId, session);
+  return {
+    ...summary,
+    permissions: { ...(session?.permissions || DEFAULT_PERMISSIONS) },
+    participants: (session?.participants || []).map(sanitizeParticipant),
+    files: cloneFiles(session?.files || []),
+    chat: {
+      groupCount: Array.isArray(session?.chat?.group) ? session.chat.group.length : 0,
+      privateThreadCount: Object.keys(session?.chat?.private || {}).length,
+    },
+  };
 }
 
 function sanitizeParticipant(p) {
@@ -111,6 +535,24 @@ function canUseSession(sessionId, socketId) {
   return member ? { session, member } : null;
 }
 
+function canUseLimitedRoomTools(session, socketId) {
+  const member = session?.participants?.find((p) => p.socketId === socketId);
+  if (!member) return null;
+  const role = String(member.role || "participant");
+  if (role !== "host" && role !== "co-host") return null;
+  return member;
+}
+
+function canModerateTarget(session, socketId, target) {
+  const actor = canUseLimitedRoomTools(session, socketId);
+  if (!actor || !target) return null;
+  const actorRole = String(actor.role || "participant");
+  const targetRole = String(target.role || "participant");
+  if (targetRole === "host") return null;
+  if (actorRole === "co-host" && targetRole !== "participant") return null;
+  return actor;
+}
+
 function getChatPayloadForUser(session, userName) {
   const userKey = normalizeName(userName);
   const privateMessages = [];
@@ -141,11 +583,32 @@ function normalizePermissions(input, files) {
 
   return {
     disableGroupChat: Boolean(raw.disableGroupChat),
+    disableAllChat: Boolean(raw.disableAllChat),
     manageSelectedFiles: Boolean(raw.manageSelectedFiles),
     selectedFiles,
     disableExportZip: Boolean(raw.disableExportZip),
     disableImportZip: Boolean(raw.disableImportZip),
     disableNewFile: Boolean(raw.disableNewFile),
+    disableRunCode: Boolean(raw.disableRunCode),
+    disableConsoleAccess: Boolean(raw.disableConsoleAccess),
+    readOnlyAll: Boolean(raw.readOnlyAll),
+    roomLocked: Boolean(raw.roomLocked),
+    pauseCollab: Boolean(raw.pauseCollab),
+    quietMode: Boolean(raw.quietMode),
+    requireJoinApproval: Boolean(raw.requireJoinApproval),
+    pinnedFile:
+      raw.pinnedFile && allNames.has(String(raw.pinnedFile || "").trim())
+        ? String(raw.pinnedFile || "").trim()
+        : "",
+    groupHighlightFile:
+      raw.groupHighlightFile && allNames.has(String(raw.groupHighlightFile || "").trim())
+        ? String(raw.groupHighlightFile || "").trim()
+        : "",
+    announcementBar: String(raw.announcementBar || "").trim().slice(0, 220),
+    sessionEndsAt:
+      Number(raw.sessionEndsAt) > Date.now()
+        ? Number(raw.sessionEndsAt)
+        : null,
   };
 }
 
@@ -175,15 +638,85 @@ function emitParticipants(sessionId) {
     "collab:participants",
     session.participants.map(sanitizeParticipant),
   );
+  emitAdminUpdate("participants");
 }
 
 function emitSessionMeta(sessionId) {
   const session = sessions.get(sessionId);
   if (!session) return;
   io.to(sessionId).emit("collab:meta", {
+    sessionId,
     hostName: session.hostName,
     permissions: session.permissions,
+    pendingJoins: (session.pendingJoins || []).map((entry) => ({
+      socketId: entry.socketId,
+      name: entry.name,
+      theme: entry.theme,
+      requestedAt: entry.requestedAt,
+    })),
+    shareLink: buildShareLink(session.baseUrl || "", sessionId),
   });
+  emitAdminUpdate("meta");
+}
+
+function endSession(sessionId, reason = "Session ended.") {
+  const session = sessions.get(sessionId);
+  if (!session) return;
+  io.to(sessionId).emit("collab:session-ended", { reason });
+  (session.participants || []).forEach((participant) => {
+    const socketRef = io.sockets.sockets.get(participant.socketId);
+    if (socketRef) {
+      socketRef.leave(sessionId);
+    }
+    socketMeta.delete(participant.socketId);
+  });
+  (session.pendingJoins || []).forEach((entry) => {
+    const socketRef = io.sockets.sockets.get(entry.socketId);
+    if (socketRef) {
+      socketRef.leave(sessionId);
+    }
+    socketMeta.delete(entry.socketId);
+    io.to(entry.socketId).emit("collab:join-rejected", { reason });
+  });
+  sessions.delete(sessionId);
+  emitAdminUpdate("session-ended");
+}
+
+function finalizeApprovedJoin(sessionId, socketId, name, theme) {
+  const session = sessions.get(sessionId);
+  if (!session) return false;
+  if (session.participants.some((p) => p.name.toLowerCase() === String(name || "").trim().toLowerCase())) {
+    return false;
+  }
+  session.participants.push({
+    socketId,
+    name,
+    theme,
+    role: "participant",
+    mutedChat: false,
+    frozenEditing: false,
+    priority: false,
+    currentFile: session.activeFileName || null,
+    joinedAt: Date.now(),
+    allowedFiles: null,
+  });
+  const socketRef = io.sockets.sockets.get(socketId);
+  if (socketRef) socketRef.join(sessionId);
+  socketMeta.set(socketId, { sessionId, name, theme });
+  io.to(socketId).emit("collab:join-approved", {
+    ok: true,
+    sessionId,
+    files: cloneFiles(session.files),
+    activeFileName: session.activeFileName || null,
+    hostName: session.hostName,
+    permissions: session.permissions,
+    participants: session.participants.map(sanitizeParticipant),
+    shareLink: buildShareLink(session.baseUrl || "", sessionId),
+  });
+  logAdminEvent("Join approved", `${name} was approved for session ${sessionId}.`, sessionId);
+  emitParticipants(sessionId);
+  emitSessionMeta(sessionId);
+  return true;
 }
 
 io.on("connection", (socket) => {
@@ -228,8 +761,10 @@ io.on("connection", (socket) => {
         participants,
         hostSocketId: socket.id,
         hostName: name,
+        baseUrl,
         permissions: normalizePermissions(payload?.permissions, files),
         chat: { group: [], private: {} },
+        pendingJoins: [],
       });
 
       socket.join(sessionId);
@@ -242,6 +777,7 @@ io.on("connection", (socket) => {
         permissions: sessions.get(sessionId).permissions,
         participants: participants.map(sanitizeParticipant),
       });
+      logAdminEvent("Session created", `${name} created session ${sessionId}.`, sessionId);
       emitParticipants(sessionId);
       emitSessionMeta(sessionId);
     } catch {
@@ -264,11 +800,34 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Name is required." });
         return;
       }
+      if (session.permissions?.roomLocked) {
+        ack?.({ ok: false, error: "Room is locked." });
+        return;
+      }
       const taken = session.participants.some(
         (p) => p.name.toLowerCase() === name.toLowerCase(),
       );
       if (taken) {
         ack?.({ ok: false, error: "Name already taken." });
+        return;
+      }
+      if (session.permissions?.requireJoinApproval) {
+        const alreadyPending = (session.pendingJoins || []).some(
+          (entry) => entry.name.toLowerCase() === name.toLowerCase(),
+        );
+        if (alreadyPending) {
+          ack?.({ ok: false, error: "Join request already pending." });
+          return;
+        }
+        session.pendingJoins.push({
+          socketId: socket.id,
+          name,
+          theme,
+          requestedAt: Date.now(),
+        });
+        logAdminEvent("Join approval requested", `${name} requested access to session ${sessionId}.`, sessionId);
+        emitSessionMeta(sessionId);
+        ack?.({ ok: false, pending: true, error: "Waiting for host approval." });
         return;
       }
 
@@ -295,6 +854,7 @@ io.on("connection", (socket) => {
         permissions: session.permissions,
         participants: session.participants.map(sanitizeParticipant),
       });
+      logAdminEvent("Participant joined", `${name} joined session ${sessionId}.`, sessionId);
       emitParticipants(sessionId);
       emitSessionMeta(sessionId);
     } catch {
@@ -416,6 +976,10 @@ io.on("connection", (socket) => {
           ack?.({ ok: false, error: "Group chat is disabled by host." });
           return;
         }
+        if (session.permissions?.disableAllChat) {
+          ack?.({ ok: false, error: "Chat is disabled for the group." });
+          return;
+        }
         if (member.mutedChat) {
           ack?.({ ok: false, error: "The host muted your chat access." });
           return;
@@ -429,6 +993,10 @@ io.on("connection", (socket) => {
 
       if (mode !== "private") {
         ack?.({ ok: false, error: "Invalid chat mode." });
+        return;
+      }
+      if (session.permissions?.disableAllChat) {
+        ack?.({ ok: false, error: "Chat is disabled for the group." });
         return;
       }
       if (member.mutedChat) {
@@ -470,7 +1038,11 @@ io.on("connection", (socket) => {
     const access = canUseSession(sessionId, socket.id);
     if (!access) return;
     const { session, member } = access;
-    if (member.frozenEditing) {
+    if (
+      member.frozenEditing ||
+      session.permissions?.readOnlyAll ||
+      session.permissions?.pauseCollab
+    ) {
       socket.emit("collab:state", {
         files: cloneFiles(session.files),
         activeFileName: session.activeFileName,
@@ -561,6 +1133,7 @@ io.on("connection", (socket) => {
         role,
         by: session.hostName || "Host",
       });
+      logAdminEvent("Role updated", `${target.name} is now ${role} in session ${sessionId}.`, sessionId);
       emitParticipants(sessionId);
       ack?.({ ok: true });
     } catch {
@@ -599,6 +1172,7 @@ io.on("connection", (socket) => {
         role: "host",
         by: currentHost?.name || "Host",
       });
+      logAdminEvent("Host transferred", `${target.name} became host of session ${sessionId}.`, sessionId);
       emitParticipants(sessionId);
       emitSessionMeta(sessionId);
       ack?.({ ok: true });
@@ -615,23 +1189,21 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Session not found." });
         return;
       }
-      if (session.hostSocketId !== socket.id) {
-        ack?.({ ok: false, error: "Only host can update participants." });
-        return;
-      }
       const targetName = normalizeName(payload?.targetName);
       const target = session.participants.find((p) => normalizeName(p.name) === targetName);
       if (!target) {
         ack?.({ ok: false, error: "Participant not found." });
         return;
       }
-      if (target.socketId === session.hostSocketId) {
-        ack?.({ ok: false, error: "Host cannot be updated here." });
+      const actor = canModerateTarget(session, socket.id, target);
+      if (!actor) {
+        ack?.({ ok: false, error: "You do not have permission to update this participant." });
         return;
       }
       if (typeof payload?.mutedChat === "boolean") target.mutedChat = payload.mutedChat;
       if (typeof payload?.frozenEditing === "boolean") target.frozenEditing = payload.frozenEditing;
       if (typeof payload?.priority === "boolean") target.priority = payload.priority;
+      logAdminEvent("Participant flags updated", `${target.name} was updated in session ${sessionId}.`, sessionId);
       emitParticipants(sessionId);
       ack?.({ ok: true });
     } catch {
@@ -647,18 +1219,15 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Session not found." });
         return;
       }
-      if (session.hostSocketId !== socket.id) {
-        ack?.({ ok: false, error: "Only host can change file access." });
-        return;
-      }
       const targetName = normalizeName(payload?.targetName);
       const target = session.participants.find((p) => normalizeName(p.name) === targetName);
       if (!target) {
         ack?.({ ok: false, error: "Participant not found." });
         return;
       }
-      if (target.socketId === session.hostSocketId) {
-        ack?.({ ok: false, error: "Host already has full file access." });
+      const actor = canModerateTarget(session, socket.id, target);
+      if (!actor) {
+        ack?.({ ok: false, error: "You do not have permission to change this file access." });
         return;
       }
 
@@ -668,6 +1237,7 @@ io.on("connection", (socket) => {
       } else {
         target.allowedFiles = normalizeAllowedFiles(session.files, payload?.allowedFiles);
       }
+      logAdminEvent("File access updated", `${target.name}'s file access was changed in session ${sessionId}.`, sessionId);
       emitParticipants(sessionId);
       ack?.({ ok: true });
     } catch {
@@ -683,16 +1253,234 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Session not found." });
         return;
       }
-      if (session.hostSocketId !== socket.id) {
-        ack?.({ ok: false, error: "Only host can update permissions." });
+      const actor = canUseLimitedRoomTools(session, socket.id);
+      if (!actor) {
+        ack?.({ ok: false, error: "Only host or co-host can update these settings." });
         return;
       }
 
-      session.permissions = normalizePermissions(payload?.permissions, session.files);
+      const normalizedNext = normalizePermissions(payload?.permissions, session.files);
+      if (String(actor.role || "") === "co-host") {
+        const cohostOnly = {
+          ...session.permissions,
+          pinnedFile: normalizedNext.pinnedFile,
+        };
+        session.permissions = normalizePermissions(cohostOnly, session.files);
+      } else {
+        session.permissions = normalizedNext;
+      }
+      logAdminEvent("Room permissions updated", `${actor.name} updated room controls in session ${sessionId}.`, sessionId);
       emitSessionMeta(sessionId);
       ack?.({ ok: true, permissions: session.permissions });
     } catch {
       ack?.({ ok: false, error: "Failed to update permissions." });
+    }
+  });
+
+  socket.on("collab:clear-group-chat", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      const actor = canUseLimitedRoomTools(session, socket.id);
+      if (!actor) {
+        ack?.({ ok: false, error: "Only host or co-host can clear group chat." });
+        return;
+      }
+      if (!session.chat) session.chat = { group: [], private: {} };
+      session.chat.group = [];
+      io.to(sessionId).emit("collab:chat:cleared", { mode: "group" });
+      logAdminEvent("Group chat cleared", `Group chat was cleared in session ${sessionId}.`, sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to clear group chat." });
+    }
+  });
+
+  socket.on("collab:bring-to-file", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      const actor = canUseLimitedRoomTools(session, socket.id);
+      if (!actor) {
+        ack?.({ ok: false, error: "Only host or co-host can bring everyone to a file." });
+        return;
+      }
+      const fileName = String(payload?.fileName || "").trim();
+      if (!session.files.some((file) => file.name === fileName)) {
+        ack?.({ ok: false, error: "File not found." });
+        return;
+      }
+      session.activeFileName = fileName;
+      session.participants.forEach((participant) => {
+        participant.currentFile = fileName;
+      });
+      io.to(sessionId).emit("collab:bring-to-file", { fileName });
+      logAdminEvent("Participants brought to file", `Session ${sessionId} was brought to ${fileName}.`, sessionId);
+      emitParticipants(sessionId);
+      emitSessionMeta(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to bring everyone to file." });
+    }
+  });
+
+  socket.on("collab:save-snapshot", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can save a session snapshot." });
+        return;
+      }
+      ack?.({
+        ok: true,
+        snapshot: {
+          sessionId,
+          createdAt: Date.now(),
+          hostName: session.hostName,
+          permissions: session.permissions,
+          participants: session.participants.map(sanitizeParticipant),
+          files: cloneFiles(session.files),
+          chat: session.chat || { group: [], private: {} },
+        },
+      });
+    } catch {
+      ack?.({ ok: false, error: "Failed to save session snapshot." });
+    }
+  });
+
+  socket.on("collab:regenerate-link", (payload, ack) => {
+    try {
+      const oldSessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(oldSessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can regenerate the invite link." });
+        return;
+      }
+      const nextSessionId = generateSessionId();
+      sessions.delete(oldSessionId);
+      sessions.set(nextSessionId, session);
+      (session.participants || []).forEach((participant) => {
+        const socketRef = io.sockets.sockets.get(participant.socketId);
+        if (socketRef) {
+          socketRef.leave(oldSessionId);
+          socketRef.join(nextSessionId);
+        }
+        const meta = socketMeta.get(participant.socketId);
+        if (meta) meta.sessionId = nextSessionId;
+      });
+      (session.pendingJoins || []).forEach((entry) => {
+        const meta = socketMeta.get(entry.socketId);
+        if (meta) meta.sessionId = nextSessionId;
+      });
+      const shareLink = buildShareLink(session.baseUrl || "", nextSessionId);
+      io.to(nextSessionId).emit("collab:link-regenerated", {
+        sessionId: nextSessionId,
+        shareLink,
+      });
+      logAdminEvent("Invite link regenerated", `Session ${oldSessionId} was regenerated as ${nextSessionId}.`, nextSessionId);
+      emitSessionMeta(nextSessionId);
+      ack?.({ ok: true, sessionId: nextSessionId, shareLink });
+    } catch {
+      ack?.({ ok: false, error: "Failed to regenerate invite link." });
+    }
+  });
+
+  socket.on("collab:approve-join", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can approve joins." });
+        return;
+      }
+      const socketId = String(payload?.socketId || "").trim();
+      const request = (session.pendingJoins || []).find((entry) => entry.socketId === socketId);
+      if (!request) {
+        ack?.({ ok: false, error: "Join request not found." });
+        return;
+      }
+      session.pendingJoins = session.pendingJoins.filter((entry) => entry.socketId !== socketId);
+      const joined = finalizeApprovedJoin(sessionId, request.socketId, request.name, request.theme);
+      if (!joined) {
+        io.to(request.socketId).emit("collab:join-rejected", { reason: "Name already taken." });
+        emitSessionMeta(sessionId);
+        ack?.({ ok: false, error: "Could not approve this join request." });
+        return;
+      }
+      ack?.({ ok: true });
+      emitSessionMeta(sessionId);
+    } catch {
+      ack?.({ ok: false, error: "Failed to approve join request." });
+    }
+  });
+
+  socket.on("collab:reject-join", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can reject joins." });
+        return;
+      }
+      const socketId = String(payload?.socketId || "").trim();
+      const request = (session.pendingJoins || []).find((entry) => entry.socketId === socketId);
+      if (!request) {
+        ack?.({ ok: false, error: "Join request not found." });
+        return;
+      }
+      session.pendingJoins = session.pendingJoins.filter((entry) => entry.socketId !== socketId);
+      socketMeta.delete(socketId);
+      io.to(socketId).emit("collab:join-rejected", { reason: "The host rejected your join request." });
+      logAdminEvent("Join rejected", `${request.name} was rejected from session ${sessionId}.`, sessionId);
+      ack?.({ ok: true });
+      emitSessionMeta(sessionId);
+    } catch {
+      ack?.({ ok: false, error: "Failed to reject join request." });
+    }
+  });
+
+  socket.on("collab:end-session", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      if (session.hostSocketId !== socket.id) {
+        ack?.({ ok: false, error: "Only host can end the session." });
+        return;
+      }
+      logAdminEvent("Session ended", `${sessionId} was ended by the host.`, sessionId);
+      ack?.({ ok: true });
+      endSession(sessionId, "The host ended the collaboration session.");
+    } catch {
+      ack?.({ ok: false, error: "Failed to end session." });
     }
   });
 
@@ -704,11 +1492,6 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Session not found." });
         return;
       }
-      if (session.hostSocketId !== socket.id) {
-        ack?.({ ok: false, error: "Only host can kick participants." });
-        return;
-      }
-
       const targetName = String(payload?.targetName || "").trim().toLowerCase();
       if (!targetName) {
         ack?.({ ok: false, error: "Invalid participant name." });
@@ -722,8 +1505,9 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Participant not found." });
         return;
       }
-      if (target.socketId === session.hostSocketId) {
-        ack?.({ ok: false, error: "Host cannot be kicked." });
+      const actor = canModerateTarget(session, socket.id, target);
+      if (!actor) {
+        ack?.({ ok: false, error: "You do not have permission to kick this participant." });
         return;
       }
 
@@ -734,6 +1518,7 @@ io.on("connection", (socket) => {
       io.to(target.socketId).emit("collab:kicked", { sessionId });
       io.sockets.sockets.get(target.socketId)?.leave(sessionId);
 
+      logAdminEvent("Participant kicked", `${target.name} was removed from session ${sessionId}.`, sessionId);
       emitParticipants(sessionId);
       emitSessionMeta(sessionId);
       ack?.({ ok: true });
@@ -795,6 +1580,14 @@ io.on("connection", (socket) => {
     const session = sessions.get(meta.sessionId);
     if (!session) return;
 
+    if (Array.isArray(session.pendingJoins) && session.pendingJoins.length) {
+      const before = session.pendingJoins.length;
+      session.pendingJoins = session.pendingJoins.filter((entry) => entry.socketId !== socket.id);
+      if (session.pendingJoins.length !== before) {
+        emitSessionMeta(meta.sessionId);
+      }
+    }
+
     session.participants = session.participants.filter(
       (p) => p.socketId !== socket.id,
     );
@@ -814,6 +1607,7 @@ io.on("connection", (socket) => {
       session.hostSocketId = nextHost.socketId;
       session.hostName = nextHost.name;
       nextHost.role = "host";
+      logAdminEvent("Host reassigned", `${nextHost.name} became host of session ${meta.sessionId} after a disconnect.`, meta.sessionId);
     }
 
     emitParticipants(meta.sessionId);
@@ -842,3 +1636,12 @@ server.on("error", (err) => {
 });
 
 startServer(PORT);
+
+setInterval(() => {
+  const now = Date.now();
+  Array.from(sessions.entries()).forEach(([sessionId, session]) => {
+    if (Number(session?.permissions?.sessionEndsAt || 0) > 0 && Number(session.permissions.sessionEndsAt) <= now) {
+      endSession(sessionId, "The collaboration session timer ended.");
+    }
+  });
+}, 1000);

@@ -160,6 +160,17 @@
         <strong>ZEN MODE</strong>
       </button>
 
+      <button
+        id="helpPageBtn"
+        class="run-button"
+        title="Open help page"
+        aria-label="Open help page"
+        onclick="window.location.href='help.html'"
+      >
+        <i class="fa-solid fa-circle-question"></i>
+        <strong>HELP</strong>
+      </button>
+
     </header>
 
     <div class="editor-container">
@@ -259,6 +270,7 @@
           "
         >
           <button
+            id="runPreviewBtn"
             class="run-button"
             onclick="updatePreview()"
             aria-label="Run code"
@@ -283,6 +295,38 @@
           >
             <i class="fa-solid fa-file-import"></i>
             <strong>IMPORT ZIP FILE</strong>
+          </button>
+          <button
+            id="saveProjectBtn"
+            class="run-button"
+            aria-label="Save project"
+          >
+            <i class="fa-solid fa-floppy-disk"></i>
+            <strong>SAVE PROJECT</strong>
+          </button>
+          <button
+            id="openSavedProjectsBtn"
+            class="run-button"
+            aria-label="Open saved project library"
+          >
+            <i class="fa-solid fa-folder-open"></i>
+            <strong>OPEN SAVED</strong>
+          </button>
+          <button
+            id="templatesBtn"
+            class="run-button"
+            aria-label="Open starter templates"
+          >
+            <i class="fa-solid fa-layer-group"></i>
+            <strong>TEMPLATES</strong>
+          </button>
+          <button
+            id="publishProjectBtn"
+            class="run-button"
+            aria-label="Publish or share project"
+          >
+            <i class="fa-solid fa-share-nodes"></i>
+            <strong>PUBLISH / SHARE</strong>
           </button>
           <input
             type="file"
@@ -315,6 +359,7 @@
           >
             <strong style="color: var(--text-primary)">Console Output</strong>
             <button
+              id="clearConsoleBtn"
               class="run-button"
               onclick="clearConsole()"
               style="padding: 4px 10px; font-size: 11px"
@@ -680,6 +725,299 @@
             <strong>DONE</strong>
           </button>
         </div>
+      </div>
+    </div>
+
+    <div
+      id="announcementPopup"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="announcementPopupTitle"
+      style="
+        display: none;
+        position: fixed;
+        z-index: 1100;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          width: min(460px, 92vw);
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 14px;
+          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+          padding: 24px 24px 18px;
+          text-align: center;
+        "
+      >
+        <div
+          style="
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            background: rgba(76, 175, 80, 0.14);
+            color: #4caf50;
+            font-size: 24px;
+          "
+          aria-hidden="true"
+        >
+          <i class="fa-solid fa-bullhorn"></i>
+        </div>
+        <h3 id="announcementPopupTitle" style="margin: 0 0 10px">
+          Host Announcement
+        </h3>
+        <p
+          id="announcementPopupText"
+          style="
+            margin: 0 0 18px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+          "
+        ></p>
+        <button id="announcementPopupOkBtn" class="run-button">
+          <strong>OK</strong>
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="appDialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="appDialogTitle"
+      style="
+        display: none;
+        position: fixed;
+        z-index: 1400;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          width: min(460px, 92vw);
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 14px;
+          box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+          padding: 22px;
+        "
+      >
+        <h3 id="appDialogTitle" style="margin: 0 0 10px">Dialog</h3>
+        <p
+          id="appDialogMessage"
+          style="
+            margin: 0 0 14px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+          "
+        ></p>
+        <input
+          id="appDialogInput"
+          type="text"
+          style="
+            display: none;
+            width: 100%;
+            margin-bottom: 16px;
+            padding: 11px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+          "
+        />
+        <div
+          id="appDialogActions"
+          style="
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+          "
+        ></div>
+      </div>
+    </div>
+
+    <div
+      id="developerConsoleModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="developerConsoleTitle"
+      style="
+        display: none;
+        position: fixed;
+        z-index: 1250;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          width: min(760px, 94vw);
+          max-height: 84vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 14px;
+          box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border-color);
+          "
+        >
+          <div>
+            <h3 id="developerConsoleTitle" style="margin: 0 0 4px">
+              Developer Tools
+            </h3>
+            <p
+              style="
+                margin: 0;
+                color: var(--text-muted);
+                font-size: 12px;
+              "
+            >
+              Hidden test panel for internal editor checks
+            </p>
+          </div>
+          <button
+            id="closeDeveloperConsoleBtn"
+            class="run-button"
+            type="button"
+          >
+            <strong>CLOSE</strong>
+          </button>
+        </div>
+        <div style="padding: 16px 18px; border-bottom: 1px solid var(--border-color);">
+          <div class="collab-pill-row">
+            <span class="collab-pill">Shortcut: Ctrl/Cmd + C, then X</span>
+            <span class="collab-pill">Commands: help, state, files, participants, permissions, errors, preview, clear, close</span>
+          </div>
+        </div>
+        <pre
+          id="developerConsoleOutput"
+          style="
+            flex: 1;
+            margin: 0;
+            padding: 16px 18px;
+            overflow: auto;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+          "
+        ></pre>
+        <div
+          style="
+            display: flex;
+            gap: 10px;
+            padding: 16px 18px 18px;
+            border-top: 1px solid var(--border-color);
+            flex-wrap: wrap;
+          "
+        >
+          <input
+            id="developerConsoleInput"
+            type="text"
+            placeholder="Type a command..."
+            style="
+              flex: 1 1 320px;
+              padding: 11px 12px;
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+              background: var(--bg-primary);
+              color: var(--text-primary);
+            "
+          />
+          <button id="runDeveloperCommandBtn" class="run-button" type="button">
+            <strong>RUN</strong>
+          </button>
+          <button id="clearDeveloperConsoleBtn" class="run-button" type="button">
+            <strong>CLEAR</strong>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="projectLibraryModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="projectLibraryTitle"
+      style="
+        display: none;
+        position: fixed;
+        z-index: 1200;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+    >
+      <div
+        style="
+          width: min(920px, 95vw);
+          max-height: 86vh;
+          overflow: auto;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 14px;
+          box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+          padding: 24px;
+          position: relative;
+        "
+      >
+        <button
+          id="closeProjectLibraryBtn"
+          type="button"
+          style="
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+            background: transparent;
+            border: none;
+          "
+          aria-label="Close project library"
+        >
+          &times;
+        </button>
+        <h2 id="projectLibraryTitle" style="margin: 0 0 18px">Project Library</h2>
+        <div id="projectLibraryBody"></div>
       </div>
     </div>
 

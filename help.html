@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Complete help guide for CodX Editor. Learn what every major feature does, from editing, saved projects, autosave, templates, and publishing to collaboration, roles, admin tools, shortcuts, and developer tools."
+    />
+    <meta name="theme-color" content="#4CAF50" />
+    <link rel="icon" type="image/png" href="cx.png" />
+    <link rel="stylesheet" href="theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <title>Help | CodX Editor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --green: #4caf50;
+        --green-dark: #2e7d32;
+        --green-soft: #e9f8ed;
+        --ink: #151815;
+        --muted: #5b675f;
+        --line: rgba(24, 42, 29, 0.12);
+        --panel: rgba(255, 255, 255, 0.94);
+        --shadow: 0 18px 45px rgba(25, 48, 34, 0.12);
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(76, 175, 80, 0.14), transparent 24%),
+          radial-gradient(circle at right center, rgba(129, 199, 132, 0.16), transparent 22%),
+          linear-gradient(135deg, #f5fff7 0%, #ffffff 58%, #eef9f1 100%);
+        padding-top: 82px;
+        overflow-x: hidden;
+      }
+
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        padding: 15px 40px;
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 1400px;
+        margin: 0 auto;
+        gap: 20px;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        z-index: 1001;
+      }
+
+      .logo-container img {
+        height: 45px;
+        width: auto;
+      }
+
+      .menu-toggle {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        z-index: 1001;
+      }
+
+      .menu-toggle span {
+        display: block;
+        width: 25px;
+        height: 3px;
+        background: #333;
+        border-radius: 3px;
+        transition: all 0.3s ease;
+      }
+
+      .menu-toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(8px, 8px);
+      }
+
+      .menu-toggle.active span:nth-child(2) {
+        opacity: 0;
+      }
+
+      .menu-toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -7px);
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .nav-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .nav-btn.active {
+        background: var(--green);
+        color: white;
+      }
+
+      .nav-btn:not(.active) {
+        background: transparent;
+        color: #333;
+      }
+
+      .nav-btn:not(.active):hover {
+        background: rgba(76, 175, 80, 0.1);
+        color: var(--green);
+      }
+
+      .particles {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(76, 175, 80, 0.28);
+        border-radius: 50%;
+        animation: float 15s infinite;
+      }
+
+      .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+      .particle:nth-child(2) { left: 22%; animation-delay: 2s; }
+      .particle:nth-child(3) { left: 35%; animation-delay: 4s; }
+      .particle:nth-child(4) { left: 48%; animation-delay: 6s; }
+      .particle:nth-child(5) { left: 62%; animation-delay: 8s; }
+      .particle:nth-child(6) { left: 76%; animation-delay: 10s; }
+      .particle:nth-child(7) { left: 88%; animation-delay: 12s; }
+
+      @keyframes float {
+        0% { transform: translateY(100vh) scale(0); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 36px 20px 60px;
+      }
+
+      .hero {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        padding: 34px;
+        margin-bottom: 24px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) 300px;
+        align-items: center;
+        gap: 32px;
+        overflow: hidden;
+      }
+
+      .hero-copy {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .hero-logo {
+        width: 300px;
+        height: 300px;
+        object-fit: contain;
+        margin: 0 0 0 auto;
+        padding: 24px;
+        border-radius: 34px;
+        background: linear-gradient(180deg, rgba(76, 175, 80, 0.16), rgba(76, 175, 80, 0.06));
+        border: 1px solid rgba(76, 175, 80, 0.18);
+        box-shadow: 0 24px 48px rgba(46, 125, 50, 0.16);
+        display: block;
+        align-self: center;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-size: 0.85rem;
+        font-weight: 800;
+        margin-bottom: 16px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.3rem);
+        line-height: 1.05;
+        margin-bottom: 14px;
+        max-width: 12ch;
+      }
+
+      .lead {
+        color: var(--muted);
+        line-height: 1.7;
+        max-width: 72ch;
+        font-size: 1.02rem;
+      }
+
+      .hero-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(76, 175, 80, 0.1);
+        color: var(--green-dark);
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .help-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 22px;
+      }
+
+      .toc,
+      .section-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .toc {
+        position: sticky;
+        top: 102px;
+        align-self: start;
+        padding: 20px;
+      }
+
+      .toc h2 {
+        font-size: 1rem;
+        margin-bottom: 12px;
+      }
+
+      .toc ul {
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+
+      .toc a {
+        text-decoration: none;
+        color: var(--muted);
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 9px 10px;
+        display: block;
+        transition: 0.2s ease;
+      }
+
+      .toc a:hover {
+        background: rgba(76, 175, 80, 0.1);
+        color: var(--green-dark);
+      }
+
+      .toc a.active {
+        background: rgba(76, 175, 80, 0.14);
+        color: var(--green-dark);
+        font-weight: 800;
+      }
+
+      .content {
+        display: grid;
+        gap: 18px;
+      }
+
+      .section-card {
+        padding: 24px;
+      }
+
+      .section-card h2 {
+        font-size: 1.35rem;
+        margin-bottom: 10px;
+      }
+
+      .section-copy {
+        color: var(--muted);
+        line-height: 1.7;
+        margin-bottom: 16px;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .feature-item {
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241, 249, 243, 0.94));
+        border: 1px solid rgba(46, 125, 50, 0.12);
+        border-radius: 18px;
+        padding: 16px;
+      }
+
+      .feature-item h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+        margin-bottom: 10px;
+      }
+
+      .feature-item h3 i {
+        color: var(--green-dark);
+      }
+
+      .feature-item p,
+      .feature-item li,
+      .section-card li {
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .feature-item ul,
+      .section-card ul {
+        margin-left: 18px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .shortcut-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .shortcut-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(76, 175, 80, 0.08);
+        border: 1px solid rgba(76, 175, 80, 0.12);
+      }
+
+      kbd {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid rgba(24, 42, 29, 0.12);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+        font-family: var(--font-ui, "Segoe UI", sans-serif);
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .simple-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .simple-list li {
+        list-style: none;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(76, 175, 80, 0.08);
+        border: 1px solid rgba(76, 175, 80, 0.12);
+      }
+
+      @media (max-width: 980px) {
+        .help-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .toc {
+          position: static;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-logo {
+          width: min(180px, 58vw);
+          height: min(180px, 58vw);
+          margin: 8px auto 0;
+        }
+
+        header {
+          padding: 12px 18px;
+        }
+
+        .menu-toggle {
+          display: flex;
+        }
+
+        .nav-buttons {
+          position: fixed;
+          top: 0;
+          right: -100%;
+          height: 100vh;
+          width: 280px;
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(10px);
+          flex-direction: column;
+          padding: 90px 20px 20px;
+          transition: right 0.3s ease;
+          box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-buttons.active {
+          right: 0;
+        }
+
+        .nav-btn {
+          width: 100%;
+          padding: 15px 20px;
+          font-size: 1em;
+          text-align: left;
+        }
+
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .shortcut-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo-container">
+          <img src="cx.png" alt="CodX Editor Logo" />
+        </div>
+        <button class="menu-toggle" aria-label="Toggle menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <nav class="nav-buttons">
+          <a href="index.html" class="nav-btn">Home</a>
+          <a href="about.html" class="nav-btn">About</a>
+          <a href="contact.html" class="nav-btn">Contact</a>
+          <a href="help.html" class="nav-btn active">Help</a>
+          <a href="terms.html" class="nav-btn">Terms and Conditions</a>
+          <a href="privacy.html" class="nav-btn">Privacy Policy</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><i class="fa-solid fa-circle-question"></i> Complete Feature Guide</div>
+          <h1>Everything CodX Editor can do, explained clearly.</h1>
+          <p class="lead">
+            This page explains the major features across the website and editor, including file tools,
+            saved projects, autosave, starter templates, publishing, live preview, debugging, shortcuts,
+            collaboration roles, room controls, admin protection, and hidden developer tools.
+          </p>
+          <div class="hero-pills">
+            <span class="pill"><i class="fa-solid fa-code"></i> Editor features</span>
+            <span class="pill"><i class="fa-solid fa-floppy-disk"></i> Saved projects</span>
+            <span class="pill"><i class="fa-solid fa-users"></i> Collaboration roles</span>
+            <span class="pill"><i class="fa-solid fa-bug"></i> Debugging & errors</span>
+            <span class="pill"><i class="fa-solid fa-keyboard"></i> Shortcuts</span>
+          </div>
+        </div>
+        <img class="hero-logo" src="cx.png" alt="CodX Editor logo" />
+      </section>
+
+      <div class="help-layout">
+        <aside class="toc">
+          <h2>On This Page</h2>
+          <ul>
+            <li><a href="#getting-started">Getting Started</a></li>
+            <li><a href="#editing">Editing & Files</a></li>
+            <li><a href="#preview">Preview & Console</a></li>
+            <li><a href="#settings">Settings & Fonts</a></li>
+            <li><a href="#errors">Errors & Suggestions</a></li>
+            <li><a href="#collab">Collaboration Basics</a></li>
+            <li><a href="#roles">Host, Co-Host, Participant</a></li>
+            <li><a href="#group-tools">Room & Group Controls</a></li>
+            <li><a href="#shortcuts">Shortcuts</a></li>
+            <li><a href="#developer-tools">Developer Tools</a></li>
+          </ul>
+        </aside>
+
+        <div class="content">
+          <section class="section-card" id="getting-started">
+            <h2>Getting Started</h2>
+            <p class="section-copy">
+              CodX Editor is a browser-based coding workspace for HTML, CSS, and JavaScript projects.
+              You can create files, preview pages live, debug issues, collaborate with others, and export your project as a ZIP.
+            </p>
+            <ul class="simple-list">
+              <li><strong>Welcome page:</strong> asks you to accept the terms before using the editor.</li>
+              <li><strong>Launch flow:</strong> takes you into the editor after acceptance.</li>
+              <li><strong>Starter experience:</strong> new users see onboarding hints, a starter page, and tutorial support.</li>
+              <li><strong>Terms gate:</strong> direct access to the editor is blocked until terms are accepted.</li>
+            </ul>
+          </section>
+
+          <section class="section-card" id="editing">
+            <h2>Editing & Files</h2>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-folder-tree"></i> File Explorer</h3>
+                <ul>
+                  <li>Create new `.html`, `.css`, `.js`, and `.env` files.</li>
+                  <li>Rename files and keep the editor in sync.</li>
+                  <li>Delete files and update the preview immediately.</li>
+                  <li>Switch between files inside one project.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-file-import"></i> Import / Export</h3>
+                <ul>
+                  <li>Export the full project as a ZIP file.</li>
+                  <li>Name the ZIP before exporting.</li>
+                  <li>Import ZIP projects back into the editor.</li>
+                  <li>Drag and drop supported source files into the editor.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-floppy-disk"></i> Saved Projects & Autosave</h3>
+                <ul>
+                  <li>Save the current project into your browser with a custom project name.</li>
+                  <li>Open saved projects again from the project library modal.</li>
+                  <li>Delete saved projects with a full-screen confirmation popup so removal is harder to do by mistake.</li>
+                  <li>Autosave keeps a draft of your current project and restores it on reload.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-layer-group"></i> Starter Templates</h3>
+                <ul>
+                  <li>Open built-in starter templates from the project library.</li>
+                  <li>Templates are shown as richer cards with icons, file counts, file types, and quick highlights.</li>
+                  <li>Templates load multiple files at once.</li>
+                  <li>Current built-in options include landing page, portfolio, and contact form starters.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-pen-ruler"></i> Typing Experience</h3>
+                <ul>
+                  <li>Tab inserts 3 spaces.</li>
+                  <li>Undo/redo behavior is protected for editor mutations.</li>
+                  <li>Auto-close helps with tags, quotes, and brackets.</li>
+                  <li>New HTML files start clean instead of showing old welcome content.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-wand-magic-sparkles"></i> HTML Starter Shortcut</h3>
+                <ul>
+                  <li>Type <strong>cxstart</strong> and press Enter in an empty HTML file.</li>
+                  <li>CodX inserts a starter HTML structure for you.</li>
+                  <li>An editor watermark reminds you about this when the HTML editor is empty.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="preview">
+            <h2>Preview & Console</h2>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-eye"></i> Live Preview</h3>
+                <ul>
+                  <li>Preview HTML, CSS, and JS together inside the iframe.</li>
+                  <li>Auto-Run refreshes preview while you work.</li>
+                  <li>Manual Run is available if Auto-Run is off.</li>
+                  <li>The preview header shows the current page title from the HTML <code>&lt;title&gt;</code> tag.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-link"></i> Linked Files</h3>
+                <ul>
+                  <li>HTML pages can link to other project files in preview.</li>
+                  <li>Buttons and forms that navigate to project pages are supported in preview.</li>
+                  <li>Missing preview pages go to <code>404-for-preview.html</code>.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-photo-film"></i> Media Support</h3>
+                <ul>
+                  <li>Add images, video, and audio files into the project.</li>
+                  <li>Media sources inside preview are rewritten so controls actually work.</li>
+                  <li>Linked <code>&lt;source&gt;</code> tags are supported.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-terminal"></i> Console Output</h3>
+                <ul>
+                  <li>See logs, warnings, and runtime errors.</li>
+                  <li>Clear console output any time.</li>
+                  <li>Unhandled promise rejections and iframe runtime issues are captured.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-share-nodes"></i> Publish & Share</h3>
+                <ul>
+                  <li>Publish the current project and generate a shareable public link.</li>
+                  <li>The published page renders your current HTML project with linked CSS and JS files.</li>
+                  <li>The link is shown after publishing and can be copied for sharing.</li>
+                  <li>Published projects are now stored server-side so shared links survive server restarts better.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="settings">
+            <h2>Settings & Fonts</h2>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-sliders"></i> Editor Settings</h3>
+                <ul>
+                  <li>Change editor background color.</li>
+                  <li>Change editor text size.</li>
+                  <li>Preview settings before applying them.</li>
+                  <li>Reset everything to defaults.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-font"></i> Font Picker</h3>
+                <ul>
+                  <li>Pick from many built-in fonts.</li>
+                  <li>Search font names inside the font modal.</li>
+                  <li>Distinct font choices were added to avoid too many lookalikes.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-brands fa-google"></i> Google Fonts Embed</h3>
+                <ul>
+                  <li>Paste a Google Fonts embed URL or snippet.</li>
+                  <li>CodX uses <code>@import</code> to load the font.</li>
+                  <li>When a Google Fonts embed is active, the normal font dropdown is disabled.</li>
+                  <li>This feature needs internet access to fetch the font.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-moon"></i> Zen Mode</h3>
+                <ul>
+                  <li>Hides most UI so you can focus only on typing.</li>
+                  <li>Has a visible exit button inside the editor.</li>
+                  <li>Escape also exits Zen Mode.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="errors">
+            <h2>Errors, Highlighting & Suggestions</h2>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-circle-exclamation"></i> Error Detection</h3>
+                <ul>
+                  <li>Checks HTML, CSS, JS, and inline script issues.</li>
+                  <li>Shows file error badges in the explorer.</li>
+                  <li>If error count is above 99, the badge shows <strong>99+</strong>.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-arrow-up-right-dots"></i> Jump To Error</h3>
+                <ul>
+                  <li>Click the error badge to jump to the first error in that file.</li>
+                  <li>The editor moves the caret to the error location when possible.</li>
+                  <li>HTML tag errors are highlighted in red where the problem exists.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-highlighter"></i> Inline Highlighting</h3>
+                <ul>
+                  <li>Error lines receive a red background highlight.</li>
+                  <li>Specific error ranges are underlined when location data is available.</li>
+                  <li>Closing HTML tags now receive syntax colors too.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-lightbulb"></i> Smart Suggestions</h3>
+                <ul>
+                  <li>HTML tag suggestions appear while typing.</li>
+                  <li>Attribute suggestions work inside tags.</li>
+                  <li>Inline <code>style=""</code> suggestions support CSS properties and values.</li>
+                  <li>CSS and JS suggestion flows are also supported.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="collab">
+            <h2>Collaboration Basics</h2>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-users"></i> Sessions</h3>
+                <ul>
+                  <li>Create a collaboration session and share a link.</li>
+                  <li>Join by link with your name and chosen color.</li>
+                  <li>Refresh while collabing starts fresh instead of silently rejoining from URL.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-comments"></i> Chat</h3>
+                <ul>
+                  <li>Group chat and private chat are built into the collab modal.</li>
+                  <li>Messages show the sender color they picked.</li>
+                  <li>Group chat can be cleared by moderators with permission.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-arrow-pointer"></i> Live Presence</h3>
+                <ul>
+                  <li>See collaborator cursors in their chosen color.</li>
+                  <li>See typing highlights where others are typing.</li>
+                  <li>Typing and cursor state clear properly on disconnect or session reset.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-user-xmark"></i> Session Safety</h3>
+                <ul>
+                  <li>Invalid collab links go to the 404 page.</li>
+                  <li>Kicked users see a notice modal and are reset to a fresh state.</li>
+                  <li>If host leaves and a co-host exists, co-host is promoted first.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="roles">
+            <h2>Host, Co-Host & Participant Roles</h2>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-crown"></i> Host</h3>
+                <ul>
+                  <li>Full room control.</li>
+                  <li>Can manage participants, change roles, and use all room-wide controls.</li>
+                  <li>Can transfer host to another user with confirmation.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-user-shield"></i> Co-Host</h3>
+                <ul>
+                  <li>Limited moderator/helper role.</li>
+                  <li>Can kick normal participants, mute chat, freeze editing, manage allowed files, mark priority, follow users, bring everyone to file, pin team file, and clear group chat.</li>
+                  <li>Cannot lock room, end session, transfer host, or change room ownership controls.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-user"></i> Participant</h3>
+                <ul>
+                  <li>Can edit, preview, chat, and collaborate normally.</li>
+                  <li>May be limited by file access, room settings, mute, or frozen editing.</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-user-gear"></i> Participant Tools</h3>
+                <ul>
+                  <li>Host and co-host can open <strong>MORE</strong> on participants.</li>
+                  <li>There you may see message, copy name, copy role, copy color, kick, follow user, file access, and detail tools depending on role.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="group-tools">
+            <h2>Room & Group Controls</h2>
+            <p class="section-copy">
+              These tools live in the collaboration modal and are mainly for the host. Some limited team tools are available to co-hosts.
+            </p>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-people-group"></i> Group Controls</h3>
+                <ul>
+                  <li>Lock room</li>
+                  <li>Read-only for all</li>
+                  <li>Disable chat for all</li>
+                  <li>Disable run for participants</li>
+                  <li>Disable console for participants</li>
+                  <li>Bring everyone to file</li>
+                  <li>Pin team file</li>
+                  <li>Clear group chat</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-bullhorn"></i> Broadcast & Focus</h3>
+                <ul>
+                  <li>Announcement bar</li>
+                  <li>Announcement popup on screen</li>
+                  <li>Group highlight mode</li>
+                  <li>Team focus indicators in the file list</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-stopwatch"></i> Session Management</h3>
+                <ul>
+                  <li>Session timer</li>
+                  <li>Pause collaboration</li>
+                  <li>Quiet mode</li>
+                  <li>Save session snapshot</li>
+                  <li>Regenerate invite link</li>
+                  <li>End session for everyone</li>
+                </ul>
+              </article>
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-user-check"></i> Join Approval</h3>
+                <ul>
+                  <li>Approve new joins can be turned on.</li>
+                  <li>Pending join requests show inside the group controls view.</li>
+                  <li>Host can approve or reject waiting users.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="shortcuts">
+            <h2>Shortcuts</h2>
+            <div class="shortcut-list">
+              <div class="shortcut-row"><span><kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd></span><span>Export project as ZIP</span></div>
+              <div class="shortcut-row"><span><kbd>Ctrl/Cmd</kbd> + <kbd>Enter</kbd></span><span>Run preview manually</span></div>
+              <div class="shortcut-row"><span><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd></span><span>Create a new file</span></div>
+              <div class="shortcut-row"><span><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></span><span>Toggle console panel</span></div>
+              <div class="shortcut-row"><span><kbd>Esc</kbd></span><span>Exit Zen Mode and close supported overlays</span></div>
+              <div class="shortcut-row"><span><strong>cxstart</strong> + <kbd>Enter</kbd></span><span>Insert the HTML starter setup in an empty HTML file</span></div>
+            </div>
+          </section>
+
+          <section class="section-card" id="developer-tools">
+            <h2>Hidden Developer Tools</h2>
+            <p class="section-copy">
+              CodX includes hidden internal tools for testing and a protected admin area for room oversight.
+            </p>
+            <ul class="simple-list">
+              <li><strong>Shortcut:</strong> press <kbd>Ctrl/Cmd</kbd> + <kbd>C</kbd>, then <kbd>X</kbd>.</li>
+              <li><strong>Purpose:</strong> internal testing and quick inspection of files, participants, permissions, errors, and preview state.</li>
+              <li><strong>Commands:</strong> <code>help</code>, <code>state</code>, <code>files</code>, <code>participants</code>, <code>permissions</code>, <code>errors</code>, <code>preview</code>, <code>clear</code>, <code>close</code>.</li>
+              <li><strong>Admin panel:</strong> <code>adminprivate.html</code> is protected by a backend PIN check before admin data and actions are allowed.</li>
+              <li><strong>Admin session safety:</strong> if the admin session expires, the page relocks and asks for the PIN again.</li>
+              <li><strong>Admin abilities:</strong> the admin page can monitor live sessions, spectate rooms, view preview output, and run room-level moderation actions.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const menuToggle = document.querySelector(".menu-toggle");
+      const navButtons = document.querySelector(".nav-buttons");
+      const navLinks = document.querySelectorAll(".nav-btn");
+      const tocLinks = Array.from(document.querySelectorAll(".toc a"));
+      const observedSections = tocLinks
+        .map((link) => {
+          const id = (link.getAttribute("href") || "").replace(/^#/, "");
+          return document.getElementById(id);
+        })
+        .filter(Boolean);
+
+      if (menuToggle && navButtons) {
+        menuToggle.addEventListener("click", () => {
+          menuToggle.classList.toggle("active");
+          navButtons.classList.toggle("active");
+        });
+      }
+
+      navLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+          if (menuToggle && navButtons) {
+            menuToggle.classList.remove("active");
+            navButtons.classList.remove("active");
+          }
+        });
+      });
+
+      function setActiveTocLink(id) {
+        tocLinks.forEach((link) => {
+          const isActive = link.getAttribute("href") === `#${id}`;
+          link.classList.toggle("active", isActive);
+        });
+      }
+
+      if (observedSections.length) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((entry) => entry.isIntersecting)
+              .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+            if (visible && visible.target && visible.target.id) {
+              setActiveTocLink(visible.target.id);
+            }
+          },
+          {
+            rootMargin: "-18% 0px -55% 0px",
+            threshold: [0.2, 0.35, 0.55],
+          },
+        );
+
+        observedSections.forEach((section) => observer.observe(section));
+        setActiveTocLink(observedSections[0].id);
+      }
+    </script>
+  </body>
+</html>

@@ -228,6 +228,21 @@
         transform: translateY(0);
       }
 
+      .help-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-top: 12px;
+        color: #9be7a2;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .help-link:hover {
+        text-decoration: underline;
+      }
+
       /* Tablet Styles */
       @media (max-width: 768px) {
         body {
@@ -553,6 +568,7 @@
           <button class="action-button" id="continueButton">
             Start using CodX Editor
           </button>
+          <a class="help-link" href="help.html">Need help understanding the features?</a>
         </div>
       </div>
     </div>

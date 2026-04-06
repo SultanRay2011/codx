@@ -1,0 +1,28 @@
+[
+  {
+    "id": "PUB-O12K16-MNNB1YUD",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "register.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Sign Up</title>\n</head>\n\n<body>\n\n<h1 style=\"text-align: center;\">Sign Up</h1>\n\n<form action=\"dashboard.html\" method=\"get\">\n\n<label>Name:</label><br>\n<input type=\"text\" name=\"name\" placeholder=\"Enter your name\" required><br><br>\n\n<label>Email:</label><br>\n<input type=\"email\" name=\"email\" placeholder=\"Enter your email\" required><br><br>\n\n<label>Password:</label><br>\n<input type=\"password\" name=\"password\" placeholder=\"Enter your password\" required><br><br>\n\n<label>State:</label><br>\n<select name=\"state\" required>\n<option value=\"\">Select your state</option>\n<option>Lagos</option>\n<option>Oyo</option>\n<option>Abuja</option>\n<option>Abia</option>\n<option>Imo</option>\n</select><br><br>\n\n<button type=\"submit\">Submit</button>\n\n</form>\n\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "dashboard.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Dashboard</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">WELCOME TO MY PAGE</h1>\n<hr>\n      <a href=\"about.html\">About Me</a><br>\n      <a href=\"contact.html\">Contact Me</a><br>\n      <a href=\"projects.html\">Projects</a><br>\n      <img src=\"img.png\">\n      <footer>Copyright &copy 2026</footer>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      },
+      {
+        "name": "contact.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Contact</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">GET IN TOUCH</h1> \n<hr>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "register.html",
+    "createdAt": 1775486893478
+  }
+]

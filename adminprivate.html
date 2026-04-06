@@ -1,0 +1,1965 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Preview an admin panel for CodX Editor with moderation, platform health, collaboration control, and activity oversight tools."
+    />
+    <meta name="theme-color" content="#4CAF50" />
+    <link rel="icon" type="image/png" href="cx.png" />
+    <link rel="stylesheet" href="theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <title>Admin Panel | CodX Editor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --green: #4caf50;
+        --green-dark: #2e7d32;
+        --green-soft: #e9f8ed;
+        --ink: #131713;
+        --muted: #5b675f;
+        --line: rgba(20, 41, 27, 0.12);
+        --panel: rgba(255, 255, 255, 0.94);
+        --shadow: 0 20px 48px rgba(24, 46, 31, 0.12);
+        --danger: #d14343;
+        --amber: #f5a524;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(76, 175, 80, 0.16), transparent 24%),
+          radial-gradient(circle at right center, rgba(129, 199, 132, 0.18), transparent 22%),
+          linear-gradient(135deg, #f5fff7 0%, #ffffff 54%, #eef8f1 100%);
+        padding-top: 84px;
+        overflow-x: hidden;
+      }
+
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);
+        padding: 15px 40px;
+      }
+
+      .header-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .logo-container img {
+        height: 45px;
+        width: auto;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .nav-btn {
+        padding: 10px 22px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-size: 0.95rem;
+        font-weight: 700;
+        transition: 0.25s ease;
+      }
+
+      .nav-btn.active {
+        background: var(--green);
+        color: #fff;
+      }
+
+      .nav-btn:not(.active) {
+        color: #243129;
+        background: rgba(76, 175, 80, 0.08);
+      }
+
+      .nav-btn:not(.active):hover {
+        background: rgba(76, 175, 80, 0.16);
+        color: var(--green-dark);
+      }
+
+      .particles {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      body.admin-locked {
+        overflow: hidden;
+      }
+
+      body.admin-locked main,
+      body.admin-locked header,
+      body.admin-locked .particles {
+        filter: blur(10px);
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .admin-pin-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 5000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(14, 19, 15, 0.28);
+        backdrop-filter: blur(8px);
+      }
+
+      .admin-pin-card {
+        width: min(460px, 100%);
+        background: rgba(255, 255, 255, 0.97);
+        border: 1px solid rgba(20, 41, 27, 0.1);
+        border-radius: 30px;
+        box-shadow: 0 28px 70px rgba(14, 30, 19, 0.18);
+        padding: 28px;
+        display: grid;
+        gap: 18px;
+        text-align: center;
+      }
+
+      .admin-pin-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin: 0 auto;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-weight: 800;
+        font-size: 0.88rem;
+      }
+
+      .admin-pin-card h2 {
+        font-size: clamp(1.7rem, 3vw, 2.3rem);
+        line-height: 1.08;
+      }
+
+      .admin-pin-card p {
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 0.98rem;
+      }
+
+      .admin-pin-form {
+        display: grid;
+        gap: 18px;
+      }
+
+      .admin-pin-inputs {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .admin-pin-digit {
+        width: 62px;
+        height: 70px;
+        border-radius: 18px;
+        border: 1px solid rgba(20, 41, 27, 0.14);
+        background: #fff;
+        color: var(--ink);
+        text-align: center;
+        font-size: 1.9rem;
+        font-weight: 800;
+        outline: none;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
+      }
+
+      .admin-pin-digit:focus {
+        border-color: rgba(76, 175, 80, 0.55);
+        box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.12);
+      }
+
+      .admin-pin-card.error .admin-pin-digit {
+        border-color: rgba(209, 67, 67, 0.56);
+        background: rgba(209, 67, 67, 0.06);
+        color: #8f1e1e;
+      }
+
+      .admin-pin-card.error {
+        animation: adminPinShake 0.32s ease;
+      }
+
+      .admin-pin-message {
+        min-height: 20px;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .admin-pin-card.error .admin-pin-message {
+        color: var(--danger);
+        font-weight: 700;
+      }
+
+      .admin-pin-submit {
+        border: none;
+        border-radius: 16px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, var(--green), #6dcd70);
+        color: #fff;
+        font-size: 0.98rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .admin-pin-submit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 26px rgba(76, 175, 80, 0.18);
+      }
+
+      .admin-pin-note {
+        font-size: 0.84rem;
+        color: var(--muted);
+      }
+
+      .admin-pin-overlay.hidden {
+        display: none;
+      }
+
+      @keyframes adminPinShake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-10px); }
+        40% { transform: translateX(10px); }
+        60% { transform: translateX(-8px); }
+        80% { transform: translateX(8px); }
+      }
+
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(76, 175, 80, 0.28);
+        border-radius: 50%;
+        animation: float 15s infinite;
+      }
+
+      .particle:nth-child(1) { left: 9%; animation-delay: 0s; }
+      .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+      .particle:nth-child(3) { left: 31%; animation-delay: 4s; }
+      .particle:nth-child(4) { left: 45%; animation-delay: 6s; }
+      .particle:nth-child(5) { left: 58%; animation-delay: 8s; }
+      .particle:nth-child(6) { left: 71%; animation-delay: 10s; }
+      .particle:nth-child(7) { left: 85%; animation-delay: 12s; }
+
+      @keyframes float {
+        0% { transform: translateY(100vh) scale(0); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+      }
+
+      .page-shell {
+        position: relative;
+        z-index: 1;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 34px 22px 56px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(290px, 0.95fr);
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      .hero-panel,
+      .side-panel,
+      .section-card,
+      .stat-card,
+      .queue-card,
+      .log-card,
+      .tool-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero-panel {
+        padding: 34px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(120deg, rgba(76, 175, 80, 0.13), transparent 42%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(76, 175, 80, 0.04));
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        margin-bottom: 18px;
+      }
+
+      .hero h1 {
+        font-size: clamp(2.2rem, 4vw, 3.7rem);
+        line-height: 1.02;
+        margin-bottom: 16px;
+        max-width: 12ch;
+      }
+
+      .hero p {
+        color: var(--muted);
+        font-size: 1.04rem;
+        line-height: 1.72;
+        max-width: 62ch;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 16px;
+        padding: 13px 18px;
+        text-decoration: none;
+        font-weight: 700;
+        border: 1px solid transparent;
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+      }
+
+      .action-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .action-btn.primary {
+        background: linear-gradient(135deg, var(--green), #69cc6c);
+        color: #fff;
+      }
+
+      .action-btn.secondary {
+        background: #fff;
+        color: var(--ink);
+        border-color: var(--line);
+      }
+
+      .side-panel {
+        padding: 28px;
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .panel-header h2,
+      .section-header h2 {
+        font-size: 1.08rem;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .pill.online {
+        background: rgba(76, 175, 80, 0.14);
+        color: var(--green-dark);
+      }
+
+      .pill.alert {
+        background: rgba(245, 165, 36, 0.16);
+        color: #986300;
+      }
+
+      .health-list,
+      .activity-list,
+      .queue-list,
+      .tool-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .health-item,
+      .activity-item,
+      .queue-item,
+      .tool-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(255, 255, 255, 0.98));
+        border: 1px solid rgba(76, 175, 80, 0.14);
+      }
+
+      .item-copy {
+        display: grid;
+        gap: 4px;
+      }
+
+      .item-copy strong {
+        font-size: 0.98rem;
+      }
+
+      .item-copy span {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .item-value {
+        font-weight: 800;
+        color: var(--green-dark);
+        white-space: nowrap;
+      }
+
+      .overview-grid,
+      .main-grid,
+      .lower-grid {
+        display: grid;
+        gap: 24px;
+      }
+
+      .overview-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        padding: 22px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-size: 1.15rem;
+      }
+
+      .stat-trend {
+        font-size: 0.84rem;
+        font-weight: 800;
+        color: var(--green-dark);
+      }
+
+      .stat-card h3 {
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .stat-card p {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .main-grid {
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        margin-bottom: 24px;
+      }
+
+      .section-card,
+      .queue-card,
+      .log-card,
+      .tool-card {
+        padding: 26px;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .section-copy {
+        display: grid;
+        gap: 6px;
+      }
+
+      .section-copy p {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .moderation-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .moderation-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 16px 18px;
+        border-radius: 22px;
+        border: 1px solid rgba(20, 41, 27, 0.09);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(233, 248, 237, 0.7));
+      }
+
+      .row-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .mini-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: rgba(76, 175, 80, 0.1);
+        color: var(--green-dark);
+      }
+
+      .mini-pill.warn {
+        background: rgba(245, 165, 36, 0.14);
+        color: #986300;
+      }
+
+      .mini-pill.danger {
+        background: rgba(209, 67, 67, 0.12);
+        color: var(--danger);
+      }
+
+      .row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .tiny-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 0.86rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.22s ease, opacity 0.22s ease;
+      }
+
+      .tiny-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .tiny-btn.green {
+        background: var(--green-soft);
+        color: var(--green-dark);
+      }
+
+      .tiny-btn.dark {
+        background: #18201a;
+        color: #fff;
+      }
+
+      .tiny-btn.red {
+        background: rgba(209, 67, 67, 0.12);
+        color: var(--danger);
+      }
+
+      .lower-grid {
+        grid-template-columns: minmax(300px, 0.86fr) minmax(0, 1.14fr);
+      }
+
+      .log-card {
+        display: grid;
+        gap: 16px;
+      }
+
+      .log-item {
+        display: grid;
+        gap: 6px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(20, 41, 27, 0.09);
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      .log-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .log-top strong {
+        font-size: 0.98rem;
+      }
+
+      .log-top time,
+      .log-item p {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .tool-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tool-item {
+        align-items: flex-start;
+      }
+
+      .tool-item i {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: var(--green-soft);
+        color: var(--green-dark);
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+
+      .tool-copy {
+        display: grid;
+        gap: 5px;
+      }
+
+      .tool-copy h3 {
+        font-size: 0.98rem;
+      }
+
+      .tool-copy p {
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+
+      .footer-note {
+        margin-top: 24px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .spectate-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 4800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(12, 18, 14, 0.42);
+        backdrop-filter: blur(8px);
+      }
+
+      .spectate-overlay.hidden {
+        display: none;
+      }
+
+      .spectate-modal {
+        width: min(1100px, 100%);
+        max-height: min(84vh, 920px);
+        overflow: auto;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(20, 41, 27, 0.1);
+        border-radius: 30px;
+        box-shadow: 0 28px 70px rgba(14, 30, 19, 0.22);
+        padding: 26px;
+        display: grid;
+        gap: 20px;
+      }
+
+      .spectate-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .spectate-title {
+        display: grid;
+        gap: 8px;
+      }
+
+      .spectate-title h2 {
+        font-size: 1.5rem;
+      }
+
+      .spectate-title p {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .spectate-close {
+        border: none;
+        border-radius: 14px;
+        width: 44px;
+        height: 44px;
+        background: rgba(20, 41, 27, 0.08);
+        color: var(--ink);
+        font-size: 1.05rem;
+        cursor: pointer;
+      }
+
+      .spectate-meta {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .spectate-card {
+        border: 1px solid rgba(20, 41, 27, 0.1);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(233, 248, 237, 0.76));
+        border-radius: 22px;
+        padding: 16px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .spectate-card-label {
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 800;
+      }
+
+      .spectate-card-value {
+        font-size: 1.02rem;
+        font-weight: 800;
+        color: var(--green-dark);
+        word-break: break-word;
+      }
+
+      .spectate-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+        gap: 20px;
+      }
+
+      .spectate-panel {
+        border: 1px solid rgba(20, 41, 27, 0.1);
+        border-radius: 24px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        display: grid;
+        gap: 16px;
+      }
+
+      .spectate-panel h3 {
+        font-size: 1rem;
+      }
+
+      .spectate-participants {
+        display: grid;
+        gap: 10px;
+      }
+
+      .spectate-participant {
+        display: grid;
+        gap: 8px;
+        padding: 14px 15px;
+        border-radius: 18px;
+        border: 1px solid rgba(20, 41, 27, 0.08);
+        background: rgba(249, 252, 249, 0.96);
+      }
+
+      .spectate-participant-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .spectate-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+      }
+
+      .spectate-color-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        flex-shrink: 0;
+      }
+
+      .spectate-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .spectate-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        background: rgba(76, 175, 80, 0.1);
+        color: var(--green-dark);
+      }
+
+      .spectate-file-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .spectate-select {
+        min-width: 220px;
+        border: 1px solid rgba(20, 41, 27, 0.12);
+        border-radius: 12px;
+        padding: 11px 12px;
+        font: inherit;
+        color: var(--ink);
+        background: #fff;
+      }
+
+      .spectate-code {
+        min-height: 420px;
+        max-height: 52vh;
+        overflow: auto;
+        margin: 0;
+        padding: 18px;
+        border-radius: 18px;
+        background: #101612;
+        color: #e8f4e9;
+        font: 0.92rem/1.6 Consolas, "Courier New", monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .spectate-view-stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .spectate-preview-shell {
+        border: 1px solid rgba(20, 41, 27, 0.1);
+        border-radius: 20px;
+        overflow: hidden;
+        background: #f7faf7;
+      }
+
+      .spectate-preview-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(20, 41, 27, 0.08);
+        background: rgba(255, 255, 255, 0.96);
+      }
+
+      .spectate-preview-title {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: var(--ink);
+      }
+
+      .spectate-preview-note {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .spectate-preview-frame {
+        width: 100%;
+        height: 300px;
+        border: none;
+        background: #fff;
+      }
+
+      .spectate-empty {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 1120px) {
+        .overview-grid,
+        .main-grid,
+        .lower-grid,
+        .hero {
+          grid-template-columns: 1fr;
+        }
+
+        .tool-list {
+          grid-template-columns: 1fr;
+        }
+
+        .spectate-meta,
+        .spectate-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 780px) {
+        header {
+          padding: 14px 18px;
+        }
+
+        .page-shell {
+          padding: 24px 16px 44px;
+        }
+
+        .hero-panel,
+        .side-panel,
+        .section-card,
+        .queue-card,
+        .log-card,
+        .tool-card,
+        .stat-card {
+          padding: 22px;
+        }
+
+        .hero h1 {
+          max-width: none;
+        }
+
+        .moderation-row {
+          grid-template-columns: 1fr;
+        }
+
+        .row-actions {
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-pin-overlay" id="adminPinOverlay" role="dialog" aria-modal="true" aria-labelledby="adminPinTitle">
+      <div class="admin-pin-card" id="adminPinCard">
+        <div class="admin-pin-badge"><i class="fa-solid fa-lock"></i> PRIVATE ACCESS</div>
+        <h2 id="adminPinTitle">Enter the 4-digit admin PIN</h2>
+        <p>Admin controls are locked. Enter the correct PIN to access the private panel.</p>
+        <form class="admin-pin-form" id="adminPinForm">
+          <div class="admin-pin-inputs" aria-label="4 digit admin pin">
+            <input class="admin-pin-digit" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+            <input class="admin-pin-digit" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+            <input class="admin-pin-digit" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+            <input class="admin-pin-digit" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+          </div>
+          <div class="admin-pin-message" id="adminPinMessage">Enter your PIN to continue.</div>
+          <button class="admin-pin-submit" type="submit">Unlock Admin Panel</button>
+        </form>
+        <div class="admin-pin-note">Only authorized access is allowed on this page.</div>
+      </div>
+    </div>
+
+    <div class="spectate-overlay hidden" id="spectateOverlay" role="dialog" aria-modal="true" aria-labelledby="spectateTitle">
+      <div class="spectate-modal">
+        <div class="spectate-header">
+          <div class="spectate-title">
+            <h2 id="spectateTitle">Spectate Session</h2>
+            <p id="spectateSubtitle">Read-only admin view of a live room. This does not join the room as a visible participant.</p>
+          </div>
+          <button class="spectate-close" id="spectateCloseBtn" type="button" aria-label="Close spectate view">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="spectate-meta">
+          <div class="spectate-card">
+            <div class="spectate-card-label">Session</div>
+            <div class="spectate-card-value" id="spectateSessionId">--</div>
+          </div>
+          <div class="spectate-card">
+            <div class="spectate-card-label">Host</div>
+            <div class="spectate-card-value" id="spectateHost">--</div>
+          </div>
+          <div class="spectate-card">
+            <div class="spectate-card-label">Participants</div>
+            <div class="spectate-card-value" id="spectateParticipantCount">--</div>
+          </div>
+          <div class="spectate-card">
+            <div class="spectate-card-label">Active File</div>
+            <div class="spectate-card-value" id="spectateActiveFile">--</div>
+          </div>
+          <div class="spectate-card">
+            <div class="spectate-card-label">Chat</div>
+            <div class="spectate-card-value" id="spectateChatCount">--</div>
+          </div>
+        </div>
+
+        <div class="spectate-layout">
+          <section class="spectate-panel">
+            <h3>People In This Room</h3>
+            <div class="spectate-participants" id="spectateParticipants"></div>
+          </section>
+
+          <section class="spectate-view-stack">
+            <div class="spectate-panel">
+              <div class="spectate-preview-shell">
+                <div class="spectate-preview-bar">
+                  <div class="spectate-preview-title" id="spectatePreviewTitle">Live Preview</div>
+                  <div class="spectate-preview-note">Admin-only read-only render</div>
+                </div>
+                <iframe class="spectate-preview-frame" id="spectatePreviewFrame" title="Spectated session preview"></iframe>
+              </div>
+            </div>
+
+            <div class="spectate-panel">
+              <div class="spectate-file-toolbar">
+                <h3>Live File Viewer</h3>
+                <select class="spectate-select" id="spectateFileSelect"></select>
+              </div>
+              <div class="spectate-empty" id="spectateFileMeta">Choose a file to inspect the current room state.</div>
+              <pre class="spectate-code" id="spectateCodeView"></pre>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="particles" aria-hidden="true">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+
+    <header>
+      <div class="header-content">
+        <a class="logo-container" href="index.html" aria-label="CodX Editor home">
+          <img src="cx.png" alt="CodX Editor logo" />
+        </a>
+        <nav class="nav-buttons" aria-label="Primary navigation">
+          <a class="nav-btn" href="index.html">Home</a>
+          <a class="nav-btn" href="about.html">About</a>
+          <a class="nav-btn" href="help.html">Help</a>
+          <a class="nav-btn active" href="adminprivate.html">Admin Panel</a>
+          <a class="nav-btn" href="frontend.html">Launch Editor</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero">
+        <article class="hero-panel">
+          <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> PLATFORM CONTROL CENTER</div>
+          <h1>Admin tools for sessions, moderation, and platform health.</h1>
+          <p>
+            This is a management-facing view of CodX Editor. It is designed to give admins a clear place to monitor collaboration rooms,
+            review risky activity, manage roles, and keep the platform stable without digging through the editor itself.
+          </p>
+          <div class="hero-actions">
+            <a class="action-btn primary" href="frontend.html"><i class="fa-solid fa-rocket"></i> Open Editor</a>
+            <a class="action-btn secondary" href="help.html"><i class="fa-solid fa-book-open"></i> Review Feature Guide</a>
+          </div>
+        </article>
+
+        <aside class="side-panel">
+          <div class="panel-header">
+            <h2>Live Platform Health</h2>
+            <span class="pill online" id="platformHealthPill"><i class="fa-solid fa-signal"></i> Loading</span>
+          </div>
+          <div class="health-list">
+            <div class="health-item">
+              <div class="item-copy">
+                <strong>Realtime sessions</strong>
+                <span id="healthSessionsText">Checking active collaboration traffic.</span>
+              </div>
+              <span class="item-value" id="healthSessionsValue">--</span>
+            </div>
+            <div class="health-item">
+              <div class="item-copy">
+                <strong>Connected sockets</strong>
+                <span id="healthSocketsText">Checking realtime socket load.</span>
+              </div>
+              <span class="item-value" id="healthSocketsValue">--</span>
+            </div>
+            <div class="health-item">
+              <div class="item-copy">
+                <strong>Moderation queue</strong>
+                <span id="healthQueueText">Review queue is loading.</span>
+              </div>
+              <span class="item-value" id="healthQueueValue">--</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="overview-grid">
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-icon"><i class="fa-solid fa-users"></i></span>
+            <span class="stat-trend" id="activeUsersTrend">Live now</span>
+          </div>
+          <h3 id="activeUsersValue">--</h3>
+          <p>Active users across editing, preview, and collaboration.</p>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-icon"><i class="fa-solid fa-people-arrows"></i></span>
+            <span class="stat-trend" id="liveSessionsTrend">Open rooms</span>
+          </div>
+          <h3 id="liveSessionsValue">--</h3>
+          <p>Live collaboration sessions currently running.</p>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+            <span class="stat-trend" id="moderationTrend">Needs attention</span>
+          </div>
+          <h3 id="moderationValue">--</h3>
+          <p>Reported issues, flags, or moderation events waiting for review.</p>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-icon"><i class="fa-solid fa-hard-drive"></i></span>
+            <span class="stat-trend" id="capacityTrend">Platform load</span>
+          </div>
+          <h3 id="capacityValue">--</h3>
+          <p>Current system capacity across active editor traffic.</p>
+        </article>
+      </section>
+
+      <section class="main-grid">
+        <article class="section-card">
+          <div class="section-header">
+            <div class="section-copy">
+              <h2>Moderation Queue</h2>
+              <p>High-signal actions admins would likely want close at hand.</p>
+            </div>
+            <span class="pill alert" id="moderationPill"><i class="fa-solid fa-list-check"></i> Live queue</span>
+          </div>
+
+          <div class="moderation-grid" id="moderationGrid"></div>
+        </article>
+
+        <aside class="queue-card">
+          <div class="section-header">
+            <div class="section-copy">
+              <h2>Admin Focus</h2>
+              <p>Current tasks that matter most right now.</p>
+            </div>
+            <span class="pill online"><i class="fa-solid fa-bolt"></i> Live</span>
+          </div>
+          <div class="queue-list">
+            <div class="queue-item">
+              <div class="item-copy">
+                <strong>Join approval queue</strong>
+                <span id="queueApprovalsText">Pending requests are loading.</span>
+              </div>
+              <span class="item-value" id="queueApprovalsValue">--</span>
+            </div>
+            <div class="queue-item">
+              <div class="item-copy">
+                <strong>Flagged participants</strong>
+                <span id="queueFlaggedText">Participant flags are loading.</span>
+              </div>
+              <span class="item-value" id="queueFlaggedValue">--</span>
+            </div>
+            <div class="queue-item">
+              <div class="item-copy">
+                <strong>Locked rooms</strong>
+                <span id="queueLockedText">Room lock count is loading.</span>
+              </div>
+              <span class="item-value" id="queueLockedValue">--</span>
+            </div>
+            <div class="queue-item">
+              <div class="item-copy">
+                <strong>Paused rooms</strong>
+                <span id="queuePausedText">Paused room count is loading.</span>
+              </div>
+              <span class="item-value" id="queuePausedValue">--</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="lower-grid">
+        <article class="log-card">
+          <div class="section-header">
+            <div class="section-copy">
+              <h2>Recent Activity</h2>
+              <p>A quick feed of actions an admin would want to scan fast.</p>
+            </div>
+            <span class="pill online"><i class="fa-solid fa-clock-rotate-left"></i> Last hour</span>
+          </div>
+
+          <div class="activity-list" id="activityList"></div>
+        </article>
+
+        <article class="tool-card">
+          <div class="section-header">
+            <div class="section-copy">
+              <h2>Admin Toolset</h2>
+              <p>Core control areas the panel is designed around.</p>
+            </div>
+            <span class="pill online"><i class="fa-solid fa-sliders"></i> Organized</span>
+          </div>
+
+          <div class="tool-list">
+            <div class="tool-item">
+              <i class="fa-solid fa-user-check"></i>
+              <div class="tool-copy">
+                <h3>User moderation</h3>
+                <p>Review reports, mute disruptive users, and audit role changes without leaving the panel.</p>
+              </div>
+            </div>
+            <div class="tool-item">
+              <i class="fa-solid fa-people-roof"></i>
+              <div class="tool-copy">
+                <h3>Room control</h3>
+                <p>Lock rooms, manage join approvals, regenerate invite links, and enforce session-wide permissions.</p>
+              </div>
+            </div>
+            <div class="tool-item">
+              <i class="fa-solid fa-wave-square"></i>
+              <div class="tool-copy">
+                <h3>System health</h3>
+                <p>Track runtime stability, collaboration traffic, and queue pressure before problems spread.</p>
+              </div>
+            </div>
+            <div class="tool-item">
+              <i class="fa-solid fa-file-shield"></i>
+              <div class="tool-copy">
+                <h3>Export oversight</h3>
+                <p>Monitor project exports, storage limits, and retention policies for shared workspace files.</p>
+              </div>
+            </div>
+            <div class="tool-item">
+              <i class="fa-solid fa-chart-line"></i>
+              <div class="tool-copy">
+                <h3>Usage analytics</h3>
+                <p>Watch which features are most active so we can prioritize reliability and product improvements.</p>
+              </div>
+            </div>
+            <div class="tool-item">
+              <i class="fa-solid fa-screwdriver-wrench"></i>
+              <div class="tool-copy">
+                <h3>Incident response</h3>
+                <p>Handle unstable rooms, preview failures, reconnect spikes, and permission conflicts from one place.</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <p class="footer-note">
+        <span id="adminStatus">Admin panel is connecting to live platform data.</span>
+      </p>
+    </main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const healthPill = document.getElementById("platformHealthPill");
+      const healthSessionsValue = document.getElementById("healthSessionsValue");
+      const healthSessionsText = document.getElementById("healthSessionsText");
+      const healthSocketsValue = document.getElementById("healthSocketsValue");
+      const healthSocketsText = document.getElementById("healthSocketsText");
+      const healthQueueValue = document.getElementById("healthQueueValue");
+      const healthQueueText = document.getElementById("healthQueueText");
+      const activeUsersValue = document.getElementById("activeUsersValue");
+      const liveSessionsValue = document.getElementById("liveSessionsValue");
+      const moderationValue = document.getElementById("moderationValue");
+      const capacityValue = document.getElementById("capacityValue");
+      const liveSessionsTrend = document.getElementById("liveSessionsTrend");
+      const moderationPill = document.getElementById("moderationPill");
+      const moderationGrid = document.getElementById("moderationGrid");
+      const queueApprovalsValue = document.getElementById("queueApprovalsValue");
+      const queueApprovalsText = document.getElementById("queueApprovalsText");
+      const queueFlaggedValue = document.getElementById("queueFlaggedValue");
+      const queueFlaggedText = document.getElementById("queueFlaggedText");
+      const queueLockedValue = document.getElementById("queueLockedValue");
+      const queueLockedText = document.getElementById("queueLockedText");
+      const queuePausedValue = document.getElementById("queuePausedValue");
+      const queuePausedText = document.getElementById("queuePausedText");
+      const activityList = document.getElementById("activityList");
+      const adminStatus = document.getElementById("adminStatus");
+      const spectateOverlay = document.getElementById("spectateOverlay");
+      const spectateCloseBtn = document.getElementById("spectateCloseBtn");
+      const spectateSessionId = document.getElementById("spectateSessionId");
+      const spectateHost = document.getElementById("spectateHost");
+      const spectateParticipantCount = document.getElementById("spectateParticipantCount");
+      const spectateActiveFile = document.getElementById("spectateActiveFile");
+      const spectateChatCount = document.getElementById("spectateChatCount");
+      const spectateParticipants = document.getElementById("spectateParticipants");
+      const spectateFileSelect = document.getElementById("spectateFileSelect");
+      const spectateFileMeta = document.getElementById("spectateFileMeta");
+      const spectateCodeView = document.getElementById("spectateCodeView");
+      const spectatePreviewTitle = document.getElementById("spectatePreviewTitle");
+      const spectatePreviewFrame = document.getElementById("spectatePreviewFrame");
+      const adminPinOverlay = document.getElementById("adminPinOverlay");
+      const adminPinCard = document.getElementById("adminPinCard");
+      const adminPinForm = document.getElementById("adminPinForm");
+      const adminPinMessage = document.getElementById("adminPinMessage");
+      const adminPinDigits = Array.from(document.querySelectorAll(".admin-pin-digit"));
+      const adminSocket = typeof io === "function" ? io() : null;
+      let adminRefreshTimer = null;
+      let currentSpectateSessionId = "";
+      let currentSpectateData = null;
+      const ADMIN_PRIVATE_KEY = "codxAdminPrivateUnlocked";
+
+      function formatRelativeTime(ts) {
+        const diff = Math.max(0, Date.now() - Number(ts || 0));
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return "just now";
+        if (mins < 60) return `${mins} min ago`;
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return `${hours} hr ago`;
+        const days = Math.floor(hours / 24);
+        return `${days} day${days === 1 ? "" : "s"} ago`;
+      }
+
+      function escapeHtml(value) {
+        return String(value || "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;",
+        })[char]);
+      }
+
+      function setStatus(text) {
+        adminStatus.textContent = text;
+      }
+
+      function isAdminUnlocked() {
+        return sessionStorage.getItem(ADMIN_PRIVATE_KEY) === "true";
+      }
+
+      function setAdminLockedState(locked) {
+        document.body.classList.toggle("admin-locked", locked);
+        adminPinOverlay.classList.toggle("hidden", !locked);
+      }
+
+      function clearPinError() {
+        adminPinCard.classList.remove("error");
+        adminPinMessage.textContent = "Enter your PIN to continue.";
+      }
+
+      function relockAdminPanel(message = "Admin authentication required.") {
+        sessionStorage.removeItem(ADMIN_PRIVATE_KEY);
+        setAdminLockedState(true);
+        adminPinCard.classList.remove("error");
+        adminPinMessage.textContent = message;
+        adminPinDigits.forEach((input) => {
+          input.value = "";
+        });
+        focusFirstEmptyPin();
+      }
+
+      function focusFirstEmptyPin() {
+        const target = adminPinDigits.find((input) => !input.value) || adminPinDigits[adminPinDigits.length - 1];
+        target.focus();
+        target.select();
+      }
+
+      function unlockAdminPanel() {
+        sessionStorage.setItem(ADMIN_PRIVATE_KEY, "true");
+        setAdminLockedState(false);
+        setStatus("Admin panel unlocked.");
+        loadAdminData();
+      }
+
+      async function authenticateAdminPin(pin) {
+        const response = await fetch("/admin/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.ok === false) {
+          throw new Error(payload.error || "Invalid admin PIN.");
+        }
+        return payload;
+      }
+
+      function triggerPinError() {
+        adminPinCard.classList.remove("error");
+        void adminPinCard.offsetWidth;
+        adminPinCard.classList.add("error");
+        adminPinMessage.textContent = "Incorrect PIN. Try again.";
+        adminPinDigits.forEach((input) => {
+          input.value = "";
+        });
+        focusFirstEmptyPin();
+      }
+
+      function scheduleAdminRefresh(reason = "live update") {
+        if (!isAdminUnlocked()) return;
+        window.clearTimeout(adminRefreshTimer);
+        adminRefreshTimer = window.setTimeout(() => {
+          setStatus(`Refreshing admin panel after ${reason}...`);
+          loadAdminData();
+        }, 180);
+      }
+
+      function closeSpectateView() {
+        currentSpectateSessionId = "";
+        currentSpectateData = null;
+        spectateOverlay.classList.add("hidden");
+      }
+
+      function renderSpectateCode() {
+        if (!currentSpectateData) return;
+        const selectedName = spectateFileSelect.value;
+        const file = (currentSpectateData.files || []).find((entry) => entry.name === selectedName);
+        if (!file) {
+          spectateFileMeta.textContent = "No file selected.";
+          spectateCodeView.textContent = "";
+          return;
+        }
+        spectateFileMeta.textContent = `${file.name} • ${String(file.type || "file").toUpperCase()} • ${String(file.content || "").length} characters`;
+        spectateCodeView.textContent = String(file.content || "");
+      }
+
+      function renderSpectateSession(session) {
+        const preservedSelectedFile = spectateFileSelect.value;
+        currentSpectateData = session;
+        spectateSessionId.textContent = session.sessionId || "--";
+        spectateHost.textContent = session.hostName || "--";
+        spectateParticipantCount.textContent = `${session.participantCount || 0}`;
+        spectateActiveFile.textContent = session.activeFileName || "No active file";
+        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group • ${session.chat?.privateThreadCount || 0} private`;
+
+        spectateParticipants.innerHTML = (session.participants || []).map((participant) => {
+          const tags = [];
+          tags.push(`<span class="spectate-tag"><i class="fa-solid fa-user"></i> ${escapeHtml(participant.role || "participant")}</span>`);
+          if (participant.currentFile) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-file-lines"></i> ${escapeHtml(participant.currentFile)}</span>`);
+          if (participant.mutedChat) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-volume-xmark"></i> Muted chat</span>`);
+          if (participant.frozenEditing) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-snowflake"></i> Frozen editing</span>`);
+          if (participant.priority) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-star"></i> Priority</span>`);
+          if (Array.isArray(participant.allowedFiles)) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-folder-tree"></i> Restricted files</span>`);
+          return `
+            <div class="spectate-participant">
+              <div class="spectate-participant-top">
+                <div class="spectate-name">
+                  <span class="spectate-color-dot" style="background:${escapeHtml(participant.theme || "#4CAF50")}"></span>
+                  ${escapeHtml(participant.name)}
+                </div>
+              </div>
+              <div class="spectate-tags">${tags.join("")}</div>
+            </div>
+          `;
+        }).join("") || `<div class="spectate-empty">No participants in this room.</div>`;
+
+        const fileOptions = (session.files || []).map((file) => `<option value="${escapeHtml(file.name)}">${escapeHtml(file.name)}</option>`).join("");
+        spectateFileSelect.innerHTML = fileOptions || `<option value="">No files</option>`;
+        const nextSelectedFile =
+          (session.files || []).some((file) => file.name === preservedSelectedFile)
+            ? preservedSelectedFile
+            : session.activeFileName && (session.files || []).some((file) => file.name === session.activeFileName)
+              ? session.activeFileName
+              : ((session.files || [])[0]?.name || "");
+        spectateFileSelect.value = nextSelectedFile;
+        renderSpectateCode();
+      }
+
+      async function openSpectateView(sessionId) {
+        if (!isAdminUnlocked()) return;
+        const response = await fetch(`/admin/api/session/${encodeURIComponent(sessionId)}`);
+        const payload = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          relockAdminPanel("Your admin session expired. Enter the PIN again.");
+          throw new Error("Admin session expired.");
+        }
+        if (!response.ok || payload.ok === false || !payload.session) {
+          throw new Error(payload.error || "Could not spectate this session.");
+        }
+        currentSpectateSessionId = sessionId;
+        renderSpectateSession(payload.session);
+        spectateOverlay.classList.remove("hidden");
+      }
+
+      function buildSpectatePreviewHtml(session) {
+        const files = Array.isArray(session?.files) ? session.files : [];
+        const activeFileName = session?.activeFileName || "";
+        const htmlFile =
+          files.find((file) => String(file?.name || "") === activeFileName && String(file?.type || "").toLowerCase() === "html") ||
+          files.find((file) => String(file?.type || "").toLowerCase() === "html");
+
+        if (!htmlFile) {
+          return {
+            title: "Live Preview",
+            html: `<!doctype html><html><head><meta charset="UTF-8"><title>No HTML file</title><style>body{font-family:Segoe UI,Tahoma,sans-serif;padding:24px;color:#1b2a1f;background:#f7faf7}.box{max-width:680px;margin:0 auto;padding:24px;border:1px solid rgba(20,41,27,.12);border-radius:20px;background:#fff}h1{margin:0 0 12px;font-size:1.4rem}p{margin:0;color:#5b675f;line-height:1.6}</style></head><body><div class="box"><h1>No previewable HTML file</h1><p>This session does not currently contain an HTML file that can be rendered in the admin spectator preview.</p></div></body></html>`,
+          };
+        }
+
+        const normalizeProjectName = (value) => String(value || "").trim().replace(/^\.\/+/, "").toLowerCase();
+        const resolveProjectFile = (rawName, typeHint = "") => {
+          const target = normalizeProjectName(rawName);
+          if (!target) return null;
+          return files.find((file) => {
+            const candidate = normalizeProjectName(file.name);
+            const sameName = candidate === target || candidate.endsWith(`/${target}`) || candidate.split("/").pop() === target.split("/").pop();
+            if (!sameName) return false;
+            if (!typeHint) return true;
+            return String(file.type || "").toLowerCase() === typeHint.toLowerCase();
+          }) || null;
+        };
+
+        let html = String(htmlFile.content || "");
+        const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
+        const title = titleMatch ? titleMatch[1].trim() || htmlFile.name : htmlFile.name;
+
+        html = html.replace(/<link\b([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi, (full, before, href) => {
+          const cssFile = resolveProjectFile(href, "css");
+          if (!cssFile) return full;
+          return `<style data-spectate-source="${cssFile.name}">\n${String(cssFile.content || "")}\n</style>`;
+        });
+
+        html = html.replace(/<script\b([^>]*?)src=["']([^"']+)["']([^>]*)><\/script>/gi, (full, before, src) => {
+          const jsFile = resolveProjectFile(src, "js");
+          if (!jsFile) return full;
+          return `<script data-spectate-source="${jsFile.name}">\n${String(jsFile.content || "")}\n<\/script>`;
+        });
+
+        return { title, html };
+      }
+
+      function renderSpectatePreview(session) {
+        const preview = buildSpectatePreviewHtml(session);
+        spectatePreviewTitle.textContent = preview.title || "Live Preview";
+        spectatePreviewFrame.srcdoc = preview.html;
+      }
+
+      function renderSpectateCode() {
+        if (!currentSpectateData) return;
+        const selectedName = spectateFileSelect.value;
+        const file = (currentSpectateData.files || []).find((entry) => entry.name === selectedName);
+        if (!file) {
+          spectateFileMeta.textContent = "No file selected.";
+          spectateCodeView.textContent = "";
+          return;
+        }
+        spectateFileMeta.textContent = `${file.name} • ${String(file.type || "file").toUpperCase()} • ${String(file.content || "").length} characters`;
+        spectateCodeView.textContent = String(file.content || "");
+      }
+
+      function renderSpectateSession(session) {
+        const preservedSelectedFile = spectateFileSelect.value;
+        currentSpectateData = session;
+        spectateSessionId.textContent = session.sessionId || "--";
+        spectateHost.textContent = session.hostName || "--";
+        spectateParticipantCount.textContent = `${session.participantCount || 0}`;
+        spectateActiveFile.textContent = session.activeFileName || "No active file";
+        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group • ${session.chat?.privateThreadCount || 0} private`;
+        renderSpectatePreview(session);
+
+        spectateParticipants.innerHTML = (session.participants || []).map((participant) => {
+          const tags = [];
+          tags.push(`<span class="spectate-tag"><i class="fa-solid fa-user"></i> ${escapeHtml(participant.role || "participant")}</span>`);
+          if (participant.currentFile) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-file-lines"></i> ${escapeHtml(participant.currentFile)}</span>`);
+          if (participant.mutedChat) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-volume-xmark"></i> Muted chat</span>`);
+          if (participant.frozenEditing) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-snowflake"></i> Frozen editing</span>`);
+          if (participant.priority) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-star"></i> Priority</span>`);
+          if (Array.isArray(participant.allowedFiles)) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-folder-tree"></i> Restricted files</span>`);
+          return `
+            <div class="spectate-participant">
+              <div class="spectate-participant-top">
+                <div class="spectate-name">
+                  <span class="spectate-color-dot" style="background:${escapeHtml(participant.theme || "#4CAF50")}"></span>
+                  ${escapeHtml(participant.name)}
+                </div>
+              </div>
+              <div class="spectate-tags">${tags.join("")}</div>
+            </div>
+          `;
+        }).join("") || `<div class="spectate-empty">No participants in this room.</div>`;
+
+        const fileOptions = (session.files || []).map((file) => `<option value="${escapeHtml(file.name)}">${escapeHtml(file.name)}</option>`).join("");
+        spectateFileSelect.innerHTML = fileOptions || `<option value="">No files</option>`;
+        const nextSelectedFile =
+          (session.files || []).some((file) => file.name === preservedSelectedFile)
+            ? preservedSelectedFile
+            : session.activeFileName && (session.files || []).some((file) => file.name === session.activeFileName)
+              ? session.activeFileName
+              : ((session.files || [])[0]?.name || "");
+        spectateFileSelect.value = nextSelectedFile;
+        renderSpectateCode();
+      }
+
+      function renderModerationSessions(sessionItems) {
+        if (!sessionItems.length) {
+          moderationGrid.innerHTML = `
+            <div class="moderation-row">
+              <div>
+                <strong>No live sessions need attention</strong>
+                <div class="row-meta">
+                  <span class="mini-pill"><i class="fa-solid fa-check"></i> Queue is clear</span>
+                </div>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        moderationGrid.innerHTML = sessionItems.map((session) => {
+          const meta = [];
+          meta.push(`<span class="mini-pill"><i class="fa-solid fa-users"></i> ${session.participantCount} participants</span>`);
+          if (session.pendingJoinCount) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-user-plus"></i> ${session.pendingJoinCount} pending joins</span>`);
+          }
+          if (session.flaggedParticipants) {
+            meta.push(`<span class="mini-pill danger"><i class="fa-solid fa-triangle-exclamation"></i> ${session.flaggedParticipants} flagged</span>`);
+          }
+          if (session.roomLocked) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-lock"></i> Room locked</span>`);
+          }
+          if (session.paused) {
+            meta.push(`<span class="mini-pill danger"><i class="fa-solid fa-pause"></i> Paused</span>`);
+          }
+          if (session.pinnedFile) {
+            meta.push(`<span class="mini-pill"><i class="fa-solid fa-thumbtack"></i> ${escapeHtml(session.pinnedFile)}</span>`);
+          }
+
+          return `
+            <div class="moderation-row">
+              <div>
+                <strong>Session ${escapeHtml(session.sessionId)}</strong>
+                <div class="row-meta">
+                  ${meta.join("")}
+                </div>
+              </div>
+              <div class="row-actions">
+                <button class="tiny-btn dark" type="button" data-action="open-editor" data-link="${escapeHtml(session.shareLink)}">Open Room</button>
+                <button class="tiny-btn dark" type="button" data-action="spectate" data-session="${escapeHtml(session.sessionId)}">Spectate</button>
+                <button class="tiny-btn green" type="button" data-action="freeze-toggle" data-session="${escapeHtml(session.sessionId)}">${session.paused ? "Resume Room" : "Freeze Session"}</button>
+                <button class="tiny-btn green" type="button" data-action="lock-toggle" data-session="${escapeHtml(session.sessionId)}">${session.roomLocked ? "Unlock Room" : "Lock Room"}</button>
+                <button class="tiny-btn red" type="button" data-action="regenerate-link" data-session="${escapeHtml(session.sessionId)}">Regenerate Link</button>
+                <button class="tiny-btn red" type="button" data-action="end-session" data-session="${escapeHtml(session.sessionId)}">End Session</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function renderActivity(items) {
+        if (!items.length) {
+          activityList.innerHTML = `
+            <div class="log-item">
+              <div class="log-top">
+                <strong>No recent admin activity yet</strong>
+                <time>now</time>
+              </div>
+              <p>Activity will appear here as sessions are created, moderated, or updated.</p>
+            </div>
+          `;
+          return;
+        }
+
+        activityList.innerHTML = items.map((item) => `
+          <div class="log-item">
+            <div class="log-top">
+              <strong>${escapeHtml(item.title)}</strong>
+              <time>${formatRelativeTime(item.ts)}</time>
+            </div>
+            <p>${escapeHtml(item.detail)}</p>
+          </div>
+        `).join("");
+      }
+
+      async function loadAdminData() {
+        if (!isAdminUnlocked()) return;
+        try {
+          setStatus("Refreshing live admin data...");
+          const [overviewRes, sessionsRes, activityRes] = await Promise.all([
+            fetch("/admin/api/overview"),
+            fetch("/admin/api/sessions"),
+            fetch("/admin/api/activity"),
+          ]);
+
+          if ([overviewRes.status, sessionsRes.status, activityRes.status].includes(401)) {
+            relockAdminPanel("Your admin session expired. Enter the PIN again.");
+            setStatus("Admin session expired.");
+            return;
+          }
+
+          if (!overviewRes.ok || !sessionsRes.ok || !activityRes.ok) {
+            throw new Error("Failed to load admin data.");
+          }
+
+          const overview = await overviewRes.json();
+          const sessionsPayload = await sessionsRes.json();
+          const activityPayload = await activityRes.json();
+
+          healthPill.innerHTML = `<i class="fa-solid fa-signal"></i> ${overview.health.ok ? "Stable" : "Attention needed"}`;
+          healthSessionsValue.textContent = `${overview.health.sessions}`;
+          healthSessionsText.textContent = `${overview.health.sessions} collaboration room${overview.health.sessions === 1 ? "" : "s"} currently active.`;
+          healthSocketsValue.textContent = `${overview.health.connectedSockets}`;
+          healthSocketsText.textContent = `${overview.health.connectedSockets} realtime connection${overview.health.connectedSockets === 1 ? "" : "s"} attached to the server.`;
+          healthQueueValue.textContent = `${overview.stats.moderationItems}`;
+          healthQueueText.textContent = overview.stats.moderationItems
+            ? `${overview.stats.moderationItems} moderation item${overview.stats.moderationItems === 1 ? "" : "s"} need review.`
+            : "No moderation items need review right now.";
+
+          activeUsersValue.textContent = `${overview.stats.activeUsers}`;
+          liveSessionsValue.textContent = `${overview.stats.liveSessions}`;
+          moderationValue.textContent = `${overview.stats.moderationItems}`;
+          capacityValue.textContent = `${overview.stats.capacityLoad}%`;
+          liveSessionsTrend.textContent = `${overview.stats.lockedRooms} locked`;
+          moderationPill.innerHTML = `<i class="fa-solid fa-list-check"></i> ${overview.stats.moderationItems} live item${overview.stats.moderationItems === 1 ? "" : "s"}`;
+
+          queueApprovalsValue.textContent = `${overview.queue.pendingJoinApprovals}`;
+          queueApprovalsText.textContent = `${overview.queue.pendingJoinApprovals} pending approval request${overview.queue.pendingJoinApprovals === 1 ? "" : "s"} across all rooms.`;
+          queueFlaggedValue.textContent = `${overview.queue.flaggedParticipants}`;
+          queueFlaggedText.textContent = `${overview.queue.flaggedParticipants} participant flag${overview.queue.flaggedParticipants === 1 ? "" : "s"} currently active.`;
+          queueLockedValue.textContent = `${overview.queue.lockedRooms}`;
+          queueLockedText.textContent = `${overview.queue.lockedRooms} room${overview.queue.lockedRooms === 1 ? "" : "s"} currently locked.`;
+          queuePausedValue.textContent = `${overview.queue.pausedRooms}`;
+          queuePausedText.textContent = `${overview.queue.pausedRooms} room${overview.queue.pausedRooms === 1 ? "" : "s"} currently paused.`;
+
+          renderModerationSessions((sessionsPayload.sessions || []).slice(0, 6));
+          renderActivity(activityPayload.activity || []);
+          setStatus(`Admin panel live. Last refresh ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`);
+        } catch (error) {
+          setStatus("Could not load live admin data. Check that the server is running.");
+          moderationGrid.innerHTML = `
+            <div class="moderation-row">
+              <div>
+                <strong>Admin data could not load</strong>
+                <div class="row-meta">
+                  <span class="mini-pill danger"><i class="fa-solid fa-wifi"></i> Server unavailable</span>
+                </div>
+              </div>
+            </div>
+          `;
+          activityList.innerHTML = "";
+        }
+      }
+
+      async function postAdminAction(url, successMessage) {
+        if (!isAdminUnlocked()) {
+          throw new Error("Unlock the admin panel first.");
+        }
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          relockAdminPanel("Your admin session expired. Enter the PIN again.");
+          throw new Error("Admin session expired.");
+        }
+        if (!response.ok || payload.ok === false) {
+          throw new Error(payload.error || "Action failed.");
+        }
+        setStatus(successMessage);
+        return payload;
+      }
+
+      document.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-action]");
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const sessionId = button.dataset.session || "";
+        const link = button.dataset.link || "";
+
+        try {
+          if (action === "open-editor") {
+            window.location.href = link || "frontend.html";
+            return;
+          }
+          if (action === "spectate") {
+            await openSpectateView(sessionId);
+            setStatus(`Spectating session ${sessionId}.`);
+            return;
+          }
+          if (action === "freeze-toggle") {
+            await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/freeze-toggle`, `Updated collaboration state for ${sessionId}.`);
+          } else if (action === "lock-toggle") {
+            await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/lock-toggle`, `Updated room lock for ${sessionId}.`);
+          } else if (action === "regenerate-link") {
+            const payload = await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/regenerate-link`, `Invite link regenerated for ${sessionId}.`);
+            if (payload.shareLink) {
+              await navigator.clipboard.writeText(payload.shareLink).catch(() => {});
+            }
+          } else if (action === "end-session") {
+            await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/end`, `Ended session ${sessionId}.`);
+          }
+          await loadAdminData();
+        } catch (error) {
+          setStatus(error.message || "Admin action failed.");
+        }
+      });
+
+      adminPinDigits.forEach((input, index) => {
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/\D/g, "").slice(0, 1);
+          clearPinError();
+          if (input.value && index < adminPinDigits.length - 1) {
+            adminPinDigits[index + 1].focus();
+            adminPinDigits[index + 1].select();
+          }
+          if (adminPinDigits.every((field) => field.value.length === 1)) {
+            adminPinForm.requestSubmit();
+          }
+        });
+
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Backspace" && !input.value && index > 0) {
+            adminPinDigits[index - 1].focus();
+            adminPinDigits[index - 1].select();
+          }
+          if (event.key === "ArrowLeft" && index > 0) {
+            event.preventDefault();
+            adminPinDigits[index - 1].focus();
+            adminPinDigits[index - 1].select();
+          }
+          if (event.key === "ArrowRight" && index < adminPinDigits.length - 1) {
+            event.preventDefault();
+            adminPinDigits[index + 1].focus();
+            adminPinDigits[index + 1].select();
+          }
+        });
+      });
+
+      adminPinForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const enteredPin = adminPinDigits.map((input) => input.value).join("");
+        if (enteredPin.length !== 4) {
+          triggerPinError();
+          return;
+        }
+        adminPinMessage.textContent = "Checking PIN...";
+        try {
+          await authenticateAdminPin(enteredPin);
+          clearPinError();
+          unlockAdminPanel();
+          return;
+        } catch (_error) {
+          triggerPinError();
+        }
+      });
+
+      spectateCloseBtn.addEventListener("click", closeSpectateView);
+      spectateOverlay.addEventListener("click", (event) => {
+        if (event.target === spectateOverlay) {
+          closeSpectateView();
+        }
+      });
+      spectateFileSelect.addEventListener("change", renderSpectateCode);
+
+      setAdminLockedState(!isAdminUnlocked());
+      if (!isAdminUnlocked()) {
+        focusFirstEmptyPin();
+      }
+
+      if (adminSocket) {
+        adminSocket.on("connect", () => {
+          if (isAdminUnlocked()) {
+            setStatus("Admin panel connected for live updates.");
+            scheduleAdminRefresh("socket connect");
+          }
+        });
+
+        adminSocket.on("admin:update", (payload) => {
+          if (currentSpectateSessionId && isAdminUnlocked()) {
+            openSpectateView(currentSpectateSessionId).catch(() => {});
+          }
+          scheduleAdminRefresh(payload?.reason || "live update");
+        });
+
+        adminSocket.on("disconnect", () => {
+          if (isAdminUnlocked()) {
+            setStatus("Admin live updates disconnected. Falling back to background refresh.");
+          }
+        });
+      }
+
+      if (isAdminUnlocked()) {
+        loadAdminData();
+      }
+      setInterval(() => {
+        if (isAdminUnlocked()) {
+          loadAdminData();
+        }
+      }, 30000);
+    </script>
+  </body>
+</html>
+
+
+
+

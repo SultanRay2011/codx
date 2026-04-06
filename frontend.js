@@ -40,9 +40,84 @@ const previewTitleEl = document.getElementById("previewTitle");
 const errorMsgEl = document.getElementById("errorMsg");
 const zenModeBtn = document.getElementById("zenModeBtn");
 const zenExitBtn = document.getElementById("zenExitBtn");
+const announcementPopup = document.getElementById("announcementPopup");
+const announcementPopupText = document.getElementById("announcementPopupText");
+const announcementPopupOkBtn = document.getElementById("announcementPopupOkBtn");
+const appDialog = document.getElementById("appDialog");
+const appDialogTitle = document.getElementById("appDialogTitle");
+const appDialogMessage = document.getElementById("appDialogMessage");
+const appDialogInput = document.getElementById("appDialogInput");
+const appDialogActions = document.getElementById("appDialogActions");
+const developerConsoleModal = document.getElementById("developerConsoleModal");
+const developerConsoleOutput = document.getElementById("developerConsoleOutput");
+const developerConsoleInput = document.getElementById("developerConsoleInput");
+const runDeveloperCommandBtn = document.getElementById("runDeveloperCommandBtn");
+const clearDeveloperConsoleBtn = document.getElementById("clearDeveloperConsoleBtn");
+const closeDeveloperConsoleBtn = document.getElementById("closeDeveloperConsoleBtn");
+const saveProjectBtn = document.getElementById("saveProjectBtn");
+const openSavedProjectsBtn = document.getElementById("openSavedProjectsBtn");
+const templatesBtn = document.getElementById("templatesBtn");
+const publishProjectBtn = document.getElementById("publishProjectBtn");
+const projectLibraryModal = document.getElementById("projectLibraryModal");
+const closeProjectLibraryBtn = document.getElementById("closeProjectLibraryBtn");
+const projectLibraryBody = document.getElementById("projectLibraryBody");
+const runPreviewBtn = document.getElementById("runPreviewBtn");
+const clearConsoleBtn = document.getElementById("clearConsoleBtn");
 
 function getModalDoneBtn() {
   return document.getElementById("modalDoneBtn");
+}
+
+if (announcementPopupOkBtn) {
+  announcementPopupOkBtn.onclick = closeAnnouncementPopup;
+}
+if (announcementPopup) {
+  announcementPopup.addEventListener("click", (e) => {
+    if (e.target === announcementPopup) {
+      closeAnnouncementPopup();
+    }
+  });
+}
+if (appDialog) {
+  appDialog.addEventListener("click", (e) => {
+    if (e.target === appDialog) {
+      closeAppDialog({ ok: false, value: null });
+    }
+  });
+}
+if (developerConsoleModal) {
+  developerConsoleModal.addEventListener("click", (e) => {
+    if (e.target === developerConsoleModal) {
+      closeDeveloperConsole();
+    }
+  });
+}
+if (closeDeveloperConsoleBtn) {
+  closeDeveloperConsoleBtn.onclick = closeDeveloperConsole;
+}
+if (clearDeveloperConsoleBtn) {
+  clearDeveloperConsoleBtn.onclick = clearDeveloperConsoleOutput;
+}
+if (runDeveloperCommandBtn) {
+  runDeveloperCommandBtn.onclick = () => {
+    if (!developerConsoleInput) return;
+    const value = developerConsoleInput.value;
+    developerConsoleInput.value = "";
+    runDeveloperCommand(value);
+    developerConsoleInput.focus();
+  };
+}
+if (developerConsoleInput) {
+  developerConsoleInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (runDeveloperCommandBtn) runDeveloperCommandBtn.click();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeDeveloperConsole();
+    }
+  });
 }
 
 const settingsPreviewSampleCode = `function helloWorld() {
@@ -664,11 +739,65 @@ const cssValueSuggestionsByProperty = {
   "background-repeat": ["no-repeat", "repeat", "repeat-x", "repeat-y"],
   "background-size": ["cover", "contain", "auto"],
   "text-align": ["left", "center", "right", "justify"],
+  "font-family": [
+    "Arial, sans-serif",
+    "Verdana, sans-serif",
+    "'Trebuchet MS', sans-serif",
+    "Tahoma, sans-serif",
+    "'Century Gothic', sans-serif",
+    "'Franklin Gothic Medium', sans-serif",
+    "'Gill Sans', 'Gill Sans MT', sans-serif",
+    "Optima, 'Segoe UI', sans-serif",
+    "Futura, 'Century Gothic', sans-serif",
+    "Avenir, 'Trebuchet MS', sans-serif",
+    "'Times New Roman', serif",
+    "Georgia, serif",
+    "Garamond, serif",
+    "'Palatino Linotype', serif",
+    "Cambria, serif",
+    "Baskerville, Georgia, serif",
+    "'Book Antiqua', Palatino, serif",
+    "'Bodoni MT', 'Times New Roman', serif",
+    "Didot, 'Times New Roman', serif",
+    "Rockwell, 'Courier New', serif",
+    "'Courier New', monospace",
+    "Consolas, monospace",
+    "'Lucida Console', monospace",
+    "Monaco, 'Lucida Console', monospace",
+    "Menlo, Consolas, monospace",
+    "'Andale Mono', Consolas, monospace",
+    "Impact, fantasy",
+    "Copperplate, fantasy",
+    "Papyrus, fantasy",
+    "Stencil, Impact, fantasy",
+    "'Brush Script MT', cursive",
+    "'Segoe Script', 'Brush Script MT', cursive",
+    "'Bradley Hand', 'Comic Sans MS', cursive",
+    "'Comic Sans MS', cursive",
+    "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    "ui-sans-serif, system-ui, sans-serif",
+    "ui-serif, Georgia, serif",
+    "ui-monospace, SFMono-Regular, Menlo, monospace",
+  ],
   "font-weight": ["400", "500", "600", "700", "bold", "normal"],
+  "font-style": ["normal", "italic", "oblique"],
+  "font-size": ["12px", "14px", "16px", "18px", "1rem", "1.25rem", "2rem", "clamp(1rem, 2vw, 2rem)"],
+  "line-height": ["1", "1.2", "1.5", "1.7", "2", "normal"],
+  "text-decoration": ["none", "underline", "overline", "line-through"],
+  "text-transform": ["none", "uppercase", "lowercase", "capitalize"],
+  "letter-spacing": ["normal", "0.02em", "0.05em", "0.1em"],
+  "border-radius": ["0", "4px", "8px", "12px", "999px", "50%"],
+  margin: ["0", "8px", "16px", "24px", "0 auto", "1rem auto"],
+  padding: ["0", "8px", "12px", "16px", "24px", "1rem 1.5rem"],
+  width: ["auto", "100%", "100vw", "fit-content", "min-content", "max-content"],
+  height: ["auto", "100%", "100vh", "fit-content"],
+  "max-width": ["100%", "480px", "720px", "960px", "1200px"],
+  "min-height": ["100vh", "50vh", "320px"],
   overflow: ["hidden", "auto", "scroll", "visible"],
   "overflow-x": ["hidden", "auto", "scroll", "visible"],
   "overflow-y": ["hidden", "auto", "scroll", "visible"],
   cursor: ["pointer", "default", "text", "not-allowed", "move"],
+  "align-self": ["auto", "stretch", "flex-start", "center", "flex-end"],
   "justify-content": [
     "flex-start",
     "center",
@@ -679,6 +808,10 @@ const cssValueSuggestionsByProperty = {
   ],
   "align-items": ["stretch", "flex-start", "center", "flex-end", "baseline"],
   "flex-direction": ["row", "row-reverse", "column", "column-reverse"],
+  "flex-wrap": ["nowrap", "wrap", "wrap-reverse"],
+  "object-fit": ["cover", "contain", "fill", "none", "scale-down"],
+  "box-shadow": ["none", "0 8px 24px rgba(0, 0, 0, 0.12)", "0 18px 40px rgba(0, 0, 0, 0.16)"],
+  "background-image": ["none", "linear-gradient(135deg, #ffffff, #f3f4f6)", "url(\"\")"],
 };
 
 const cssGenericValueSuggestions = [
@@ -749,27 +882,668 @@ let fileErrorCounts = {};
 let fileErrorLocations = {};
 const defaultCollabPermissions = {
   disableGroupChat: false,
+  disableAllChat: false,
   manageSelectedFiles: false,
   selectedFiles: [],
   disableExportZip: false,
   disableImportZip: false,
   disableNewFile: false,
+  disableRunCode: false,
+  disableConsoleAccess: false,
+  readOnlyAll: false,
+  roomLocked: false,
+  pauseCollab: false,
+  quietMode: false,
+  requireJoinApproval: false,
+  pinnedFile: "",
+  groupHighlightFile: "",
+  announcementBar: "",
+  sessionEndsAt: null,
 };
 let collabPermissions = { ...defaultCollabPermissions };
 let collabHostName = "";
 let collabModalView = "idle";
 let followedParticipantName = "";
+let collabPendingJoins = [];
+let collabShareLink = "";
+let joinRequestContext = { sessionId: "", name: "" };
+let lastAnnouncementText = "";
+let activeDialogResolver = null;
+let developerChordArmed = false;
+let developerChordTimer = null;
 const editableTextExtensions = ["html", "css", "js", "env"];
+const SAVED_PROJECTS_KEY = "codxSavedProjects";
+const AUTOSAVE_PROJECT_KEY = "codxAutosaveProject";
+const AUTOSAVE_META_KEY = "codxAutosaveMeta";
+let autosaveTimer = null;
+
+const starterTemplates = [
+  {
+    id: "landing-page",
+    name: "Landing Page",
+    icon: "fa-rocket",
+    accent: "#2ea043",
+    tone: "Launch-ready",
+    description: "Hero, feature cards, and call-to-action sections for a polished product page.",
+    highlights: ["Hero section", "Feature cards", "CTA layout"],
+    files: [
+      {
+        name: "index.html",
+        type: "html",
+        content: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Launch Better</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="hero">
+      <p class="eyebrow">Launch Week Ready</p>
+      <h1>Build a cleaner story for your product.</h1>
+      <p class="lead">A simple landing page starter with a strong hero, proof points, and a clear call to action.</p>
+      <a class="cta" href="#features">Explore Features</a>
+    </main>
+    <section id="features" class="features">
+      <article><h2>Fast setup</h2><p>Start with structure instead of a blank screen.</p></article>
+      <article><h2>Responsive by default</h2><p>Designed to adapt across desktop, tablet, and mobile.</p></article>
+      <article><h2>Clean visual system</h2><p>Easy to restyle without untangling a heavy framework.</p></article>
+    </section>
+    <script src="script.js"></script>
+  </body>
+</html>`,
+      },
+      {
+        name: "style.css",
+        type: "css",
+        content: `:root {
+  --bg: #f6fff7;
+  --surface: #ffffff;
+  --ink: #162019;
+  --muted: #58655d;
+  --accent: #2ea043;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(46, 160, 67, 0.16), transparent 24%),
+    linear-gradient(135deg, var(--bg), #ffffff 60%);
+}
+.hero {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 96px 24px 48px;
+}
+.eyebrow {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(46, 160, 67, 0.12);
+  color: var(--accent);
+  font-weight: 700;
+}
+h1 {
+  font-size: clamp(2.4rem, 7vw, 4.8rem);
+  line-height: 1;
+  max-width: 11ch;
+  margin: 20px 0 16px;
+}
+.lead {
+  max-width: 56ch;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.cta {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  text-decoration: none;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+}
+.features {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px 72px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+.features article {
+  background: var(--surface);
+  border: 1px solid rgba(22, 32, 25, 0.08);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 18px 40px rgba(24, 46, 31, 0.08);
+}
+.features p {
+  color: var(--muted);
+  line-height: 1.65;
+}`,
+      },
+      {
+        name: "script.js",
+        type: "js",
+        content: `console.log("Landing page template ready.");`,
+      },
+    ],
+  },
+  {
+    id: "portfolio",
+    name: "Portfolio",
+    icon: "fa-id-card",
+    accent: "#c0841a",
+    tone: "Personal brand",
+    description: "A personal portfolio starter with intro, projects, and contact section.",
+    highlights: ["Intro header", "Project grid", "Simple navigation"],
+    files: [
+      {
+        name: "index.html",
+        type: "html",
+        content: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Creative Portfolio</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <strong>Alex Carter</strong>
+      <nav>
+        <a href="#work">Work</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+    <main class="intro">
+      <p class="eyebrow">Designer + Frontend Developer</p>
+      <h1>I design digital experiences with clarity and edge.</h1>
+    </main>
+    <section id="work" class="grid">
+      <article><h2>Brand site</h2><p>Marketing site with bold typography and high-contrast sections.</p></article>
+      <article><h2>Dashboard</h2><p>Internal tool UI focused on faster reporting and review flow.</p></article>
+      <article><h2>Prototype</h2><p>Interactive concept page built for investor storytelling.</p></article>
+    </section>
+  </body>
+</html>`,
+      },
+      {
+        name: "style.css",
+        type: "css",
+        content: `body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  background: #fbf8f1;
+  color: #1e1d19;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 28px;
+}
+.topbar nav {
+  display: flex;
+  gap: 18px;
+}
+.topbar a {
+  color: inherit;
+  text-decoration: none;
+}
+.intro {
+  padding: 72px 28px 28px;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+h1 {
+  max-width: 10ch;
+  font-size: clamp(2.5rem, 7vw, 5.2rem);
+  line-height: 0.96;
+  margin: 18px 0 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  padding: 28px;
+}
+.grid article {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid rgba(30, 29, 25, 0.08);
+}`,
+      },
+      { name: "script.js", type: "js", content: `console.log("Portfolio template ready.");` },
+    ],
+  },
+  {
+    id: "contact-form",
+    name: "Contact Form",
+    icon: "fa-envelope-open-text",
+    accent: "#2563eb",
+    tone: "Lead capture",
+    description: "A polished form starter with responsive card layout and validation hooks.",
+    highlights: ["Responsive form", "Card layout", "Validation-ready"],
+    files: [
+      {
+        name: "index.html",
+        type: "html",
+        content: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Us</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <form class="card">
+        <h1>Get in touch</h1>
+        <label>Name<input type="text" placeholder="Your name" /></label>
+        <label>Email<input type="email" placeholder="you@example.com" /></label>
+        <label>Message<textarea rows="6" placeholder="Write your message"></textarea></label>
+        <button type="submit">Send Message</button>
+      </form>
+    </main>
+  </body>
+</html>`,
+      },
+      {
+        name: "style.css",
+        type: "css",
+        content: `body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #effaf0, #ffffff 58%, #eef4ff);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+.shell {
+  width: min(92vw, 560px);
+}
+.card {
+  background: white;
+  padding: 28px;
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(26, 49, 32, 0.1);
+  display: grid;
+  gap: 16px;
+}
+label {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+input, textarea, button {
+  font: inherit;
+}
+input, textarea {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(20, 41, 27, 0.12);
+}
+button {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  background: #2ea043;
+  color: white;
+  font-weight: 700;
+}`,
+      },
+      { name: "script.js", type: "js", content: `console.log("Contact form template ready.");` },
+    ],
+  },
+];
 
 function resetTransientCollabUiState() {
   currentTypingIndicator = null;
   remoteCursorState = {};
   remoteTypingState = {};
   followedParticipantName = "";
+  lastAnnouncementText = "";
+  if (announcementPopup) {
+    announcementPopup.style.display = "none";
+  }
   if (typingIndicatorEl) {
     typingIndicatorEl.style.display = "none";
   }
   renderRemoteCursors();
+}
+
+function getCollabAnnouncementEl() {
+  let el = document.getElementById("collabAnnouncementBar");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "collabAnnouncementBar";
+    el.style.cssText = `
+      display:none;
+      padding:10px 18px;
+      background:linear-gradient(90deg, rgba(35,134,54,0.18), rgba(35,134,54,0.06));
+      border-bottom:1px solid var(--border-color);
+      color:var(--text-primary);
+      font-size:13px;
+      font-weight:600;
+    `;
+    const header = document.querySelector("header");
+    if (header && header.parentNode) {
+      header.parentNode.insertBefore(el, header.nextSibling);
+    }
+  }
+  return el;
+}
+
+function formatSessionTimeRemaining(ts) {
+  const value = Number(ts || 0);
+  if (!value || value <= Date.now()) return "Expired";
+  const totalSeconds = Math.max(0, Math.floor((value - Date.now()) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    const remainingMinutes = Math.floor((totalSeconds % 3600) / 60);
+    return `${hours}:${String(remainingMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function applyRoomIndicators() {
+  const el = getCollabAnnouncementEl();
+  if (!el) return;
+  const parts = [];
+  if (collabPermissions.announcementBar) {
+    parts.push(`Announcement: ${collabPermissions.announcementBar}`);
+  }
+  if (collabPermissions.pinnedFile) {
+    parts.push(`Pinned file: ${collabPermissions.pinnedFile}`);
+  }
+  if (collabPermissions.groupHighlightFile) {
+    parts.push(`Team focus: ${collabPermissions.groupHighlightFile}`);
+  }
+  if (collabPermissions.sessionEndsAt) {
+    parts.push(`Timer: ${formatSessionTimeRemaining(collabPermissions.sessionEndsAt)}`);
+  }
+  el.textContent = parts.join(" | ");
+  el.style.display = parts.length ? "block" : "none";
+}
+
+function closeAnnouncementPopup() {
+  if (announcementPopup) {
+    announcementPopup.style.display = "none";
+  }
+}
+
+function showAnnouncementPopup(message) {
+  const text = String(message || "").trim();
+  if (!announcementPopup || !announcementPopupText) return;
+  if (!text) {
+    closeAnnouncementPopup();
+    return;
+  }
+  announcementPopupText.textContent = text;
+  announcementPopup.style.display = "flex";
+  if (announcementPopupOkBtn) {
+    announcementPopupOkBtn.focus();
+  }
+}
+
+function appendDeveloperConsoleLine(text = "") {
+  if (!developerConsoleOutput) return;
+  developerConsoleOutput.textContent += `${text}\n`;
+  developerConsoleOutput.scrollTop = developerConsoleOutput.scrollHeight;
+}
+
+function clearDeveloperConsoleOutput() {
+  if (!developerConsoleOutput) return;
+  developerConsoleOutput.textContent = "";
+}
+
+function closeDeveloperConsole() {
+  if (!developerConsoleModal) return;
+  developerConsoleModal.style.display = "none";
+}
+
+function openDeveloperConsole() {
+  if (!developerConsoleModal) return;
+  developerConsoleModal.style.display = "flex";
+  clearDeveloperConsoleOutput();
+  appendDeveloperConsoleLine("CodX Developer Tools");
+  appendDeveloperConsoleLine("Type 'help' to see available commands.");
+  appendDeveloperConsoleLine("");
+  runDeveloperCommand("state", false);
+  if (developerConsoleInput) {
+    developerConsoleInput.value = "";
+    developerConsoleInput.focus();
+  }
+}
+
+function setDeveloperChordArmed(value) {
+  developerChordArmed = Boolean(value);
+  if (developerChordTimer) {
+    clearTimeout(developerChordTimer);
+    developerChordTimer = null;
+  }
+  if (developerChordArmed) {
+    developerChordTimer = setTimeout(() => {
+      developerChordArmed = false;
+      developerChordTimer = null;
+    }, 1400);
+  }
+}
+
+function getDeveloperStateSummary() {
+  return {
+    activeFile: activeFile ? activeFile.name : null,
+    projectFileCount: projectFiles.length,
+    previewTarget: currentPreviewTarget,
+    autoRun: Boolean(autoRunCheckbox?.checked),
+    consoleVisible: Boolean(showConsoleCheckbox?.checked),
+    zenMode: Boolean(isZenMode),
+    activeSessionId: activeSessionId || null,
+    role: getMyRole(),
+    participantCount: collabParticipants.length,
+    errorFileCount: Object.keys(fileErrorCounts || {}).length,
+  };
+}
+
+function runDeveloperCommand(rawCommand, echoCommand = true) {
+  const command = String(rawCommand || "").trim().toLowerCase();
+  if (!command) return;
+  if (echoCommand) {
+    appendDeveloperConsoleLine(`> ${command}`);
+  }
+  switch (command) {
+    case "help":
+      appendDeveloperConsoleLine("Commands:");
+      appendDeveloperConsoleLine("help");
+      appendDeveloperConsoleLine("state");
+      appendDeveloperConsoleLine("files");
+      appendDeveloperConsoleLine("participants");
+      appendDeveloperConsoleLine("permissions");
+      appendDeveloperConsoleLine("errors");
+      appendDeveloperConsoleLine("preview");
+      appendDeveloperConsoleLine("clear");
+      appendDeveloperConsoleLine("close");
+      break;
+    case "state":
+      appendDeveloperConsoleLine(JSON.stringify(getDeveloperStateSummary(), null, 2));
+      break;
+    case "files":
+      appendDeveloperConsoleLine(
+        JSON.stringify(
+          projectFiles.map((file) => ({
+            name: file.name,
+            type: file.type,
+            active: Boolean(file.active),
+            length: String(file.content || "").length,
+          })),
+          null,
+          2,
+        ),
+      );
+      break;
+    case "participants":
+      appendDeveloperConsoleLine(
+        JSON.stringify(
+          collabParticipants.map((participant) => ({
+            name: participant.name,
+            role: participant.role || "participant",
+            currentFile: participant.currentFile || null,
+            mutedChat: Boolean(participant.mutedChat),
+            frozenEditing: Boolean(participant.frozenEditing),
+            priority: Boolean(participant.priority),
+          })),
+          null,
+          2,
+        ),
+      );
+      break;
+    case "permissions":
+      appendDeveloperConsoleLine(JSON.stringify(collabPermissions, null, 2));
+      break;
+    case "errors":
+      appendDeveloperConsoleLine(
+        JSON.stringify(
+          {
+            counts: fileErrorCounts,
+            locations: fileErrorLocations,
+          },
+          null,
+          2,
+        ),
+      );
+      break;
+    case "preview":
+      appendDeveloperConsoleLine(
+        JSON.stringify(
+          {
+            target: currentPreviewTarget,
+            title: previewTitleEl ? previewTitleEl.textContent : "",
+          },
+          null,
+          2,
+        ),
+      );
+      break;
+    case "clear":
+      clearDeveloperConsoleOutput();
+      break;
+    case "close":
+      closeDeveloperConsole();
+      break;
+    default:
+      appendDeveloperConsoleLine(`Unknown command: ${command}`);
+      appendDeveloperConsoleLine("Type 'help' for available commands.");
+  }
+  appendDeveloperConsoleLine("");
+}
+
+function closeAppDialog(result = null) {
+  if (appDialog) appDialog.style.display = "none";
+  if (appDialogInput) {
+    appDialogInput.style.display = "none";
+    appDialogInput.value = "";
+    appDialogInput.onkeydown = null;
+  }
+  if (appDialogActions) {
+    appDialogActions.innerHTML = "";
+  }
+  const resolver = activeDialogResolver;
+  activeDialogResolver = null;
+  if (resolver) resolver(result);
+}
+
+function showAppDialog({
+  title = "Dialog",
+  message = "",
+  input = false,
+  inputValue = "",
+  inputPlaceholder = "",
+  okText = "OK",
+  cancelText = "Cancel",
+  okVariant = "",
+}) {
+  return new Promise((resolve) => {
+    activeDialogResolver = resolve;
+    if (appDialogTitle) appDialogTitle.textContent = title;
+    if (appDialogMessage) appDialogMessage.textContent = message;
+    if (appDialogInput) {
+      appDialogInput.style.display = input ? "block" : "none";
+      appDialogInput.value = input ? String(inputValue || "") : "";
+      appDialogInput.placeholder = input ? String(inputPlaceholder || "") : "";
+    }
+    if (appDialogActions) {
+      appDialogActions.innerHTML = `
+        <button type="button" id="appDialogCancelBtn" class="run-button" style="background:#6b7280;"><strong>${escapeHtml(cancelText)}</strong></button>
+        <button type="button" id="appDialogOkBtn" class="run-button"${okVariant ? ` style="${escapeHtml(okVariant)}"` : ""}><strong>${escapeHtml(okText)}</strong></button>
+      `;
+    }
+    if (appDialog) appDialog.style.display = "flex";
+    const cancelBtn = document.getElementById("appDialogCancelBtn");
+    const okBtn = document.getElementById("appDialogOkBtn");
+    if (cancelBtn) cancelBtn.onclick = () => closeAppDialog({ ok: false, value: null });
+    if (okBtn) {
+      okBtn.onclick = () =>
+        closeAppDialog({
+          ok: true,
+          value: input && appDialogInput ? appDialogInput.value : true,
+        });
+    }
+    if (appDialogInput) {
+      appDialogInput.onkeydown = (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (okBtn) okBtn.click();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          if (cancelBtn) cancelBtn.click();
+        }
+      };
+    }
+    if (input && appDialogInput) {
+      setTimeout(() => appDialogInput.focus(), 0);
+    } else if (okBtn) {
+      setTimeout(() => okBtn.focus(), 0);
+    }
+  });
+}
+
+function showAppPrompt(title, message, inputValue = "", inputPlaceholder = "") {
+  return showAppDialog({
+    title,
+    message,
+    input: true,
+    inputValue,
+    inputPlaceholder,
+    okText: "OK",
+    cancelText: "CANCEL",
+  });
+}
+
+function showAppConfirm(title, message, okText = "YES", cancelText = "NO", okVariant = "") {
+  return showAppDialog({
+    title,
+    message,
+    input: false,
+    okText,
+    cancelText,
+    okVariant,
+  });
 }
 
 function resetFileErrorCounts() {
@@ -1076,10 +1850,12 @@ let projectFiles = [
         <article class="card">
           <h2>Controls</h2>
           <ul>
-            <li><kbd>Ctrl</kbd> + <kbd>S</kbd> Save current file</li>
-            <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Run preview manually</li>
+            <li><kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd> Export your project as a ZIP</li>
+            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Enter</kbd> Run preview manually</li>
             <li><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd> Create a new file</li>
-            <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>
+            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>
+            <li><kbd>Esc</kbd> Exit Zen Mode</li>
+            <li>Type <strong>cxstart</strong> in an empty HTML file and press <kbd>Enter</kbd></li>
           </ul>
         </article>
       </section>
@@ -1218,6 +1994,14 @@ let currentPreviewTarget = {
 
 function getPreviewTargetForFile(rawHref) {
   const normalizedHref = String(rawHref || "").trim().replace(/^\.\/+/, "");
+  if (!normalizedHref || normalizedHref === "#") {
+    return {
+      exists: false,
+      mode: "empty",
+      fileName: "",
+      url: "",
+    };
+  }
   const fileName = normalizedHref.split("/").pop();
   const linkedFile = projectFiles.find((f) => {
     if (f.type !== "html") return false;
@@ -1313,42 +2097,374 @@ function safeLocalStorage(method, key, value = null) {
   }
 }
 
+function serializeProjectState() {
+  return {
+    version: 1,
+    files: projectFiles.map((file) => ({
+      name: file.name,
+      type: file.type,
+      content: file.content,
+      active: file.active,
+    })),
+    activeFileName: activeFile ? activeFile.name : "",
+    previewTarget: currentPreviewTarget,
+    savedAt: Date.now(),
+  };
+}
+
+function applyProjectState(snapshot, sourceLabel = "project") {
+  const files = Array.isArray(snapshot?.files) ? snapshot.files : [];
+  if (!files.length) {
+    showNotification(`No files found in ${sourceLabel}.`, "error");
+    return false;
+  }
+
+  projectFiles = files.map((file, index) => ({
+    name: String(file.name || `file-${index + 1}.html`),
+    type: String(file.type || "html"),
+    content: String(file.content || ""),
+    active: false,
+  }));
+
+  const requestedActiveName = String(snapshot?.activeFileName || "").trim();
+  activeFile =
+    projectFiles.find((file) => file.name === requestedActiveName) ||
+    projectFiles.find((file) => file.active) ||
+    projectFiles[0];
+  projectFiles.forEach((file) => {
+    file.active = activeFile && file.name === activeFile.name;
+  });
+
+  if (snapshot?.previewTarget?.mode === "html") {
+    currentPreviewTarget = {
+      mode: "html",
+      fileName: String(snapshot.previewTarget.fileName || activeFile?.name || ""),
+    };
+  } else if (activeFile?.type === "html") {
+    currentPreviewTarget = { mode: "html", fileName: activeFile.name };
+  }
+
+  const editor = document.getElementById("activeEditor");
+  if (editor && activeFile) {
+    editor.value = activeFile.content;
+    updateLineNumbers(editor);
+    syncScroll(editor);
+  }
+  renderFileList();
+  enforceCollabPermissionsUI();
+  hasUnsavedChanges = false;
+  scheduleProjectAutosave();
+  if (autoRunCheckbox.checked) updatePreview();
+  syncProjectWithSession();
+  return true;
+}
+
+function scheduleProjectAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    const snapshot = serializeProjectState();
+    safeLocalStorage("set", AUTOSAVE_PROJECT_KEY, JSON.stringify(snapshot));
+    safeLocalStorage(
+      "set",
+      AUTOSAVE_META_KEY,
+      JSON.stringify({
+        activeFileName: snapshot.activeFileName,
+        savedAt: snapshot.savedAt,
+      }),
+    );
+  }, 350);
+}
+
+function getSavedProjects() {
+  try {
+    return JSON.parse(safeLocalStorage("get", SAVED_PROJECTS_KEY) || "[]");
+  } catch (_err) {
+    return [];
+  }
+}
+
+function setSavedProjects(projects) {
+  safeLocalStorage("set", SAVED_PROJECTS_KEY, JSON.stringify(projects));
+}
+
+function saveCurrentProjectToLibrary(projectName) {
+  const trimmedName = String(projectName || "").trim();
+  if (!trimmedName) {
+    showNotification("Project name cannot be empty.", "error");
+    return;
+  }
+  const projects = getSavedProjects();
+  const snapshot = serializeProjectState();
+  const existingIndex = projects.findIndex(
+    (project) => String(project.name || "").trim().toLowerCase() === trimmedName.toLowerCase(),
+  );
+  const nextRecord = {
+    id:
+      existingIndex >= 0
+        ? projects[existingIndex].id
+        : `project-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: trimmedName,
+    updatedAt: Date.now(),
+    snapshot,
+  };
+  if (existingIndex >= 0) {
+    projects[existingIndex] = nextRecord;
+  } else {
+    projects.unshift(nextRecord);
+  }
+  setSavedProjects(projects.slice(0, 24));
+  hasUnsavedChanges = false;
+  scheduleProjectAutosave();
+  showNotification(`Saved project "${trimmedName}".`, "success");
+}
+
+function getSuggestedProjectName() {
+  const htmlFile = projectFiles.find((file) => file.type === "html");
+  const baseName = (htmlFile ? htmlFile.name : activeFile?.name || "codx-project").replace(/\.[^.]+$/, "");
+  return baseName || "codx-project";
+}
+
+async function deleteSavedProject(projectId) {
+  const project = getSavedProjects().find((entry) => entry.id === projectId);
+  if (!project) return;
+  const dialog = await showAppConfirm(
+    "DELETE SAVED PROJECT",
+    `Delete "${project.name}" from your saved projects?`,
+    "DELETE",
+    "CANCEL",
+    "background:#d32f2f;",
+  );
+  if (!dialog?.ok) return;
+  const projects = getSavedProjects().filter((entry) => entry.id !== projectId);
+  setSavedProjects(projects);
+  renderProjectLibrary("saved");
+  showNotification("Saved project removed.", "success");
+}
+
+async function publishCurrentProject() {
+  const dialog = await showAppPrompt(
+    "PUBLISH PROJECT",
+    "Enter a name for the published project:",
+    "CodX Project",
+    "CodX Project",
+  );
+  if (!dialog?.ok) return;
+  const projectName = String(dialog.value || "").trim() || "CodX Project";
+  try {
+    const response = await fetch("/api/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectName,
+        files: projectFiles,
+        activeFileName: activeFile ? activeFile.name : "",
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.error || "Failed to publish project.");
+    }
+    if (payload.shareLink) {
+      try {
+        await navigator.clipboard.writeText(payload.shareLink);
+      } catch (_err) {}
+    }
+    const dialog = await showAppPrompt(
+      "PROJECT PUBLISHED",
+      "Your project link is ready. It was copied to your clipboard if your browser allowed it.",
+      payload.shareLink || "",
+      payload.shareLink || "",
+    );
+    if (dialog?.ok && dialog.value && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(dialog.value);
+        showNotification("Published link copied.", "success");
+      } catch (_err) {
+        showNotification("Project published successfully.", "success");
+      }
+    } else {
+      showNotification("Project published successfully.", "success");
+    }
+  } catch (error) {
+    showNotification(error.message || "Failed to publish project.", "error");
+  }
+}
+
+function renderProjectLibrary(mode = "saved") {
+  if (!projectLibraryModal || !projectLibraryBody) return;
+  const savedProjects = getSavedProjects();
+  const tabs = `
+    <div class="collab-pill-row" style="margin-bottom:16px;">
+      <button id="savedProjectsTabBtn" class="run-button"${mode === "saved" ? ' style="background:var(--accent-color);color:#fff;"' : ""}><strong>SAVED PROJECTS</strong></button>
+      <button id="templateProjectsTabBtn" class="run-button"${mode === "templates" ? ' style="background:var(--accent-color);color:#fff;"' : ""}><strong>STARTER TEMPLATES</strong></button>
+    </div>
+  `;
+
+  if (mode === "templates") {
+    projectLibraryBody.innerHTML =
+      tabs +
+      `<div class="template-library-grid">${starterTemplates
+        .map(
+          (template) => `
+            <article class="template-card" style="--template-accent:${escapeHtml(template.accent || "#4CAF50")};">
+              <div class="template-card-top">
+                <span class="template-icon"><i class="fa-solid ${escapeHtml(template.icon || "fa-layer-group")}"></i></span>
+                <span class="template-tone">${escapeHtml(template.tone || "Starter")}</span>
+              </div>
+              <h4 class="template-title">${escapeHtml(template.name)}</h4>
+              <div class="template-description">${escapeHtml(template.description)}</div>
+              <div class="template-meta-row">
+                <span class="template-meta-pill"><i class="fa-solid fa-folder-tree"></i> ${template.files.length} files</span>
+                <span class="template-meta-pill"><i class="fa-solid fa-code"></i> ${escapeHtml(template.files.map((file) => file.type.toUpperCase()).join(" • "))}</span>
+              </div>
+              <div class="template-highlights">
+                ${(Array.isArray(template.highlights) ? template.highlights : [])
+                  .map((item) => `<span class="template-highlight-pill">${escapeHtml(item)}</span>`)
+                  .join("")}
+              </div>
+              <button class="run-button apply-template-btn" data-template="${escapeHtml(template.id)}"><strong>USE TEMPLATE</strong></button>
+            </article>`,
+        )
+        .join("")}</div>`;
+  } else {
+    projectLibraryBody.innerHTML =
+      tabs +
+      (savedProjects.length
+        ? `<div class="collab-participant-list">${savedProjects
+            .map(
+              (project) => `
+                <div class="collab-pending-row">
+                  <div class="collab-participant-main">
+                    <div class="collab-participant-text">
+                      <div class="collab-participant-name">${escapeHtml(project.name)}</div>
+                      <div class="collab-participant-meta">Updated ${new Date(project.updatedAt).toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div class="collab-pending-actions">
+                    <button class="run-button open-saved-project-btn" data-project-id="${escapeHtml(project.id)}"><strong>OPEN</strong></button>
+                    <button class="run-button delete-saved-project-btn" data-project-id="${escapeHtml(project.id)}" style="background:#d32f2f;"><strong>DELETE</strong></button>
+                  </div>
+                </div>`,
+            )
+            .join("")}</div>`
+        : `<div class="collab-section-card"><div class="collab-section-note">No saved projects yet. Use SAVE PROJECT to store your current work.</div></div>`);
+  }
+
+  projectLibraryModal.style.display = "flex";
+
+  const savedTabBtn = document.getElementById("savedProjectsTabBtn");
+  const templateTabBtn = document.getElementById("templateProjectsTabBtn");
+  if (savedTabBtn) savedTabBtn.onclick = () => renderProjectLibrary("saved");
+  if (templateTabBtn) templateTabBtn.onclick = () => renderProjectLibrary("templates");
+
+  document.querySelectorAll(".open-saved-project-btn").forEach((btn) => {
+    btn.onclick = () => {
+      const project = savedProjects.find((entry) => entry.id === btn.dataset.projectId);
+      if (!project?.snapshot) return;
+      applyProjectState(project.snapshot, "saved project");
+      closeProjectLibrary();
+      showNotification(`Opened "${project.name}".`, "success");
+    };
+  });
+
+  document.querySelectorAll(".delete-saved-project-btn").forEach((btn) => {
+    btn.onclick = () => deleteSavedProject(btn.dataset.projectId);
+  });
+
+  document.querySelectorAll(".apply-template-btn").forEach((btn) => {
+    btn.onclick = () => {
+      const template = starterTemplates.find((entry) => entry.id === btn.dataset.template);
+      if (!template) return;
+      applyProjectState(
+        {
+          files: template.files,
+          activeFileName: template.files[0]?.name || "",
+          previewTarget: { mode: "html", fileName: template.files[0]?.name || "" },
+        },
+        "template",
+      );
+      closeProjectLibrary();
+      showNotification(`Template "${template.name}" loaded.`, "success");
+    };
+  });
+}
+
+function closeProjectLibrary() {
+  if (projectLibraryModal) {
+    projectLibraryModal.style.display = "none";
+  }
+}
+
+function tryRestoreAutosaveDraft() {
+  const raw = safeLocalStorage("get", AUTOSAVE_PROJECT_KEY);
+  if (!raw) return;
+  try {
+    const snapshot = JSON.parse(raw);
+    if (Array.isArray(snapshot?.files) && snapshot.files.length) {
+      applyProjectState(snapshot, "autosave");
+      showNotification("Restored autosaved project draft.", "info");
+    }
+  } catch (_err) {}
+}
+
 function showNotification(message, type = "info") {
+  if (
+    activeSessionId &&
+    collabPermissions.quietMode &&
+    type !== "error" &&
+    type !== "warn" &&
+    !String(message || "").toLowerCase().includes("session")
+  ) {
+    return;
+  }
   const existing = document.querySelectorAll(".codx-notification");
   existing.forEach((item, index) => {
-    item.style.top = `${80 + index * 62}px`;
+    item.style.top = `${86 + index * 78}px`;
   });
 
   const notification = document.createElement("div");
-  notification.className = "codx-notification";
-  notification.textContent = message;
-  const offsetTop = 80 + existing.length * 62;
-  notification.style.cssText = `
-    position: fixed; top: ${offsetTop}px; right: 20px; padding: 15px 20px;
-    background: ${
-      type === "error" ? "#ff5555" : type === "success" ? "#4CAF50" : "#2196F3"
-    };
-    color: white; border-radius: 4px; z-index: 10000; font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3); animation: slideIn 0.3s ease;
+  notification.className = `codx-notification codx-notification-${type}`;
+  const offsetTop = 86 + existing.length * 78;
+  notification.style.top = `${offsetTop}px`;
+
+  const icon =
+    type === "error"
+      ? "fa-circle-exclamation"
+      : type === "success"
+      ? "fa-circle-check"
+      : type === "warn"
+      ? "fa-triangle-exclamation"
+      : "fa-circle-info";
+
+  const label =
+    type === "error"
+      ? "Error"
+      : type === "success"
+      ? "Success"
+      : type === "warn"
+      ? "Warning"
+      : "Info";
+
+  notification.innerHTML = `
+    <div class="codx-notification-icon" aria-hidden="true">
+      <i class="fa-solid ${icon}"></i>
+    </div>
+    <div class="codx-notification-body">
+      <div class="codx-notification-label">${label}</div>
+      <div class="codx-notification-message">${escapeHtml(String(message || ""))}</div>
+    </div>
   `;
   document.body.appendChild(notification);
   setTimeout(() => {
-    notification.style.animation = "slideOut 0.3s ease";
+    notification.classList.add("is-leaving");
     setTimeout(() => {
       notification.remove();
       document.querySelectorAll(".codx-notification").forEach((item, index) => {
-        item.style.top = `${80 + index * 62}px`;
+        item.style.top = `${86 + index * 78}px`;
       });
     }, 300);
   }, 3000);
 }
-
-const style = document.createElement("style");
-style.textContent = `
-  @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
-`;
-document.head.appendChild(style);
 
 const consoleErrorObserver = new MutationObserver(() => {
   updateFileErrorCountsFromConsole();
@@ -1383,6 +2499,7 @@ function renderFileList() {
     if (
       currentTypingIndicator &&
       currentTypingIndicator.name !== myInfo.name &&
+      !collabPermissions.quietMode &&
       currentTypingIndicator.fileName === file.name
     ) {
       const typingSpan = document.createElement("span");
@@ -1390,6 +2507,22 @@ function renderFileList() {
       typingSpan.textContent = ` - ${currentTypingIndicator.name} is typing...`;
       typingSpan.style.color = currentTypingIndicator.theme || "var(--accent-color)";
       nameSpan.appendChild(typingSpan);
+    }
+
+    if (collabPermissions.pinnedFile === file.name) {
+      const pinnedSpan = document.createElement("span");
+      pinnedSpan.className = "file-typing-indicator";
+      pinnedSpan.textContent = " - PINNED";
+      pinnedSpan.style.color = "var(--warning-color)";
+      nameSpan.appendChild(pinnedSpan);
+    }
+
+    if (collabPermissions.groupHighlightFile === file.name) {
+      const focusSpan = document.createElement("span");
+      focusSpan.className = "file-typing-indicator";
+      focusSpan.textContent = " - TEAM FOCUS";
+      focusSpan.style.color = "var(--accent-color)";
+      nameSpan.appendChild(focusSpan);
     }
 
     const errorCount = fileErrorCounts[file.name] || 0;
@@ -1494,12 +2627,19 @@ function switchFile(fileName) {
   syncProjectWithSession();
 }
 
-function createNewFile() {
+async function createNewFile() {
   if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableNewFile) {
     showNotification("The host disabled creating new files for participants.", "error");
     return;
   }
-  const name = prompt("Enter file name (e.g., newfile.html or .env):");
+  const dialog = await showAppPrompt(
+    "NEW FILE",
+    "Enter file name (e.g., newfile.html or .env):",
+    "",
+    "newfile.html",
+  );
+  if (!dialog?.ok) return;
+  const name = dialog.value;
   if (!name) return;
   const trimmedName = name.trim();
   if (!trimmedName) return;
@@ -1534,19 +2674,27 @@ function createNewFile() {
   editor.value = newFile.content; // Set editor value to the template
   updateLineNumbers(editor);
   renderFileList();
+  scheduleProjectAutosave();
   if (autoRunCheckbox.checked) updatePreview();
   syncProjectWithSession();
   showNotification(`File ${trimmedName} created`, "success");
 }
 
-function renameFile(oldName) {
+async function renameFile(oldName) {
   const normalizedOldName = String(oldName || "").trim().toLowerCase();
   const file = projectFiles.find(
     (f) => String(f.name || "").trim().toLowerCase() === normalizedOldName,
   );
   if (!file) return;
 
-  const nextName = prompt("Rename file:", oldName);
+  const dialog = await showAppPrompt(
+    "RENAME FILE",
+    "Enter the new file name:",
+    oldName,
+    oldName,
+  );
+  if (!dialog?.ok) return;
+  const nextName = dialog.value;
   if (!nextName) return;
   const name = nextName.trim();
   if (!name || name === oldName) return;
@@ -1587,6 +2735,7 @@ function renameFile(oldName) {
   }
 
   renderFileList();
+  scheduleProjectAutosave();
   syncProjectWithSession();
   showNotification(`File renamed to ${name}`, "success");
   if (autoRunCheckbox.checked || previousType !== ext) {
@@ -1594,12 +2743,19 @@ function renameFile(oldName) {
   }
 }
 
-function deleteFile(fileName) {
+async function deleteFile(fileName) {
   if (projectFiles.length <= 1) {
     showNotification("Cannot delete the last file", "error");
     return;
   }
-  if (confirm(`Delete ${fileName}?`)) {
+  const dialog = await showAppConfirm(
+    "DELETE FILE",
+    `Delete ${fileName}?`,
+    "DELETE",
+    "CANCEL",
+    "background:#d32f2f;",
+  );
+  if (dialog?.ok) {
     const normalizedFileName = String(fileName || "").trim().toLowerCase();
     projectFiles = projectFiles.filter(
       (file) => String(file.name || "").trim().toLowerCase() !== normalizedFileName,
@@ -1625,6 +2781,7 @@ function deleteFile(fileName) {
         : { mode: "html", fileName: "" };
     }
     renderFileList();
+    scheduleProjectAutosave();
     syncProjectWithSession();
     updatePreview();
     showNotification(`File ${fileName} deleted`, "success");
@@ -1829,17 +2986,28 @@ applySettingsBtn.addEventListener("click", () => {
 });
 
 resetSettingsBtn.addEventListener("click", () => {
-  if (confirm("Are you sure you want to reset all settings to default?")) {
+  showAppConfirm(
+    "RESET SETTINGS",
+    "Are you sure you want to reset all settings to default?",
+    "RESET",
+    "CANCEL",
+    "background:#d32f2f;",
+  ).then((dialog) => {
+    if (!dialog?.ok) return;
     safeLocalStorage("remove", "editorSettings");
     resetToDefaultSettings();
     updatePreviewBox();
     applySettingsToEditors();
     showNotification("Settings reset to default!", "success");
-  }
+  });
 });
 
 // PART 4 - UI CONTROLS
 showConsoleCheckbox.addEventListener("change", () => {
+  if (showConsoleCheckbox.disabled) {
+    showConsoleCheckbox.checked = false;
+    return;
+  }
   consoleContainer.classList.toggle("show", showConsoleCheckbox.checked);
 });
 
@@ -2019,10 +3187,22 @@ function runPreflightDiagnostics() {
 }
 
 function updatePreview() {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableRunCode) {
+    showNotification("The host disabled running code for participants.", "error");
+    return;
+  }
   consoleOutput.innerHTML = "";
   resetFileErrorCounts();
   renderFileList();
   runPreflightDiagnostics();
+
+  if (currentPreviewTarget.mode === "empty") {
+    updatePreviewTitle("Preview");
+    iframe.srcdoc =
+      '<h3 style="text-align:center;color:#aaa;">No HTML file found</h3>';
+    appendConsoleMessage("warn", "WARNING: No HTML target was provided for preview navigation.");
+    return;
+  }
 
   if (currentPreviewTarget.mode === "missing" && currentPreviewTarget.fileName) {
     const recoveredTarget = getPreviewTargetForFile(currentPreviewTarget.fileName);
@@ -2485,6 +3665,7 @@ function commitEditorMutation(editor) {
   hasUnsavedChanges = true;
   activeFile.content = editor.value;
   updateLineNumbers(editor);
+  scheduleProjectAutosave();
   if (autoRunCheckbox.checked) debouncedUpdatePreview();
   handleCodeChange({
     target: { id: activeFile.type + "Code", value: editor.value },
@@ -2568,7 +3749,7 @@ function wrapTokens(text, patterns) {
   return result || " ";
 }
 
-function highlightHtml(code) {
+function highlightHtmlSegment(code) {
   const patterns = [
     { className: "comment", regex: /<!--[\s\S]*?-->/g },
     { className: "keyword", regex: /<!DOCTYPE[\s\S]*?>/gi },
@@ -2583,6 +3764,32 @@ function highlightHtml(code) {
     { className: "tag", regex: /\/?>/g },
   ];
   return wrapTokens(code, patterns);
+}
+
+function highlightHtml(code) {
+  const blockRegex = /(<style\b[^>]*>)([\s\S]*?)(<\/style>)|(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi;
+  let result = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = blockRegex.exec(code)) !== null) {
+    result += highlightHtmlSegment(code.slice(lastIndex, match.index));
+
+    if (match[1]) {
+      result += highlightHtmlSegment(match[1]);
+      result += highlightCss(match[2] || "");
+      result += highlightHtmlSegment(match[3]);
+    } else {
+      result += highlightHtmlSegment(match[4]);
+      result += highlightJs(match[5] || "");
+      result += highlightHtmlSegment(match[6]);
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  result += highlightHtmlSegment(code.slice(lastIndex));
+  return result;
 }
 
 function highlightCss(code) {
@@ -3696,9 +4903,11 @@ function selectHtmlAttributeSuggestion(attrName) {
   const cursorOffset =
     attrName === "data-*"
       ? 5
-      : needsQuotedValue
-        ? insertedText.length - 1
-        : insertedText.length;
+      : lowerAttr === "style"
+        ? insertedText.indexOf('""') + 1
+        : needsQuotedValue
+          ? insertedText.length - 1
+          : insertedText.length;
   const caretPos = replaceStart + cursorOffset;
   applyEditorMutation(
     editor,
@@ -3723,8 +4932,8 @@ function selectCssSuggestion(value) {
   if (mode === "css-property") {
     const afterSlice = editor.value.substring(replaceEnd);
     if (!/^\s*:/.test(afterSlice)) {
-      insertedText = `${value}: `;
-      cursorOffset = insertedText.length;
+      insertedText = `${value}: ;`;
+      cursorOffset = value.length + 2;
     }
   } else if (mode === "css-inline-property") {
     const afterSlice = editor.value.substring(replaceEnd);
@@ -3748,7 +4957,7 @@ function selectCssSuggestion(value) {
     const afterSlice = editor.value.substring(replaceEnd);
     if (!/^\s*\{/.test(afterSlice)) {
       insertedText = `${value} {\n${INDENT_UNIT}\n}`;
-      cursorOffset = value.length + 7;
+      cursorOffset = value.length + 3 + INDENT_UNIT.length;
     }
   }
 
@@ -4134,6 +5343,11 @@ document.addEventListener("keydown", (e) => {
   }
 
   if (e.key === "Escape") {
+    if (developerConsoleModal && developerConsoleModal.style.display === "flex") {
+      e.preventDefault();
+      closeDeveloperConsole();
+      return;
+    }
     if (fontPickerModal && fontPickerModal.style.display === "flex") {
       e.preventDefault();
       fontPickerModal.style.display = "none";
@@ -4168,12 +5382,25 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
+  if (mod && key === "c") {
+    setDeveloperChordArmed(true);
+  } else if (developerChordArmed && mod && key === "x") {
+    e.preventDefault();
+    setDeveloperChordArmed(false);
+    openDeveloperConsole();
+    return;
+  }
+
   if (mod && key === "s") {
     e.preventDefault();
     exportAsZip();
   }
   if (mod && key === "enter") {
     e.preventDefault();
+    if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableRunCode) {
+      showNotification("The host disabled running code for participants.", "error");
+      return;
+    }
     updatePreview();
   }
   if (mod && key === "q") {
@@ -4184,6 +5411,12 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     showConsoleCheckbox.checked = !showConsoleCheckbox.checked;
     showConsoleCheckbox.dispatchEvent(new Event("change"));
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  if (e.key === "Control" || e.key === "Meta") {
+    setDeveloperChordArmed(false);
   }
 });
 
@@ -4231,6 +5464,7 @@ editorContainer.addEventListener("drop", (e) => {
         }
         const newFile = { name: file.name, type: ext, content, active: false };
         projectFiles.push(newFile);
+        scheduleProjectAutosave();
         if (projectFiles.length === 1) {
           newFile.active = true;
           activeFile = newFile;
@@ -4246,7 +5480,7 @@ editorContainer.addEventListener("drop", (e) => {
   }
 });
 
-document.getElementById("activeEditor").addEventListener("mousemove", announceCursorPosition);
+document.getElementById("activeEditor").addEventListener("pointermove", announceCursorPosition);
 document.getElementById("activeEditor").addEventListener("mouseenter", announceCursorPosition);
 document.getElementById("activeEditor").addEventListener("mouseleave", clearOwnSessionCursorBroadcast);
 window.addEventListener("beforeunload", clearOwnSessionCursorBroadcast);
@@ -4258,7 +5492,14 @@ async function exportAsZip() {
     showNotification("The host disabled ZIP export for participants.", "error");
     return;
   }
-  const requestedName = prompt("Name your ZIP file:", "codx-project.zip");
+  const dialog = await showAppPrompt(
+    "EXPORT ZIP",
+    "Name your ZIP file:",
+    "codx-project.zip",
+    "codx-project.zip",
+  );
+  if (!dialog?.ok) return;
+  const requestedName = dialog.value;
   if (!requestedName) return;
   const trimmedName = requestedName.trim();
   if (!trimmedName) {
@@ -4343,6 +5584,7 @@ function handleZipImport(event) {
         editor.value = activeFile.content;
         updateLineNumbers(editor);
         renderFileList();
+        scheduleProjectAutosave();
         if (autoRunCheckbox.checked) updatePreview();
         syncProjectWithSession();
         showNotification(
@@ -4453,6 +5695,18 @@ function isCoHost() {
   return getMyRole() === "co-host";
 }
 
+function canUseCoHostTools() {
+  return isHost() || isCoHost();
+}
+
+function canModerateParticipant(participant) {
+  if (!participant) return false;
+  const role = String(participant.role || "participant");
+  if (isHost()) return role !== "host";
+  if (isCoHost()) return role === "participant";
+  return false;
+}
+
 function normalizeCollabPermissions(raw) {
   const next = {
     ...defaultCollabPermissions,
@@ -4502,10 +5756,25 @@ function enforceCollabPermissionsUI() {
       importZipBtn.disabled = false;
       importZipBtn.title = "";
     }
+    if (runPreviewBtn) {
+      runPreviewBtn.disabled = false;
+      runPreviewBtn.title = "";
+    }
+    if (showConsoleCheckbox) {
+      showConsoleCheckbox.disabled = false;
+      showConsoleCheckbox.title = "";
+    }
+    if (clearConsoleBtn) {
+      clearConsoleBtn.disabled = false;
+      clearConsoleBtn.title = "";
+    }
     const editor = document.getElementById("activeEditor");
     if (editor) {
       editor.readOnly = false;
       editor.title = "";
+    }
+    if (consoleContainer && showConsoleCheckbox && !showConsoleCheckbox.checked) {
+      consoleContainer.classList.remove("show");
     }
     return;
   }
@@ -4514,7 +5783,10 @@ function enforceCollabPermissionsUI() {
   const lockNewFile = participantRestricted && collabPermissions.disableNewFile;
   const lockExport = participantRestricted && collabPermissions.disableExportZip;
   const lockImport = participantRestricted && collabPermissions.disableImportZip;
-  const lockEditor = !canCurrentUserEditFile(activeFile ? activeFile.name : "");
+  const lockRun = participantRestricted && collabPermissions.disableRunCode;
+  const lockConsole = participantRestricted && collabPermissions.disableConsoleAccess;
+  const globalReadOnly = activeSessionId && (collabPermissions.readOnlyAll || collabPermissions.pauseCollab);
+  const lockEditor = globalReadOnly || !canCurrentUserEditFile(activeFile ? activeFile.name : "");
   const me = getMyParticipant();
   const frozenEditing = participantRestricted && Boolean(me?.frozenEditing);
 
@@ -4530,15 +5802,38 @@ function enforceCollabPermissionsUI() {
     importZipBtn.disabled = lockImport;
     importZipBtn.title = lockImport ? "The host disabled ZIP import." : "";
   }
+  if (runPreviewBtn) {
+    runPreviewBtn.disabled = lockRun;
+    runPreviewBtn.title = lockRun ? "The host disabled code execution for participants." : "";
+  }
+  if (showConsoleCheckbox) {
+    showConsoleCheckbox.disabled = lockConsole;
+    showConsoleCheckbox.title = lockConsole ? "The host disabled console access for participants." : "";
+    if (lockConsole) {
+      showConsoleCheckbox.checked = false;
+    }
+  }
+  if (clearConsoleBtn) {
+    clearConsoleBtn.disabled = lockConsole;
+    clearConsoleBtn.title = lockConsole ? "The host disabled console access for participants." : "";
+  }
   const editor = document.getElementById("activeEditor");
   if (editor) {
     editor.readOnly = lockEditor;
     editor.title = lockEditor
-      ? frozenEditing
+      ? globalReadOnly
+        ? collabPermissions.pauseCollab
+          ? "The host paused collaboration for the group."
+          : "The host set the room to read-only."
+        : frozenEditing
         ? "The host temporarily froze your editing access."
         : "The host allowed editing only on selected files."
       : "";
   }
+  if (consoleContainer) {
+    consoleContainer.classList.toggle("show", showConsoleCheckbox.checked && !lockConsole);
+  }
+  applyRoomIndicators();
 }
 
 function updateZenModeButtonState() {
@@ -4593,6 +5888,352 @@ function pushCollabPermissionsUpdate(partial) {
   );
 }
 
+function updateGroupPermission(partial, successMessage) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  const next = normalizeCollabPermissions({
+    ...collabPermissions,
+    ...(partial || {}),
+  });
+  collabSocket.emit(
+    "collab:set-permissions",
+    { sessionId: activeSessionId, permissions: next },
+    (res) => {
+      if (!res?.ok) {
+        showNotification((res && res.error) || "Failed to update room setting", "error");
+      } else {
+        collabPermissions = normalizeCollabPermissions(res.permissions || next);
+        enforceCollabPermissionsUI();
+        applyRoomIndicators();
+        if (collabModal.style.display === "flex") {
+          if (collabModalView === "group-controls") {
+            showGroupControls(activeSessionId);
+          } else if (collabModalView === "session") {
+            showSessionDetails(activeSessionId);
+          }
+        }
+        if (successMessage) showNotification(successMessage, "success");
+      }
+    },
+  );
+}
+
+async function promptForExistingFile(label, currentValue = "") {
+  const existingNames = projectFiles.map((file) => file.name).join(", ");
+  const dialog = await showAppPrompt(
+    "SELECT FILE",
+    `${label}\nAvailable files: ${existingNames}`,
+    currentValue || (activeFile ? activeFile.name : ""),
+    activeFile ? activeFile.name : "",
+  );
+  if (!dialog?.ok) {
+    return { status: "cancel" };
+  }
+  const picked = dialog.value;
+  const trimmed = String(picked || "").trim();
+  if (!trimmed) {
+    return { status: "empty" };
+  }
+  const match = projectFiles.find((file) => file.name.toLowerCase() === trimmed.toLowerCase());
+  return match ? { status: "ok", fileName: match.name } : { status: "invalid" };
+}
+
+async function bringEveryoneToFile() {
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return;
+  const result = await promptForExistingFile("Bring everyone to which file?", activeFile ? activeFile.name : "");
+  if (result.status === "cancel") return;
+  if (result.status !== "ok") {
+    showNotification("Choose an existing file name.", "error");
+    return;
+  }
+  const fileName = result.fileName;
+  collabSocket.emit("collab:bring-to-file", { sessionId: activeSessionId, fileName }, (res) => {
+    if (!res?.ok) {
+      showNotification((res && res.error) || "Failed to bring everyone to file", "error");
+      return;
+    }
+    showNotification(`Everyone was brought to ${fileName}.`, "success");
+  });
+}
+
+function clearGroupChat() {
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return;
+  collabSocket.emit("collab:clear-group-chat", { sessionId: activeSessionId }, (res) => {
+    if (!res?.ok) {
+      showNotification((res && res.error) || "Failed to clear group chat", "error");
+      return;
+    }
+    showNotification("Group chat cleared.", "success");
+  });
+}
+
+function saveSessionSnapshot() {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit("collab:save-snapshot", { sessionId: activeSessionId }, (res) => {
+    if (!res?.ok || !res.snapshot) {
+      showNotification((res && res.error) || "Failed to save session snapshot", "error");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(res.snapshot, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `codx-session-${activeSessionId}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    showNotification("Session snapshot saved.", "success");
+  });
+}
+
+function regenerateInviteLink() {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit("collab:regenerate-link", { sessionId: activeSessionId }, (res) => {
+    if (!res?.ok) {
+      showNotification((res && res.error) || "Failed to regenerate link", "error");
+      return;
+    }
+    activeSessionId = res.sessionId || activeSessionId;
+    collabShareLink = res.shareLink || collabShareLink;
+    window.history.replaceState({}, "", `/frontend.html/${activeSessionId}`);
+    showNotification("Invite link regenerated.", "success");
+    showGroupControls(activeSessionId);
+  });
+}
+
+async function endSessionForEveryone() {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  const dialog = await showAppConfirm(
+    "END SESSION",
+    "End the collaboration session for everyone?",
+    "END SESSION",
+    "CANCEL",
+    "background:#d32f2f;",
+  );
+  if (!dialog?.ok) return;
+  collabSocket.emit("collab:end-session", { sessionId: activeSessionId }, (res) => {
+    if (!res?.ok) {
+      showNotification((res && res.error) || "Failed to end session", "error");
+    }
+  });
+}
+
+function approveJoinRequest(socketId) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit("collab:approve-join", { sessionId: activeSessionId, socketId }, (res) => {
+    if (!res?.ok) {
+      showNotification((res && res.error) || "Failed to approve join request", "error");
+      return;
+    }
+    showNotification("Join request approved.", "success");
+  });
+}
+
+function rejectJoinRequest(socketId) {
+  if (!collabSocket || !activeSessionId || !isHost()) return;
+  collabSocket.emit("collab:reject-join", { sessionId: activeSessionId, socketId }, (res) => {
+    if (!res?.ok) {
+      showNotification((res && res.error) || "Failed to reject join request", "error");
+      return;
+    }
+    showNotification("Join request rejected.", "success");
+  });
+}
+
+function showJoinPendingState(sessionId, name) {
+  joinRequestContext = { sessionId, name };
+  collabModalView = "join-pending";
+  setCollabCloseButtonVisible(false);
+  modalTitle.innerHTML = "<strong>WAITING FOR APPROVAL</strong>";
+  modalBody.innerHTML = `
+    <p style="margin:8px 0 16px;color:var(--text-primary);">
+      Your request to join <strong>${escapeHtml(sessionId)}</strong> as <strong>${escapeHtml(name)}</strong> is waiting for the host.
+    </p>
+  `;
+  setModalActions("");
+  collabModal.style.display = "flex";
+}
+
+function showGroupControls(sessionId) {
+  if (!canUseCoHostTools()) return;
+  const hostView = isHost();
+  const pendingHtml = collabPendingJoins.length
+    ? collabPendingJoins
+        .map(
+          (entry) => `<div class="collab-pending-row">
+            <div class="collab-participant-main">
+              <span class="collab-participant-color" style="background:${escapeHtml(entry.theme || "#4CAF50")};"></span>
+              <div class="collab-participant-text">
+                <div class="collab-participant-name">${escapeHtml(entry.name)}</div>
+                <div class="collab-participant-meta">Waiting for host approval</div>
+              </div>
+            </div>
+            <span class="collab-pending-actions">
+              <button class="run-button approve-join-btn" data-socket="${escapeHtml(entry.socketId)}" style="padding:4px 10px;"><strong>APPROVE</strong></button>
+              <button class="run-button reject-join-btn" data-socket="${escapeHtml(entry.socketId)}" style="padding:4px 10px;background:#d32f2f;"><strong>REJECT</strong></button>
+            </span>
+          </div>`,
+        )
+        .join("")
+    : `<div class="collab-section-note">No pending join requests.</div>`;
+
+  collabModalView = "group-controls";
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>GROUP CONTROLS</strong>";
+  modalBody.innerHTML = `
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">Session Overview</h4>
+      <div class="collab-meta-grid">
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Share Link</span>
+          <span class="collab-meta-value">${escapeHtml(collabShareLink || `${window.location.origin}/frontend.html/${sessionId}`)}</span>
+        </div>
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Timer</span>
+          <span class="collab-meta-value">${collabPermissions.sessionEndsAt ? formatSessionTimeRemaining(collabPermissions.sessionEndsAt) : "Off"}</span>
+        </div>
+      </div>
+    </div>
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">${hostView ? "Room Controls" : "Co-Host Tools"}</h4>
+      <div class="collab-action-grid">
+      ${hostView ? `<button id="groupLockRoomBtn" class="run-button"><strong>${collabPermissions.roomLocked ? "UNLOCK ROOM" : "LOCK ROOM"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupReadOnlyBtn" class="run-button"><strong>${collabPermissions.readOnlyAll ? "DISABLE READ-ONLY" : "READ-ONLY FOR ALL"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupDisableChatBtn" class="run-button"><strong>${collabPermissions.disableAllChat ? "ENABLE CHAT" : "DISABLE CHAT FOR ALL"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupDisableRunBtn" class="run-button"><strong>${collabPermissions.disableRunCode ? "ENABLE RUN" : "DISABLE RUN FOR PARTICIPANTS"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupDisableConsoleBtn" class="run-button"><strong>${collabPermissions.disableConsoleAccess ? "ENABLE CONSOLE" : "DISABLE CONSOLE FOR PARTICIPANTS"}</strong></button>` : ""}
+      <button id="groupBringToFileBtn" class="run-button"><strong>BRING EVERYONE TO FILE</strong></button>
+      <button id="groupPinFileBtn" class="run-button"><strong>${collabPermissions.pinnedFile ? "CHANGE PINNED FILE" : "PIN TEAM FILE"}</strong></button>
+      <button id="groupClearChatBtn" class="run-button"><strong>CLEAR GROUP CHAT</strong></button>
+      ${hostView ? `<button id="groupAnnouncementBtn" class="run-button"><strong>ANNOUNCEMENT BAR</strong></button>` : ""}
+      ${hostView ? `<button id="groupPauseBtn" class="run-button"><strong>${collabPermissions.pauseCollab ? "RESUME COLLAB" : "PAUSE COLLAB"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupTimerBtn" class="run-button"><strong>SESSION TIMER</strong></button>` : ""}
+      ${hostView ? `<button id="groupEndSessionBtn" class="run-button" style="background:#d32f2f;"><strong>END SESSION</strong></button>` : ""}
+      ${hostView ? `<button id="groupSnapshotBtn" class="run-button"><strong>SAVE SESSION SNAPSHOT</strong></button>` : ""}
+      ${hostView ? `<button id="groupRegenLinkBtn" class="run-button"><strong>REGENERATE INVITE LINK</strong></button>` : ""}
+      ${hostView ? `<button id="groupApprovalBtn" class="run-button"><strong>${collabPermissions.requireJoinApproval ? "DISABLE APPROVAL" : "APPROVE NEW JOINS"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupHighlightBtn" class="run-button"><strong>${collabPermissions.groupHighlightFile ? "CHANGE TEAM FOCUS" : "GROUP HIGHLIGHT MODE"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupQuietBtn" class="run-button"><strong>${collabPermissions.quietMode ? "DISABLE QUIET MODE" : "QUIET MODE"}</strong></button>` : ""}
+      <button id="groupDoneBtn" class="run-button"><strong>DONE</strong></button>
+    </div>
+    </div>
+    ${hostView ? `<div class="collab-section-card">
+    <h4 class="collab-section-title">Pending Join Requests</h4>
+    <div class="collab-participant-list">${pendingHtml}</div>
+    </div>` : ""}
+  `;
+  setModalActions("");
+  collabModal.style.display = "flex";
+
+  const bind = (id, handler) => {
+    const btn = document.getElementById(id);
+    if (btn) btn.onclick = handler;
+  };
+  bind("groupLockRoomBtn", () =>
+    updateGroupPermission({ roomLocked: !collabPermissions.roomLocked }, collabPermissions.roomLocked ? "Room unlocked." : "Room locked."),
+  );
+  bind("groupReadOnlyBtn", () =>
+    updateGroupPermission({ readOnlyAll: !collabPermissions.readOnlyAll }, collabPermissions.readOnlyAll ? "Read-only disabled." : "Room set to read-only."),
+  );
+  bind("groupDisableChatBtn", () =>
+    updateGroupPermission({ disableAllChat: !collabPermissions.disableAllChat }, collabPermissions.disableAllChat ? "Chat enabled." : "Chat disabled for the group."),
+  );
+  bind("groupDisableRunBtn", () =>
+    updateGroupPermission(
+      { disableRunCode: !collabPermissions.disableRunCode },
+      collabPermissions.disableRunCode ? "Run access enabled for participants." : "Run access disabled for participants.",
+    ),
+  );
+  bind("groupDisableConsoleBtn", () =>
+    updateGroupPermission(
+      { disableConsoleAccess: !collabPermissions.disableConsoleAccess },
+      collabPermissions.disableConsoleAccess ? "Console access enabled for participants." : "Console access disabled for participants.",
+    ),
+  );
+  bind("groupBringToFileBtn", bringEveryoneToFile);
+  bind("groupPinFileBtn", async () => {
+    const result = await promptForExistingFile("Pin which file for the team? Leave blank to clear.", collabPermissions.pinnedFile || (activeFile ? activeFile.name : ""));
+    if (result.status === "cancel") return;
+    if (result.status === "empty") {
+      updateGroupPermission({ pinnedFile: "" }, "Pinned file cleared.");
+      return;
+    }
+    if (result.status !== "ok") {
+      showNotification("Choose an existing file name.", "error");
+      return;
+    }
+    updateGroupPermission({ pinnedFile: result.fileName }, `Pinned ${result.fileName} for the team.`);
+  });
+  bind("groupClearChatBtn", clearGroupChat);
+  bind("groupAnnouncementBtn", async () => {
+    const dialog = await showAppPrompt(
+      "ANNOUNCEMENT BAR",
+      "Enter the announcement text. Leave it empty to clear.",
+      collabPermissions.announcementBar || "",
+      "Type announcement here",
+    );
+    if (!dialog?.ok) return;
+    const text = String(dialog.value || "");
+    updateGroupPermission({ announcementBar: text.trim() }, text.trim() ? "Announcement updated." : "Announcement cleared.");
+  });
+  bind("groupPauseBtn", () =>
+    updateGroupPermission({ pauseCollab: !collabPermissions.pauseCollab }, collabPermissions.pauseCollab ? "Collaboration resumed." : "Collaboration paused."),
+  );
+  bind("groupTimerBtn", async () => {
+    const currentMinutes = collabPermissions.sessionEndsAt ? Math.max(1, Math.ceil((collabPermissions.sessionEndsAt - Date.now()) / 60000)) : 15;
+    const dialog = await showAppPrompt(
+      "SESSION TIMER",
+      "Set session timer in minutes. Enter 0 to clear.",
+      String(currentMinutes),
+      "15",
+    );
+    if (!dialog?.ok) return;
+    const value = dialog.value;
+    const minutes = Math.max(0, Number(value));
+    if (!Number.isFinite(minutes)) {
+      showNotification("Enter a valid number of minutes.", "error");
+      return;
+    }
+    updateGroupPermission(
+      { sessionEndsAt: minutes > 0 ? Date.now() + minutes * 60000 : null },
+      minutes > 0 ? `Session timer set for ${minutes} minute(s).` : "Session timer cleared.",
+    );
+  });
+  bind("groupEndSessionBtn", endSessionForEveryone);
+  bind("groupSnapshotBtn", saveSessionSnapshot);
+  bind("groupRegenLinkBtn", regenerateInviteLink);
+  bind("groupApprovalBtn", () =>
+    updateGroupPermission(
+      { requireJoinApproval: !collabPermissions.requireJoinApproval },
+      collabPermissions.requireJoinApproval ? "Join approval disabled." : "Join approval enabled.",
+    ),
+  );
+  bind("groupHighlightBtn", async () => {
+    const result = await promptForExistingFile("Highlight which file for the group? Leave blank to clear.", collabPermissions.groupHighlightFile || (activeFile ? activeFile.name : ""));
+    if (result.status === "cancel") return;
+    if (result.status === "empty") {
+      updateGroupPermission({ groupHighlightFile: "" }, "Team focus cleared.");
+      return;
+    }
+    if (result.status !== "ok") {
+      showNotification("Choose an existing file name.", "error");
+      return;
+    }
+    updateGroupPermission({ groupHighlightFile: result.fileName }, `Team focus set to ${result.fileName}.`);
+  });
+  bind("groupQuietBtn", () =>
+    updateGroupPermission({ quietMode: !collabPermissions.quietMode }, collabPermissions.quietMode ? "Quiet mode disabled." : "Quiet mode enabled."),
+  );
+  bind("groupDoneBtn", () => showSessionDetails(sessionId));
+
+  if (hostView) {
+    modalBody.querySelectorAll(".approve-join-btn").forEach((btn) => {
+      btn.addEventListener("click", () => approveJoinRequest(btn.getAttribute("data-socket") || ""));
+    });
+    modalBody.querySelectorAll(".reject-join-btn").forEach((btn) => {
+      btn.addEventListener("click", () => rejectJoinRequest(btn.getAttribute("data-socket") || ""));
+    });
+  }
+}
+
 function setCoHost(targetName, makeCoHost) {
   if (!collabSocket || !activeSessionId || !isHost()) return;
   collabSocket.emit(
@@ -4613,7 +6254,12 @@ function setCoHost(targetName, makeCoHost) {
 }
 
 function updateParticipantFlags(targetName, partial, successMessage) {
-  if (!collabSocket || !activeSessionId || !isHost()) return;
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return;
+  const participant = getParticipantByName(targetName);
+  if (!canModerateParticipant(participant)) {
+    showNotification("You do not have permission to update this participant.", "error");
+    return;
+  }
   collabSocket.emit(
     "collab:set-participant-flags",
     {
@@ -4683,7 +6329,12 @@ function showTransferHostConfirmation(targetName) {
 }
 
 function updateParticipantAllowedFiles(targetName, allowedFiles, reset = false) {
-  if (!collabSocket || !activeSessionId || !isHost()) return;
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return;
+  const participant = getParticipantByName(targetName);
+  if (!canModerateParticipant(participant)) {
+    showNotification("You do not have permission to update this file access.", "error");
+    return;
+  }
   collabSocket.emit(
     "collab:set-participant-files",
     {
@@ -4716,9 +6367,9 @@ function formatParticipantJoinedAt(ts) {
 }
 
 function showParticipantDetails(targetName) {
-  if (!isHost()) return;
+  if (!canUseCoHostTools()) return;
   const participant = getParticipantByName(targetName);
-  if (!participant) return;
+  if (!canModerateParticipant(participant)) return;
   const allowedText = Array.isArray(participant.allowedFiles)
     ? participant.allowedFiles.length
       ? participant.allowedFiles.join(", ")
@@ -4748,15 +6399,18 @@ function showParticipantDetails(targetName) {
 }
 
 function showParticipantFileAccessEditor(targetName) {
-  if (!isHost()) return;
+  if (!canUseCoHostTools()) return;
   const participant = getParticipantByName(targetName);
-  if (!participant) return;
+  if (!canModerateParticipant(participant)) return;
   const currentSet = new Set(Array.isArray(participant.allowedFiles) ? participant.allowedFiles : []);
   const options = projectFiles
     .map((file) => `
-      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-        <input type="checkbox" value="${escapeHtml(file.name)}" ${currentSet.has(file.name) ? "checked" : ""}>
-        <span>${escapeHtml(file.name)}</span>
+      <label class="file-access-option">
+        <span class="file-access-check">
+          <input type="checkbox" value="${escapeHtml(file.name)}" ${currentSet.has(file.name) ? "checked" : ""}>
+          <span class="file-access-box" aria-hidden="true"></span>
+        </span>
+        <span class="file-access-name">${escapeHtml(file.name)}</span>
       </label>
     `)
     .join("");
@@ -4767,7 +6421,7 @@ function showParticipantFileAccessEditor(targetName) {
     <p style="margin: 8px 0 12px; color: var(--text-primary);">
       Choose which files <strong>${escapeHtml(participant.name)}</strong> can edit.
     </p>
-    <div id="participantFileAccessList" style="text-align:left;max-height:220px;overflow:auto;border:1px solid var(--border-color);border-radius:8px;padding:10px;background:var(--bg-primary);">
+    <div id="participantFileAccessList" class="participant-file-access-list" style="text-align:left;max-height:220px;overflow:auto;border:1px solid var(--border-color);border-radius:8px;padding:10px;background:var(--bg-primary);">
       ${options || `<div style="color:var(--text-muted);">No files available.</div>`}
     </div>
   `;
@@ -4892,7 +6546,8 @@ function buildCollabChatPanelHtml() {
     collabChatMode = "group";
   }
 
-  const groupDisabled = collabPermissions.disableGroupChat;
+  const groupDisabled = collabPermissions.disableGroupChat || collabPermissions.disableAllChat;
+  const chatLocked = collabPermissions.disableAllChat;
   const groupOption = `<option value="group" ${collabChatMode === "group" ? "selected" : ""} ${groupDisabled ? "disabled" : ""}>Group Chat${groupDisabled ? " (disabled)" : ""}</option>`;
   const privateOption = `<option value="private" ${collabChatMode === "private" ? "selected" : ""}>Private Chat</option>`;
   const privateOptions = privateCandidates
@@ -4913,8 +6568,8 @@ function buildCollabChatPanelHtml() {
     </div>
     <div id="collabChatMessages" style="height:180px;overflow:auto;border:1px solid var(--border-color);border-radius:8px;padding:10px;background:var(--bg-primary);margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;">
-      <input id="collabChatInput" type="text" maxlength="500" placeholder="Type a message..." style="flex:1;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;">
-      <button id="collabChatSendBtn" class="run-button" style="padding:8px 12px;"><strong>SEND</strong></button>
+      <input id="collabChatInput" type="text" maxlength="500" ${chatLocked ? "disabled" : ""} placeholder="${chatLocked ? "Chat is disabled by the host..." : "Type a message..."}" style="flex:1;padding:10px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;">
+      <button id="collabChatSendBtn" class="run-button" style="padding:8px 12px;" ${chatLocked ? "disabled" : ""}><strong>SEND</strong></button>
     </div>
   `;
 }
@@ -4989,13 +6644,30 @@ function requestCollabChatHistory() {
   });
 }
 
+setInterval(() => {
+  applyRoomIndicators();
+  if (
+    activeSessionId &&
+    collabModal.style.display === "flex" &&
+    collabModalView === "session" &&
+    collabPermissions.sessionEndsAt
+  ) {
+    showSessionDetails(activeSessionId);
+  }
+}, 1000);
+
 function requestKickParticipant(targetName) {
-  if (!collabSocket || !activeSessionId || !isHost()) {
-    showNotification("Only the host can kick participants.", "error");
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) {
+    showNotification("Only the host or co-host can kick participants.", "error");
     return;
   }
   const safeName = String(targetName || "").trim();
   if (!safeName) return;
+  const participant = getParticipantByName(safeName);
+  if (!canModerateParticipant(participant)) {
+    showNotification("You do not have permission to kick this participant.", "error");
+    return;
+  }
 
   let ackReceived = false;
   const ackTimer = setTimeout(() => {
@@ -5054,37 +6726,47 @@ function openPrivateChatWithParticipant(targetName) {
 }
 
 function showParticipantActions(targetName) {
-  if (!isHost()) return;
+  if (!canUseCoHostTools()) return;
   const safeName = String(targetName || "").trim();
   if (!safeName) return;
   const participant = getParticipantByName(safeName);
-  if (!participant || participant.role === "host") return;
+  if (!participant || !canModerateParticipant(participant)) return;
+  const hostView = isHost();
 
   collabModalView = "participant-actions";
   setCollabCloseButtonVisible(true);
   modalTitle.innerHTML = "<strong>PARTICIPANT OPTIONS</strong>";
   modalBody.innerHTML = `
-    <p style="margin: 8px 0 16px; color: var(--text-primary);">
-      Manage <strong>${escapeHtml(safeName)}</strong>
-    </p>
-    <p style="margin: -6px 0 14px; color: var(--text-muted); font-size: 13px;">
-      Role: <strong>${escapeHtml(participant.role || "participant")}</strong>
-    </p>
-    <p style="margin: -6px 0 14px; color: var(--text-muted); font-size: 13px;">
-      Color:
-      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${escapeHtml(participant.theme || "#4CAF50")};margin:0 6px 0 2px;vertical-align:middle;"></span>
-      <strong>${escapeHtml(participant.theme || "#4CAF50")}</strong>
-    </p>
-    <p style="margin: -6px 0 14px; color: var(--text-muted); font-size: 13px;">
-      Current file: <strong>${escapeHtml(participant.currentFile || "None")}</strong>
-    </p>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch;">
-      <button id="participantRoleBtn" class="run-button">
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">Participant</h4>
+      <div class="collab-meta-grid">
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Name</span>
+          <span class="collab-meta-value">${escapeHtml(safeName)}</span>
+        </div>
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Role</span>
+          <span class="collab-meta-value">${escapeHtml(participant.role || "participant")}</span>
+        </div>
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Color</span>
+          <span class="collab-meta-value"><span class="collab-participant-color" style="display:inline-block;vertical-align:middle;margin-right:8px;background:${escapeHtml(participant.theme || "#4CAF50")};"></span>${escapeHtml(participant.theme || "#4CAF50")}</span>
+        </div>
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Current File</span>
+          <span class="collab-meta-value">${escapeHtml(participant.currentFile || "None")}</span>
+        </div>
+      </div>
+    </div>
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">${hostView ? "Participant Controls" : "Moderator Controls"}</h4>
+      <div class="collab-action-grid">
+      ${hostView ? `<button id="participantRoleBtn" class="run-button">
         <strong>${participant.role === "co-host" ? "REMOVE CO-HOST" : "MAKE CO-HOST"}</strong>
-      </button>
-      <button id="participantTransferHostBtn" class="run-button">
+      </button>` : ""}
+      ${hostView ? `<button id="participantTransferHostBtn" class="run-button">
         <strong>TRANSFER HOST</strong>
-      </button>
+      </button>` : ""}
       <button id="participantMessageBtn" class="run-button">
         <strong>MESSAGE</strong>
       </button>
@@ -5125,6 +6807,7 @@ function showParticipantActions(targetName) {
         <strong>DONE</strong>
       </button>
     </div>
+    </div>
   `;
   setModalActions("");
   collabModal.style.display = "flex";
@@ -5144,10 +6827,10 @@ function showParticipantActions(targetName) {
   const copyRoleBtn = document.getElementById("participantCopyRoleBtn");
   const kickBtn = document.getElementById("participantKickBtn");
   const doneBtn = document.getElementById("participantDoneBtn");
-  if (roleBtn) {
+  if (hostView && roleBtn) {
     roleBtn.onclick = () => setCoHost(safeName, participant.role !== "co-host");
   }
-  if (transferHostBtn) {
+  if (hostView && transferHostBtn) {
     transferHostBtn.onclick = () => showTransferHostConfirmation(safeName);
   }
   if (messageBtn) {
@@ -5354,11 +7037,28 @@ function ensureCollabSocket() {
 
   collabSocket.on("collab:meta", (meta) => {
     if (!meta) return;
+    const previousAnnouncement = String(collabPermissions.announcementBar || "").trim();
     collabHostName = meta.hostName || collabHostName;
     collabPermissions = normalizeCollabPermissions(meta.permissions);
+    collabPendingJoins = Array.isArray(meta.pendingJoins) ? meta.pendingJoins : [];
+    collabShareLink = meta.shareLink || collabShareLink;
+    const nextAnnouncement = String(collabPermissions.announcementBar || "").trim();
+    if (nextAnnouncement) {
+      if (nextAnnouncement !== previousAnnouncement || nextAnnouncement !== lastAnnouncementText) {
+        showAnnouncementPopup(nextAnnouncement);
+        lastAnnouncementText = nextAnnouncement;
+      }
+    } else {
+      lastAnnouncementText = "";
+      closeAnnouncementPopup();
+    }
     enforceCollabPermissionsUI();
-    if (collabModal.style.display === "flex" && activeSessionId && collabModalView === "session") {
-      showSessionDetails(activeSessionId);
+    if (collabModal.style.display === "flex" && activeSessionId) {
+      if (collabModalView === "session") {
+        showSessionDetails(activeSessionId);
+      } else if (collabModalView === "group-controls" && isHost()) {
+        showGroupControls(activeSessionId);
+      }
     }
   });
 
@@ -5403,6 +7103,88 @@ function ensureCollabSocket() {
     collabPrivateMessages.push(message);
     if (collabPrivateMessages.length > 500) collabPrivateMessages.shift();
     renderCollabChatMessages();
+  });
+
+  collabSocket.on("collab:chat:cleared", (payload) => {
+    if (payload?.mode === "group") {
+      collabGroupMessages = [];
+      renderCollabChatMessages();
+      showNotification("Group chat was cleared.", "info");
+    }
+  });
+
+  collabSocket.on("collab:bring-to-file", (payload) => {
+    const fileName = String(payload?.fileName || "").trim();
+    if (!fileName) return;
+    switchFile(fileName);
+    showNotification(`The host brought everyone to ${fileName}.`, "info");
+  });
+
+  collabSocket.on("collab:link-regenerated", (payload) => {
+    if (!payload) return;
+    activeSessionId = payload.sessionId || activeSessionId;
+    collabShareLink = payload.shareLink || collabShareLink;
+    window.history.replaceState({}, "", `/frontend.html/${activeSessionId}`);
+    if (collabModal.style.display === "flex" && collabModalView === "session") {
+      showSessionDetails(activeSessionId);
+    }
+  });
+
+  collabSocket.on("collab:join-approved", (res) => {
+    if (!res?.ok) return;
+    activeSessionId = res.sessionId || activeSessionId;
+    myInfo = { name: joinRequestContext.name || myInfo.name, theme: myInfo.theme };
+    collabParticipants = res.participants || [];
+    collabHostName =
+      (collabParticipants.find((p) => p.role === "host") || {}).name ||
+      res.hostName ||
+      collabHostName;
+    collabPermissions = normalizeCollabPermissions(res.permissions);
+    collabShareLink = res.shareLink || collabShareLink;
+    collabGroupMessages = [];
+    collabPrivateMessages = [];
+    collabChatMode = "group";
+    collabChatTarget = "";
+    applyRemoteSessionState(res.files, res.activeFileName, true);
+    enforceCollabPermissionsUI();
+    window.history.replaceState({}, "", `/frontend.html/${activeSessionId}`);
+    showNotification(`Welcome, ${myInfo.name}!`, "success");
+    startSyncing();
+    closeModal();
+  });
+
+  collabSocket.on("collab:join-rejected", (payload) => {
+    const reason = String(payload?.reason || "The host rejected your join request.");
+    if (collabModalView === "join-pending" && joinRequestContext.sessionId) {
+      renderJoinNameStep(joinRequestContext.sessionId, joinRequestContext.name);
+      errorMsgEl.textContent = reason;
+      errorMsgEl.style.display = "block";
+      return;
+    }
+    showNotification(reason, "error");
+  });
+
+  collabSocket.on("collab:session-ended", (payload) => {
+    resetTransientCollabUiState();
+    activeSessionId = null;
+    collabParticipants = [];
+    collabPendingJoins = [];
+    collabShareLink = "";
+    collabPermissions = { ...defaultCollabPermissions };
+    setCollabCloseButtonVisible(false);
+    const reason = String(payload?.reason || "The collaboration session ended.");
+    modalTitle.innerHTML = "<strong>SESSION ENDED</strong>";
+    modalBody.innerHTML = `<p style="margin:8px 0 16px;color:var(--text-primary);">${escapeHtml(reason)}</p>`;
+    setModalActions(`<button id="sessionEndedOkBtn" class="run-button"><strong>OK</strong></button>`);
+    collabModal.style.display = "flex";
+    const okBtn = document.getElementById("sessionEndedOkBtn");
+    if (okBtn) {
+      okBtn.onclick = () => {
+        resetCollabUrlToFreshState();
+        closeModal();
+      };
+    }
+    showNotification(reason, "warn");
   });
 
   return true;
@@ -5493,6 +7275,7 @@ function updateTypingIndicatorUI(ind) {
     ind &&
     !ind.stopped &&
     ind.name !== myInfo.name &&
+    !collabPermissions.quietMode &&
     ind.fileName === activeFile.name
   ) {
     ed.style.boxShadow = `0 0 0 3px ${ind.theme} inset`;
@@ -5529,6 +7312,10 @@ function getVisibleTypingParticipants() {
 
 function renderRemoteCursors() {
   if (!remoteCursorLayer) return;
+  if (collabPermissions.quietMode) {
+    remoteCursorLayer.innerHTML = "";
+    return;
+  }
   const wrapper = remoteCursorLayer.parentElement;
   if (!wrapper) return;
 
@@ -5582,8 +7369,6 @@ function pruneRemoteCursors() {
 
 function announceCursorPosition(event) {
   if (!collabSocket || !activeSessionId || !myInfo.name || !activeFile) return;
-  const now = Date.now();
-  if (now - lastCursorEmitAt < 35) return;
   const editor = document.getElementById("activeEditor");
   if (!editor) return;
 
@@ -5593,7 +7378,6 @@ function announceCursorPosition(event) {
   const y = (event.clientY - rect.top) / rect.height;
   if (x < 0 || x > 1 || y < 0 || y > 1) return;
 
-  lastCursorEmitAt = now;
   collabSocket.emit("collab:cursor", {
     sessionId: activeSessionId,
     cursor: {
@@ -5602,7 +7386,7 @@ function announceCursorPosition(event) {
       fileName: activeFile.name,
       x,
       y,
-      ts: now,
+      ts: Date.now(),
     },
   });
 }
@@ -5764,6 +7548,7 @@ function createNumericSession() {
       const sid = res.sessionId;
       const link = res.shareLink || `${window.location.origin}/frontend.html/${sid}`;
       activeSessionId = sid;
+      collabShareLink = link;
       myInfo = { name: sessionData.host, theme: sessionData.theme };
       collabParticipants = res.participants || [myInfo];
       collabHostName = res.hostName || sessionData.host;
@@ -5784,7 +7569,7 @@ function createNumericSession() {
 function showSessionDetails(sid) {
   collabModalView = "session";
   setCollabCloseButtonVisible(true);
-  const link = `${window.location.origin}/frontend.html/${sid}`;
+  const link = collabShareLink || `${window.location.origin}/frontend.html/${sid}`;
   const orderedParticipants = [...collabParticipants].sort((a, b) => {
     if ((a.role || "") === "host") return -1;
     if ((b.role || "") === "host") return 1;
@@ -5795,34 +7580,74 @@ function showSessionDetails(sid) {
     .map((p) => {
       const roleLabel =
         p.role === "host" ? " (host)" : p.role === "co-host" ? " (co-host)" : "";
-      const canManage = isHost() && p.role !== "host";
+      const canManage = canModerateParticipant(p);
       const moreButton = canManage
         ? `<button class="run-button participant-more-btn" data-name="${escapeHtml(p.name)}" style="padding:4px 10px; font-size:11px;"><strong>MORE</strong></button>`
         : "";
-      return `<li style="padding:5px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.theme};margin-right:8px;"></span>${escapeHtml(p.name)}${roleLabel}${p.priority ? " [priority]" : ""}</span>
+      return `<div class="collab-participant-row">
+        <div class="collab-participant-main">
+          <span class="collab-participant-color" style="background:${escapeHtml(p.theme)};"></span>
+          <div class="collab-participant-text">
+            <div class="collab-participant-name">${escapeHtml(p.name)}${roleLabel}</div>
+            <div class="collab-participant-meta">${escapeHtml(p.currentFile || "No active file")}${p.priority ? " · priority" : ""}</div>
+          </div>
+        </div>
         ${moreButton}
-      </li>`;
+      </div>`;
     })
     .join("");
 
   modalTitle.innerHTML = "<strong>SESSION INFO</strong>";
   modalBody.innerHTML = `
-    <p><strong>Share:</strong></p>
-    <input type="text" readonly id="collabLinkInput" value="${link}" style="width:90%;padding:8px;text-align:center;">
-    <hr style="border-color:var(--border-color);margin:15px 0;">
-    <p style="text-align:left;"><strong>Host:</strong> ${escapeHtml(getCurrentHostName() || "Unknown")}</p>
-    <h4 style="text-align:left;">Participants:</h4>
-    <ul style="list-style:none;padding:0;text-align:left;">${listItems}</ul>
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">Session</h4>
+      <div class="collab-meta-grid">
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Share Link</span>
+          <span class="collab-meta-value">
+            <input type="text" readonly id="collabLinkInput" value="${link}" style="width:100%;padding:8px;text-align:left;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);margin-bottom:10px;">
+            <button id="sessionCopyLinkBtn" class="run-button" style="width:100%;justify-content:center;"><strong>COPY LINK</strong></button>
+          </span>
+        </div>
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Host</span>
+          <span class="collab-meta-value">${escapeHtml(getCurrentHostName() || "Unknown")}</span>
+        </div>
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Announcement</span>
+          <span class="collab-meta-value">${escapeHtml(collabPermissions.announcementBar || "None")}</span>
+        </div>
+        <div class="collab-meta-item">
+          <span class="collab-meta-label">Timer</span>
+          <span class="collab-meta-value">${collabPermissions.sessionEndsAt ? escapeHtml(formatSessionTimeRemaining(collabPermissions.sessionEndsAt)) : "Off"}</span>
+        </div>
+      </div>
+      <div class="collab-pill-row" style="margin-top:12px;">
+        <span class="collab-pill">Pinned: ${escapeHtml(collabPermissions.pinnedFile || "None")}</span>
+        <span class="collab-pill">Team focus: ${escapeHtml(collabPermissions.groupHighlightFile || "None")}</span>
+      </div>
+    </div>
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">Participants</h4>
+      <div class="collab-participant-list">${listItems}</div>
+    </div>
     ${buildCollabChatPanelHtml()}
   `;
 
   document.getElementById("modalActions").innerHTML = `
-    <button class="run-button" onclick="copyLink()"><strong>COPY LINK</strong></button>
+    ${canUseCoHostTools() ? `<button id="groupControlsBtn" class="run-button"><strong>${isHost() ? "GROUP CONTROLS" : "TEAM TOOLS"}${isHost() && collabPendingJoins.length ? ` (${collabPendingJoins.length})` : ""}</strong></button>` : ""}
     <button class="run-button" onclick="closeModal()"><strong>CLOSE</strong></button>`;
   collabModal.style.display = "flex";
 
-  if (isHost()) {
+  const groupControlsBtn = document.getElementById("groupControlsBtn");
+  if (groupControlsBtn) {
+    groupControlsBtn.onclick = () => showGroupControls(sid);
+  }
+  const sessionCopyLinkBtn = document.getElementById("sessionCopyLinkBtn");
+  if (sessionCopyLinkBtn) {
+    sessionCopyLinkBtn.onclick = () => copyLink();
+  }
+  if (canUseCoHostTools()) {
     const moreButtons = modalBody.querySelectorAll(".participant-more-btn");
     moreButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -5943,6 +7768,11 @@ function promptJoinTheme(name, sid) {
       { sessionId: sid, name, theme },
       (res) => {
         if (!res || !res.ok) {
+          if (res && res.pending) {
+            myInfo = { name, theme };
+            showJoinPendingState(sid, name);
+            return;
+          }
           if (res && String(res.error || "").toLowerCase().includes("session not found")) {
             window.location.href = "/404.html";
             return;
@@ -5954,6 +7784,7 @@ function promptJoinTheme(name, sid) {
 
         activeSessionId = sid;
         myInfo = { name, theme };
+        collabShareLink = `${window.location.origin}/frontend.html/${sid}`;
         collabParticipants = res.participants || [];
         collabHostName =
           (collabParticipants.find((p) => p.role === "host") || {}).name ||
@@ -6124,6 +7955,7 @@ window.addEventListener("load", () => {
   loadSettings();
   renderFileList();
   initializeEditor();
+  tryRestoreAutosaveDraft();
   updatePreview();
 });
 
@@ -6136,6 +7968,37 @@ window.addEventListener("beforeunload", function (e) {
 });
 
 newFileBtn.addEventListener("click", createNewFile);
+if (saveProjectBtn) {
+  saveProjectBtn.addEventListener("click", async () => {
+    const dialog = await showAppPrompt(
+      "SAVE PROJECT",
+      "Choose a name for this saved project:",
+      getSuggestedProjectName(),
+      "codx-project",
+    );
+    if (!dialog?.ok) return;
+    saveCurrentProjectToLibrary(dialog.value);
+  });
+}
+if (openSavedProjectsBtn) {
+  openSavedProjectsBtn.addEventListener("click", () => renderProjectLibrary("saved"));
+}
+if (templatesBtn) {
+  templatesBtn.addEventListener("click", () => renderProjectLibrary("templates"));
+}
+if (publishProjectBtn) {
+  publishProjectBtn.addEventListener("click", publishCurrentProject);
+}
+if (closeProjectLibraryBtn) {
+  closeProjectLibraryBtn.addEventListener("click", closeProjectLibrary);
+}
+if (projectLibraryModal) {
+  projectLibraryModal.addEventListener("click", (event) => {
+    if (event.target === projectLibraryModal) {
+      closeProjectLibrary();
+    }
+  });
+}
 
 // PART 16 - FONT PICKER
 const fontPickerBtn = document.getElementById("fontPickerBtn");
@@ -6711,12 +8574,15 @@ tutorialPrevBtn.addEventListener("click", () => {
   }
 });
 
-closeTutorialBtn.addEventListener("click", () => {
-  if (
-    confirm(
-      "Are you sure you want to skip the tutorial? You can always restart it from the settings.",
-    )
-  ) {
+closeTutorialBtn.addEventListener("click", async () => {
+  const dialog = await showAppConfirm(
+    "SKIP TUTORIAL",
+    "Are you sure you want to skip the tutorial? You can always restart it from the settings.",
+    "SKIP",
+    "CANCEL",
+    "background:#d32f2f;",
+  );
+  if (dialog?.ok) {
     completeTutorial();
   }
 });
@@ -6767,9 +8633,10 @@ window.addEventListener("load", () => {
 });
 
 console.log("Tutorial system loaded!");
-console.log("Ctrl + S: Saves current file.");
-console.log("Ctrl + Enter: Manually triggers an update of the preview pane.");
+console.log("Ctrl/Cmd + S: Exports the project as a ZIP.");
+console.log("Ctrl/Cmd + Enter: Manually triggers an update of the preview pane.");
 console.log("Ctrl/Cmd + Q: Creates a new file in the project.");
-console.log("Ctrl + Shift + C: Opens the console panel.");
+console.log("Ctrl/Cmd + Shift + C: Opens the console panel.");
+console.log("Ctrl/Cmd + C, then X: Opens hidden developer tools.");
 console.log("CodX Editor loaded with file linking and tag suggestions!");
 

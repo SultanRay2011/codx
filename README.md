@@ -1,81 +1,106 @@
-# CodX Editor (Node.js + Socket.IO)
+# CodX Editor
 
-This project includes a Node.js backend (`server.js`) for real-time collaboration.
+CodX Editor is a browser-based code editor for building and testing frontend projects directly in the browser. It is designed for HTML, CSS, and JavaScript workflows, with live preview, debugging tools, project file management, and real-time collaboration.
 
-## Step-by-step: Upload this Node.js project to GitHub
+Live site:
 
-1. Open terminal in this project folder:
-```powershell
-cd "c:\Users\HP\OneDrive\Desktop\Web Development\codxeditor"
-```
+`https://codx-furo.onrender.com`
 
-2. Install dependencies (also ensures `package-lock.json` is correct):
-```powershell
-npm install
-```
+## What CodX Editor Is
 
-3. Create a `.gitignore` file (important for Node.js):
-```gitignore
-node_modules/
-.env
-npm-debug.log*
-```
+CodX Editor is a lightweight web IDE that lets users:
 
-4. Initialize git (if not already initialized):
-```powershell
-git init
-```
+- create and manage project files
+- write HTML, CSS, and JavaScript
+- preview projects instantly in an iframe
+- debug with a built-in console and error system
+- collaborate with other people in real time
+- manage room roles such as host, co-host, and participant
+- control sessions with room-wide collaboration tools
 
-5. Add all files:
-```powershell
-git add .
-```
+It is built as a custom editor experience instead of relying on a large external IDE framework.
 
-6. Create first commit:
-```powershell
-git commit -m "Add CodX Editor with Node.js collaboration backend"
-```
+## How It Works
 
-7. Create a new empty repository on GitHub (do not add README/license from GitHub UI).
+CodX Editor has two main parts:
 
-8. Connect local repo to GitHub (replace placeholders):
-```powershell
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-```
-
-9. Push code to GitHub:
-```powershell
-git push -u origin main
-```
-
-10. Verify on GitHub that these files exist:
-- `server.js`
-- `package.json`
-- `package-lock.json`
+1. Frontend
 - `frontend.html`
-- `frontend.js`
 - `frontend.css`
+- `frontend.js`
 
-## Run locally after upload
+This is the actual editor interface. It handles:
+
+- typing and syntax highlighting
+- file explorer and project structure
+- live preview
+- error display and jump-to-error behavior
+- settings, fonts, and editor customization
+- collaboration UI, chat, cursors, and room controls
+
+2. Backend
+- `server.js`
+
+This powers the real-time collaboration features using Node.js, Express, and Socket.IO. It handles:
+
+- creating collaboration sessions
+- joining and resuming sessions
+- syncing files between collaborators
+- chat messages
+- host and co-host controls
+- session permissions and room-wide controls
+- admin panel data and actions
+
+## Main Features
+
+- live HTML/CSS/JS preview
+- built-in console and runtime error capture
+- file create, rename, delete, import, and export
+- ZIP project export/import
+- syntax highlighting and suggestions
+- clickable error badges
+- inline error highlighting
+- `cxstart` starter shortcut for HTML
+- Google Fonts support
+- collaboration links and live file sync
+- group chat and private chat
+- live collaborator cursors and typing indicators
+- host, co-host, and participant roles
+- room controls and participant controls
+- admin panel for live session monitoring
+- Zen Mode for focused editing
+
+## Run Locally
+
+Install dependencies:
 
 ```powershell
 npm install
+```
+
+Start the server:
+
+```powershell
 npm start
 ```
 
-Open:
+Then open:
+
 ```text
 http://localhost:3000/frontend.html
 ```
 
-## If port 3000 is busy
+## Project Structure
 
-```powershell
-$env:PORT=3001; npm start
-```
+- `frontend.html` - main editor page
+- `frontend.css` - editor styling
+- `frontend.js` - editor logic
+- `server.js` - backend collaboration server
+- `index.html` - homepage
+- `help.html` - complete feature guide
+- `adminprivate.html` - admin panel
+- `welcome.html` - terms gate / entry page
 
-Then open:
-```text
-http://localhost:3001/frontend.html
-```
+## Summary
+
+CodX Editor is a collaborative browser code editor focused on frontend development. It combines editing, previewing, debugging, and collaboration in one interface, with a Node.js backend powering real-time shared sessions.
