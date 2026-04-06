@@ -37,6 +37,8 @@ const importZipBtn = document.querySelector('button[aria-label="Import ZIP file"
 const previewFullscreenBtn = document.getElementById("previewFullscreenBtn");
 const previewIframe = document.getElementById("output");
 const previewTitleEl = document.getElementById("previewTitle");
+const previewLinkEl = document.getElementById("previewLink");
+const previewFaviconEl = document.getElementById("previewFavicon");
 const errorMsgEl = document.getElementById("errorMsg");
 const zenModeBtn = document.getElementById("zenModeBtn");
 const zenExitBtn = document.getElementById("zenExitBtn");
@@ -63,9 +65,42 @@ const closeProjectLibraryBtn = document.getElementById("closeProjectLibraryBtn")
 const projectLibraryBody = document.getElementById("projectLibraryBody");
 const runPreviewBtn = document.getElementById("runPreviewBtn");
 const clearConsoleBtn = document.getElementById("clearConsoleBtn");
+const headerMoreMenu = document.getElementById("headerMoreMenu");
+const headerMoreBtn = document.getElementById("headerMoreBtn");
+const headerMorePanel = document.getElementById("headerMorePanel");
 
 function getModalDoneBtn() {
   return document.getElementById("modalDoneBtn");
+}
+
+function setHeaderMoreMenuOpen(isOpen) {
+  if (!headerMoreBtn || !headerMorePanel) return;
+  headerMoreBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  headerMorePanel.hidden = !isOpen;
+}
+
+if (headerMoreBtn && headerMorePanel) {
+  headerMoreBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setHeaderMoreMenuOpen(headerMorePanel.hidden);
+  });
+
+  headerMorePanel.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!headerMoreMenu || headerMorePanel.hidden) return;
+    if (!headerMoreMenu.contains(e.target)) {
+      setHeaderMoreMenuOpen(false);
+    }
+  });
+
+  headerMorePanel.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => {
+      setHeaderMoreMenuOpen(false);
+    });
+  });
 }
 
 if (announcementPopupOkBtn) {
@@ -885,6 +920,10 @@ const defaultCollabPermissions = {
   disableAllChat: false,
   manageSelectedFiles: false,
   selectedFiles: [],
+  disableSaveProject: false,
+  disableOpenSavedProjects: false,
+  disableTemplates: false,
+  disablePublishShare: false,
   disableExportZip: false,
   disableImportZip: false,
   disableNewFile: false,
@@ -2062,6 +2101,25 @@ function updatePreviewTitle(text) {
   previewTitleEl.textContent = next || "Preview";
 }
 
+function updatePreviewLink(linkText) {
+  if (!previewLinkEl) return;
+  const next = String(linkText || "").trim();
+  previewLinkEl.textContent = next || "";
+  previewLinkEl.style.display = next ? "block" : "none";
+}
+
+function updatePreviewFavicon(src) {
+  if (!previewFaviconEl) return;
+  const next = String(src || "").trim();
+  if (!next) {
+    previewFaviconEl.hidden = true;
+    previewFaviconEl.removeAttribute("src");
+    return;
+  }
+  previewFaviconEl.hidden = false;
+  previewFaviconEl.src = next;
+}
+
 function extractHtmlTitle(htmlText) {
   const match = String(htmlText || "").match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
   if (!match) return "";
@@ -2071,6 +2129,41 @@ function extractHtmlTitle(htmlText) {
     .replace(/\s+/g, " ")
     .trim();
   return temp.value.trim();
+}
+
+function extractHtmlFavicon(htmlText) {
+  const html = String(htmlText || "");
+  const faviconMatch = html.match(
+    /<link\b[^>]*rel=["'][^"']*(?:icon|shortcut icon|apple-touch-icon)[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>/i,
+  );
+  return faviconMatch ? String(faviconMatch[1] || "").trim() : "";
+}
+
+function resolvePreviewAssetPath(assetPath) {
+  const normalizedPath = String(assetPath || "").trim();
+  if (!normalizedPath) return "";
+  if (
+    normalizedPath.startsWith("data:") ||
+    normalizedPath.startsWith("blob:") ||
+    /^(https?:)?\/\//i.test(normalizedPath)
+  ) {
+    return normalizedPath;
+  }
+  const cleanPath = normalizedPath.replace(/^\.\/+/, "").toLowerCase();
+  const fileName = cleanPath.split("/").pop();
+  const mediaFile = projectFiles.find((file) => {
+    if (file.type !== "media") return false;
+    const candidate = String(file.name || "").trim().replace(/^\.\/+/, "").toLowerCase();
+    return (
+      candidate === cleanPath ||
+      candidate.endsWith(`/${cleanPath}`) ||
+      candidate.split("/").pop() === fileName
+    );
+  });
+  if (mediaFile && mediaFile.content) {
+    return mediaFile.content;
+  }
+  return normalizedPath.startsWith("/") ? normalizedPath : `/${normalizedPath}`;
 }
 
 const defaultSettings = {
@@ -2188,6 +2281,10 @@ function setSavedProjects(projects) {
 }
 
 function saveCurrentProjectToLibrary(projectName) {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableSaveProject) {
+    showNotification("The host disabled saving projects for participants.", "error");
+    return;
+  }
   const trimmedName = String(projectName || "").trim();
   if (!trimmedName) {
     showNotification("Project name cannot be empty.", "error");
@@ -2242,6 +2339,10 @@ async function deleteSavedProject(projectId) {
 }
 
 async function publishCurrentProject() {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disablePublishShare) {
+    showNotification("The host disabled publish/share for participants.", "error");
+    return;
+  }
   const dialog = await showAppPrompt(
     "PUBLISH PROJECT",
     "Enter a name for the published project:",
@@ -2292,6 +2393,16 @@ async function publishCurrentProject() {
 
 function renderProjectLibrary(mode = "saved") {
   if (!projectLibraryModal || !projectLibraryBody) return;
+  if (activeSessionId && isReadOnlyParticipant()) {
+    if (mode === "saved" && collabPermissions.disableOpenSavedProjects) {
+      showNotification("The host disabled opening saved projects for participants.", "error");
+      return;
+    }
+    if (mode === "templates" && collabPermissions.disableTemplates) {
+      showNotification("The host disabled starter templates for participants.", "error");
+      return;
+    }
+  }
   const savedProjects = getSavedProjects();
   const tabs = `
     <div class="collab-pill-row" style="margin-bottom:16px;">
@@ -3198,6 +3309,8 @@ function updatePreview() {
 
   if (currentPreviewTarget.mode === "empty") {
     updatePreviewTitle("Preview");
+    updatePreviewLink("");
+    updatePreviewFavicon("");
     iframe.srcdoc =
       '<h3 style="text-align:center;color:#aaa;">No HTML file found</h3>';
     appendConsoleMessage("warn", "WARNING: No HTML target was provided for preview navigation.");
@@ -3213,6 +3326,8 @@ function updatePreview() {
       };
     } else {
       updatePreviewTitle(currentPreviewTarget.fileName || "Preview");
+      updatePreviewLink(currentPreviewTarget.fileName || "");
+      updatePreviewFavicon("");
       iframe.src = `/404-for-preview.html?file=${encodeURIComponent(currentPreviewTarget.fileName)}`;
       appendConsoleMessage(
         "warn",
@@ -3239,6 +3354,8 @@ function updatePreview() {
   }
   if (!htmlFile) {
     updatePreviewTitle("Preview");
+    updatePreviewLink("");
+    updatePreviewFavicon("");
     iframe.srcdoc =
       '<h3 style="text-align:center;color:#aaa;">No HTML file found</h3>';
     return;
@@ -3246,6 +3363,8 @@ function updatePreview() {
 
   let html = htmlFile.content;
   updatePreviewTitle(extractHtmlTitle(html) || htmlFile.name);
+  updatePreviewLink(htmlFile.name);
+  updatePreviewFavicon(resolvePreviewAssetPath(extractHtmlFavicon(html)));
   const externalHeadResources = [];
 
   // Normalize external font/resource links into <head> so they reliably load in srcdoc.
@@ -3923,6 +4042,10 @@ function handleSuggestions(e) {
       hideSuggestions();
       return;
     }
+    if (!String(cssContext.prefix || "").trim()) {
+      hideSuggestions();
+      return;
+    }
     const cssSuggestions = getRankedCssSuggestions(
       cssContext.prefix,
       cssContext.mode,
@@ -3979,6 +4102,10 @@ function handleSuggestions(e) {
 
   const inlineStyleContext = getHtmlInlineStyleSuggestionContext(textBefore);
   if (inlineStyleContext) {
+    if (!String(inlineStyleContext.prefix || "").trim()) {
+      hideSuggestions();
+      return;
+    }
     const cssSuggestions = getRankedCssSuggestions(
       inlineStyleContext.prefix,
       inlineStyleContext.mode,
@@ -4053,7 +4180,8 @@ function handleSuggestions(e) {
 
   const closingMatch = textBefore.match(/<\/([a-zA-Z0-9-]*)$/);
   const openingMatch = textBefore.match(/<([a-zA-Z0-9-]*)$/);
-  const plainMatch = textBefore.match(/(?:^|[\s>])([a-zA-Z][a-zA-Z0-9-]*)$/);
+  const currentLineText = textBefore.slice(textBefore.lastIndexOf("\n") + 1);
+  const plainMatch = currentLineText.match(/^\s*([a-zA-Z][a-zA-Z0-9-]*)$/);
   const isClosing = Boolean(closingMatch);
   const isOpening = Boolean(openingMatch);
   const lastLt = textBefore.lastIndexOf("<");
@@ -5343,6 +5471,11 @@ document.addEventListener("keydown", (e) => {
   }
 
   if (e.key === "Escape") {
+    if (headerMorePanel && !headerMorePanel.hidden) {
+      e.preventDefault();
+      setHeaderMoreMenuOpen(false);
+      return;
+    }
     if (developerConsoleModal && developerConsoleModal.style.display === "flex") {
       e.preventDefault();
       closeDeveloperConsole();
@@ -5756,6 +5889,22 @@ function enforceCollabPermissionsUI() {
       importZipBtn.disabled = false;
       importZipBtn.title = "";
     }
+    if (saveProjectBtn) {
+      saveProjectBtn.disabled = false;
+      saveProjectBtn.title = "";
+    }
+    if (openSavedProjectsBtn) {
+      openSavedProjectsBtn.disabled = false;
+      openSavedProjectsBtn.title = "";
+    }
+    if (templatesBtn) {
+      templatesBtn.disabled = false;
+      templatesBtn.title = "";
+    }
+    if (publishProjectBtn) {
+      publishProjectBtn.disabled = false;
+      publishProjectBtn.title = "";
+    }
     if (runPreviewBtn) {
       runPreviewBtn.disabled = false;
       runPreviewBtn.title = "";
@@ -5783,6 +5932,10 @@ function enforceCollabPermissionsUI() {
   const lockNewFile = participantRestricted && collabPermissions.disableNewFile;
   const lockExport = participantRestricted && collabPermissions.disableExportZip;
   const lockImport = participantRestricted && collabPermissions.disableImportZip;
+  const lockSaveProject = participantRestricted && collabPermissions.disableSaveProject;
+  const lockOpenSaved = participantRestricted && collabPermissions.disableOpenSavedProjects;
+  const lockTemplates = participantRestricted && collabPermissions.disableTemplates;
+  const lockPublishShare = participantRestricted && collabPermissions.disablePublishShare;
   const lockRun = participantRestricted && collabPermissions.disableRunCode;
   const lockConsole = participantRestricted && collabPermissions.disableConsoleAccess;
   const globalReadOnly = activeSessionId && (collabPermissions.readOnlyAll || collabPermissions.pauseCollab);
@@ -5801,6 +5954,22 @@ function enforceCollabPermissionsUI() {
   if (importZipBtn) {
     importZipBtn.disabled = lockImport;
     importZipBtn.title = lockImport ? "The host disabled ZIP import." : "";
+  }
+  if (saveProjectBtn) {
+    saveProjectBtn.disabled = lockSaveProject;
+    saveProjectBtn.title = lockSaveProject ? "The host disabled saving projects for participants." : "";
+  }
+  if (openSavedProjectsBtn) {
+    openSavedProjectsBtn.disabled = lockOpenSaved;
+    openSavedProjectsBtn.title = lockOpenSaved ? "The host disabled opening saved projects for participants." : "";
+  }
+  if (templatesBtn) {
+    templatesBtn.disabled = lockTemplates;
+    templatesBtn.title = lockTemplates ? "The host disabled starter templates for participants." : "";
+  }
+  if (publishProjectBtn) {
+    publishProjectBtn.disabled = lockPublishShare;
+    publishProjectBtn.title = lockPublishShare ? "The host disabled publish/share for participants." : "";
   }
   if (runPreviewBtn) {
     runPreviewBtn.disabled = lockRun;
@@ -6098,6 +6267,10 @@ function showGroupControls(sessionId) {
       ${hostView ? `<button id="groupLockRoomBtn" class="run-button"><strong>${collabPermissions.roomLocked ? "UNLOCK ROOM" : "LOCK ROOM"}</strong></button>` : ""}
       ${hostView ? `<button id="groupReadOnlyBtn" class="run-button"><strong>${collabPermissions.readOnlyAll ? "DISABLE READ-ONLY" : "READ-ONLY FOR ALL"}</strong></button>` : ""}
       ${hostView ? `<button id="groupDisableChatBtn" class="run-button"><strong>${collabPermissions.disableAllChat ? "ENABLE CHAT" : "DISABLE CHAT FOR ALL"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupDisableSaveBtn" class="run-button"><strong>${collabPermissions.disableSaveProject ? "ENABLE SAVE PROJECT" : "DISABLE SAVE PROJECT"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupDisableOpenSavedBtn" class="run-button"><strong>${collabPermissions.disableOpenSavedProjects ? "ENABLE OPEN SAVED" : "DISABLE OPEN SAVED"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupDisableTemplatesBtn" class="run-button"><strong>${collabPermissions.disableTemplates ? "ENABLE TEMPLATES" : "DISABLE TEMPLATES"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupDisablePublishBtn" class="run-button"><strong>${collabPermissions.disablePublishShare ? "ENABLE PUBLISH" : "DISABLE PUBLISH / SHARE"}</strong></button>` : ""}
       ${hostView ? `<button id="groupDisableRunBtn" class="run-button"><strong>${collabPermissions.disableRunCode ? "ENABLE RUN" : "DISABLE RUN FOR PARTICIPANTS"}</strong></button>` : ""}
       ${hostView ? `<button id="groupDisableConsoleBtn" class="run-button"><strong>${collabPermissions.disableConsoleAccess ? "ENABLE CONSOLE" : "DISABLE CONSOLE FOR PARTICIPANTS"}</strong></button>` : ""}
       <button id="groupBringToFileBtn" class="run-button"><strong>BRING EVERYONE TO FILE</strong></button>
@@ -6135,6 +6308,30 @@ function showGroupControls(sessionId) {
   );
   bind("groupDisableChatBtn", () =>
     updateGroupPermission({ disableAllChat: !collabPermissions.disableAllChat }, collabPermissions.disableAllChat ? "Chat enabled." : "Chat disabled for the group."),
+  );
+  bind("groupDisableSaveBtn", () =>
+    updateGroupPermission(
+      { disableSaveProject: !collabPermissions.disableSaveProject },
+      collabPermissions.disableSaveProject ? "Save Project enabled for participants." : "Save Project disabled for participants.",
+    ),
+  );
+  bind("groupDisableOpenSavedBtn", () =>
+    updateGroupPermission(
+      { disableOpenSavedProjects: !collabPermissions.disableOpenSavedProjects },
+      collabPermissions.disableOpenSavedProjects ? "Open Saved enabled for participants." : "Open Saved disabled for participants.",
+    ),
+  );
+  bind("groupDisableTemplatesBtn", () =>
+    updateGroupPermission(
+      { disableTemplates: !collabPermissions.disableTemplates },
+      collabPermissions.disableTemplates ? "Templates enabled for participants." : "Templates disabled for participants.",
+    ),
+  );
+  bind("groupDisablePublishBtn", () =>
+    updateGroupPermission(
+      { disablePublishShare: !collabPermissions.disablePublishShare },
+      collabPermissions.disablePublishShare ? "Publish / Share enabled for participants." : "Publish / Share disabled for participants.",
+    ),
   );
   bind("groupDisableRunBtn", () =>
     updateGroupPermission(
@@ -8188,7 +8385,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-users",
     title: "Collaborate",
     description:
-      "Work together with friends in real-time! Share a link and code together.",
+      "Work together with others in real time. Sessions include chat, participant roles, room controls, and live cursors.",
     position: "bottom-left",
   },
   {
@@ -8196,7 +8393,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-expand",
     title: "Fullscreen Preview",
     description:
-      "View your website in fullscreen mode. Perfect for testing responsive designs.",
+      "View your website in fullscreen mode. Useful for checking layouts and responsive behavior.",
     position: "bottom-left",
   },
   {
@@ -8204,7 +8401,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-gear",
     title: "Editor Settings",
     description:
-      "Customize your editor colors, font size, and font family to match your preferences.",
+      "Customize editor colors, text size, and fonts. You can also paste a Google Fonts embed link for the editor text style.",
     position: "bottom-left",
   },
   {
@@ -8220,21 +8417,22 @@ const tutorialSteps = [
     icon: "fa-solid fa-font",
     title: "Font Picker",
     description:
-      "Browse and copy professional font-family CSS code for your designs.",
+      "Browse and copy font-family CSS code. The picker includes more distinctive fonts and a search box.",
     position: "bottom-left",
   },
   {
-    target: 'label[title="Toggle light/dark theme"]',
-    icon: "fa-solid fa-moon",
-    title: "Theme Toggle",
-    description: "Switch between dark and light themes for comfortable coding.",
-    position: "bottom-right",
+    target: "#zenModeBtn",
+    icon: "fa-solid fa-laptop-code",
+    title: "Zen Mode",
+    description:
+      "Hide the surrounding interface and focus only on typing. You can leave Zen Mode with the EXIT ZEN button or Esc.",
+    position: "bottom-left",
   },
   {
     target: "#newFileBtn",
     icon: "fa-solid fa-plus",
     title: "New File",
-    description: "Create new HTML, CSS, or JS files for your project.",
+    description: "Create new HTML, CSS, JS, or .env files for your project.",
     position: "bottom-right",
   },
   {
@@ -8242,7 +8440,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-folder-open",
     title: "File Explorer",
     description:
-      "Click files to switch between them. Click the trash icon to delete files.",
+      "Switch between project files here. You can rename files, delete them, and track file-level errors.",
     position: "bottom",
   },
   {
@@ -8250,14 +8448,46 @@ const tutorialSteps = [
     icon: "fa-solid fa-code",
     title: "Code Editor",
     description:
-      "Write your code here! Features include:\n• Auto-closing tags (HTML)\n• Auto-closing brackets (CSS/JS)\n• Tag suggestions (type < in HTML)\n• Tab for 3-space indentation\n• Drag & drop files",
+      "Write your code here. Features include auto-closing tags and brackets, HTML/CSS/JS suggestions, inline style suggestions, syntax highlighting in style/script blocks, 3-space tab indentation, and error highlighting.",
     position: "right",
   },
   {
-    target: 'button[onclick="updatePreview()"]',
+    target: "#runPreviewBtn",
     icon: "fa-solid fa-play",
     title: "Run Button",
     description: "Click to manually run your code and update the preview.",
+    position: "top-left",
+  },
+  {
+    target: "#saveProjectBtn",
+    icon: "fa-solid fa-floppy-disk",
+    title: "Save Project",
+    description:
+      "Save the current project in your browser. Using the same project name again updates the saved version, and autosave also keeps your latest local work recoverable.",
+    position: "top-left",
+  },
+  {
+    target: "#openSavedProjectsBtn",
+    icon: "fa-solid fa-folder-open",
+    title: "Open Saved",
+    description:
+      "Open your saved project library, restore earlier work, or delete saved projects with confirmation.",
+    position: "top-left",
+  },
+  {
+    target: "#templatesBtn",
+    icon: "fa-solid fa-layer-group",
+    title: "Starter Templates",
+    description:
+      "Load built-in starter templates from the template library, including ready-made layouts like landing page, portfolio, and contact form setups.",
+    position: "top-left",
+  },
+  {
+    target: "#publishProjectBtn",
+    icon: "fa-solid fa-share-nodes",
+    title: "Publish / Share",
+    description:
+      "Publish the current project and generate a shareable link for the rendered result.",
     position: "top-left",
   },
   {
@@ -8281,7 +8511,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-eye",
     title: "Live Preview",
     description:
-      "See your website come to life here! Updates automatically if Auto-Run is enabled.",
+      "See your website come to life here. The preview can follow linked project pages and shows the current HTML title in its header.",
     position: "left",
   },
 ];
@@ -8639,4 +8869,5 @@ console.log("Ctrl/Cmd + Q: Creates a new file in the project.");
 console.log("Ctrl/Cmd + Shift + C: Opens the console panel.");
 console.log("Ctrl/Cmd + C, then X: Opens hidden developer tools.");
 console.log("CodX Editor loaded with file linking and tag suggestions!");
+
 

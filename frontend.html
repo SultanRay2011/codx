@@ -64,10 +64,7 @@
       >Skip to editor</a
     >
     <header>
-      <div
-        class="header-switches"
-        style="display: flex; align-items: center; gap: 8px"
-      >
+      <div class="header-switches">
         <label for="autoRun">Auto-Run</label>
         <label class="switch" title="Toggle auto-run feature">
           <input type="checkbox" id="autoRun" checked />
@@ -83,7 +80,6 @@
       <button
         id="collabBtn"
         class="run-button"
-        style="margin-left: 20px"
         aria-label="Collaborate with friends"
       >
         <svg class="btn-icon" viewBox="0 0 24 24">
@@ -137,30 +133,6 @@
       </button>
 
       <button
-        id="fontPickerBtn"
-        class="run-button"
-        title="Browse and copy fonts"
-        aria-label="Font picker"
-      >
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M9.93 13.5h4.14L12 7.98zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"
-          />
-        </svg>
-        <strong>FONTS</strong>
-      </button>
-
-      <button
-        id="zenModeBtn"
-        class="run-button"
-        title="Toggle Zen Mode"
-        aria-label="Toggle zen mode"
-      >
-        <i class="fa-solid fa-laptop-code"></i>
-        <strong>ZEN MODE</strong>
-      </button>
-
-      <button
         id="helpPageBtn"
         class="run-button"
         title="Open help page"
@@ -171,6 +143,89 @@
         <strong>HELP</strong>
       </button>
 
+      <div class="header-more-menu" id="headerMoreMenu">
+        <button
+          id="headerMoreBtn"
+          class="run-button"
+          title="More editor controls"
+          aria-label="More editor controls"
+          aria-expanded="false"
+          aria-haspopup="true"
+          type="button"
+        >
+          <i class="fa-solid fa-ellipsis"></i>
+          <strong>MORE</strong>
+        </button>
+        <div class="header-more-panel" id="headerMorePanel" hidden>
+          <div class="header-more-section">
+            <div class="header-more-section-title">Project Tools</div>
+            <button
+              id="saveProjectBtn"
+              class="run-button header-more-action"
+              aria-label="Save project"
+              type="button"
+            >
+              <i class="fa-solid fa-floppy-disk"></i>
+              <strong>SAVE PROJECT</strong>
+            </button>
+            <button
+              id="openSavedProjectsBtn"
+              class="run-button header-more-action"
+              aria-label="Open saved project library"
+              type="button"
+            >
+              <i class="fa-solid fa-folder-open"></i>
+              <strong>OPEN SAVED</strong>
+            </button>
+            <button
+              id="templatesBtn"
+              class="run-button header-more-action"
+              aria-label="Open starter templates"
+              type="button"
+            >
+              <i class="fa-solid fa-layer-group"></i>
+              <strong>TEMPLATES</strong>
+            </button>
+            <button
+              id="publishProjectBtn"
+              class="run-button header-more-action"
+              aria-label="Publish or share project"
+              type="button"
+            >
+              <i class="fa-solid fa-share-nodes"></i>
+              <strong>PUBLISH / SHARE</strong>
+            </button>
+          </div>
+          <div class="header-more-section">
+            <div class="header-more-section-title">Editor Extras</div>
+            <button
+              id="fontPickerBtn"
+              class="run-button header-more-action"
+              title="Browse and copy fonts"
+              aria-label="Font picker"
+              type="button"
+            >
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M9.93 13.5h4.14L12 7.98zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"
+                />
+              </svg>
+              <strong>FONTS</strong>
+            </button>
+
+            <button
+              id="zenModeBtn"
+              class="run-button header-more-action"
+              title="Toggle Zen Mode"
+              aria-label="Toggle zen mode"
+              type="button"
+            >
+              <i class="fa-solid fa-laptop-code"></i>
+              <strong>ZEN MODE</strong>
+            </button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <div class="editor-container">
@@ -296,38 +351,6 @@
             <i class="fa-solid fa-file-import"></i>
             <strong>IMPORT ZIP FILE</strong>
           </button>
-          <button
-            id="saveProjectBtn"
-            class="run-button"
-            aria-label="Save project"
-          >
-            <i class="fa-solid fa-floppy-disk"></i>
-            <strong>SAVE PROJECT</strong>
-          </button>
-          <button
-            id="openSavedProjectsBtn"
-            class="run-button"
-            aria-label="Open saved project library"
-          >
-            <i class="fa-solid fa-folder-open"></i>
-            <strong>OPEN SAVED</strong>
-          </button>
-          <button
-            id="templatesBtn"
-            class="run-button"
-            aria-label="Open starter templates"
-          >
-            <i class="fa-solid fa-layer-group"></i>
-            <strong>TEMPLATES</strong>
-          </button>
-          <button
-            id="publishProjectBtn"
-            class="run-button"
-            aria-label="Publish or share project"
-          >
-            <i class="fa-solid fa-share-nodes"></i>
-            <strong>PUBLISH / SHARE</strong>
-          </button>
           <input
             type="file"
             id="zipFileInput"
@@ -343,7 +366,11 @@
 
       <div class="preview">
         <div class="preview-header">
-          <strong id="previewTitle">Preview</strong>
+          <img id="previewFavicon" alt="" hidden />
+          <div class="preview-header-meta">
+            <strong id="previewTitle">Preview</strong>
+            <span id="previewLink"></span>
+          </div>
         </div>
         <iframe id="output" title="Preview output"></iframe>
         <div class="console-container" id="consoleContainer">
@@ -798,7 +825,7 @@
       style="
         display: none;
         position: fixed;
-        z-index: 1400;
+        z-index: 11050;
         inset: 0;
         background: rgba(0, 0, 0, 0.75);
         align-items: center;

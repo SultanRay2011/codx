@@ -1250,6 +1250,13 @@
               </div>
               <span class="item-value" id="queuePausedValue">--</span>
             </div>
+            <div class="queue-item">
+              <div class="item-copy">
+                <strong>Published projects</strong>
+                <span id="queuePublishedText">Published project count is loading.</span>
+              </div>
+              <span class="item-value" id="queuePublishedValue">--</span>
+            </div>
           </div>
         </aside>
       </section>
@@ -1351,6 +1358,8 @@
       const queueLockedText = document.getElementById("queueLockedText");
       const queuePausedValue = document.getElementById("queuePausedValue");
       const queuePausedText = document.getElementById("queuePausedText");
+      const queuePublishedValue = document.getElementById("queuePublishedValue");
+      const queuePublishedText = document.getElementById("queuePublishedText");
       const activityList = document.getElementById("activityList");
       const adminStatus = document.getElementById("adminStatus");
       const spectateOverlay = document.getElementById("spectateOverlay");
@@ -1691,6 +1700,24 @@
           if (session.pinnedFile) {
             meta.push(`<span class="mini-pill"><i class="fa-solid fa-thumbtack"></i> ${escapeHtml(session.pinnedFile)}</span>`);
           }
+          if (session.disableSaveProject) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-floppy-disk"></i> Save off</span>`);
+          }
+          if (session.disableOpenSavedProjects) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-folder-open"></i> Saved off</span>`);
+          }
+          if (session.disableTemplates) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-layer-group"></i> Templates off</span>`);
+          }
+          if (session.disablePublishShare) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-share-nodes"></i> Publish off</span>`);
+          }
+          if (session.disableConsoleAccess) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-terminal"></i> Console off</span>`);
+          }
+          if (session.disableRunCode) {
+            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-play"></i> Run off</span>`);
+          }
 
           return `
             <div class="moderation-row">
@@ -1787,6 +1814,8 @@
           queueLockedText.textContent = `${overview.queue.lockedRooms} room${overview.queue.lockedRooms === 1 ? "" : "s"} currently locked.`;
           queuePausedValue.textContent = `${overview.queue.pausedRooms}`;
           queuePausedText.textContent = `${overview.queue.pausedRooms} room${overview.queue.pausedRooms === 1 ? "" : "s"} currently paused.`;
+          queuePublishedValue.textContent = `${overview.stats.publishedProjects || 0}`;
+          queuePublishedText.textContent = `${overview.stats.publishedProjects || 0} published project${Number(overview.stats.publishedProjects || 0) === 1 ? "" : "s"} currently stored on the server.`;
 
           renderModerationSessions((sessionsPayload.sessions || []).slice(0, 6));
           renderActivity(activityPayload.activity || []);

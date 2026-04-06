@@ -101,6 +101,73 @@ header .run-button:hover {
   box-shadow: 0 2px 8px rgba(35, 134, 54, 0.32);
 }
 
+.header-more-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.header-more-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(320px, 82vw);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.22);
+  z-index: 1200;
+}
+
+.header-more-panel[hidden] {
+  display: none !important;
+}
+
+.header-more-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.header-more-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.header-more-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.header-more-action {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.header-switches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-switches label[for="showConsole"] {
+  margin-left: 8px;
+}
+
 .switch {
   position: relative;
   display: inline-block;
@@ -1052,6 +1119,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 .preview-header {
   display: flex;
   align-items: center;
+  gap: 10px;
   min-height: 40px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-color);
@@ -1059,10 +1127,34 @@ textarea::-webkit-scrollbar-thumb:hover {
   color: var(--text-primary);
 }
 
+#previewFavicon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.preview-header-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
 #previewTitle {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#previewLink {
+  font-size: 11px;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1806,7 +1898,9 @@ header #fontPickerBtn,
 header #previewFullscreenBtn,
 header #collabBtn,
 header #addMediaBtn,
-header #zenModeBtn {
+header #zenModeBtn,
+header #helpPageBtn,
+header #headerMoreBtn {
   background: linear-gradient(180deg, #2ea043, #238636);
   color: #ffffff;
   border: 1px solid #2ea043;
@@ -1820,7 +1914,9 @@ header #fontPickerBtn:hover,
 header #previewFullscreenBtn:hover,
 header #collabBtn:hover,
 header #addMediaBtn:hover,
-header #zenModeBtn:hover {
+header #zenModeBtn:hover,
+header #helpPageBtn:hover,
+header #headerMoreBtn:hover {
   background: linear-gradient(180deg, #34b24e, #2ea043);
   color: #ffffff;
   border-color: #34b24e;
