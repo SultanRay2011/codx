@@ -517,6 +517,8 @@ body.zen-mode #zenExitBtn {
   font-size: 13px;
   line-height: 1.5;
   letter-spacing: normal;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
   white-space: pre;
   tab-size: 2;
 }
@@ -696,6 +698,8 @@ textarea {
   font-size: 13px;
   line-height: 1.5;
   letter-spacing: normal;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
   white-space: pre;
   outline: none;
   resize: none;
