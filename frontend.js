@@ -3886,7 +3886,8 @@ function highlightHtmlSegment(code) {
 }
 
 function highlightHtml(code) {
-  const blockRegex = /(<style\b[^>]*>)([\s\S]*?)(<\/style>)|(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi;
+  const blockRegex =
+    /(<style\b[^>]*>)([\s\S]*?)(<\/style>)|(<script\b(?![^>]*\bsrc=)[^>]*>)([\s\S]*?)(<\/script>)/gi;
   let result = "";
   let lastIndex = 0;
   let match;
