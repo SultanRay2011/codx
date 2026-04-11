@@ -622,6 +622,7 @@
                   <li>Tab inserts 3 spaces.</li>
                   <li>Undo/redo behavior is protected for editor mutations.</li>
                   <li>Auto-close helps with tags, quotes, and brackets.</li>
+                  <li>Typing <code>{</code> in CSS, JS, <code>&lt;style&gt;</code>, and <code>&lt;script&gt;</code> immediately inserts the closing brace and places the caret between them.</li>
                   <li>CSS property suggestions now insert declarations that end with a semicolon, with the cursor placed before it.</li>
                   <li>New HTML files start clean instead of showing old welcome content.</li>
                 </ul>
@@ -654,6 +655,7 @@
                 <ul>
                   <li>HTML pages can link to other project files in preview.</li>
                   <li>Buttons and forms that navigate to project pages are supported in preview.</li>
+                  <li><code>&lt;a href="#"&gt;</code> and missing HTML links stay inside the iframe flow and open <code>404-for-preview.html</code>.</li>
                   <li>Missing preview pages go to <code>404-for-preview.html</code>.</li>
                 </ul>
               </article>
@@ -757,10 +759,14 @@
                 <h3><i class="fa-solid fa-lightbulb"></i> Smart Suggestions</h3>
                 <ul>
                   <li>HTML tag suggestions appear while typing.</li>
+                  <li>Typing plain HTML words can suggest tags even before you type <code>&lt;</code>.</li>
                   <li>Attribute suggestions work inside tags.</li>
+                  <li>The <code>lorem</code> snippet suggestion inserts lorem ipsum placeholder text.</li>
                   <li>Inline <code>style=""</code> suggestions support CSS properties and values.</li>
                   <li>CSS and JS suggestion flows are also supported.</li>
                   <li>Property-based CSS values are suggested too, including richer <code>font-family</code> stacks and common values for typography, sizing, spacing, layout, and effects.</li>
+                  <li>Typing a number in CSS value positions can suggest the matching <code>px</code> version.</li>
+                  <li>Color-related properties such as <code>color</code> and <code>background-color</code> can show value suggestions with a real color swatch box beside the color text.</li>
                 </ul>
               </article>
             </div>

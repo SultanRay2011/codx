@@ -6,6 +6,7 @@ const consoleContainer = document.querySelector(".console-container");
 const consoleOutput = document.getElementById("consoleOutput");
 const divider = document.querySelector(".divider");
 const editorsPanel = document.querySelector(".editors");
+const previewPanel = document.querySelector(".preview");
 const lineNumbers = document.getElementById("lineNumbers");
 const highlightLayer = document.getElementById("highlightLayer");
 const remoteCursorLayer = document.getElementById("remoteCursorLayer");
@@ -583,6 +584,16 @@ htmlTags.forEach((tag) => {
     });
   }
 });
+htmlTagMetaMap.set("lorem", {
+  tag: "lorem",
+  icon: "TXT",
+  desc: "Insert lorem ipsum placeholder text",
+  attrs: [],
+  badge: "snippet",
+  category: "snippet",
+  insertText:
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+});
 const tagSuggestionPool = Array.from(htmlTagMetaMap.values());
 let currentSuggestionContext = null;
 const globalHtmlAttributes = [
@@ -769,8 +780,53 @@ const cssPropertySuggestions = [
 const cssValueSuggestionsByProperty = {
   display: ["block", "inline", "inline-block", "flex", "grid", "none"],
   position: ["static", "relative", "absolute", "fixed", "sticky"],
-  color: ["#000", "#fff", "rgb(0, 0, 0)", "rgba(0, 0, 0, 0.5)", "inherit"],
-  "background-color": ["transparent", "#fff", "#000", "inherit"],
+  color: [
+    "#000",
+    "#fff",
+    "#ef4444",
+    "#3b82f6",
+    "#22c55e",
+    "#f59e0b",
+    "#a855f7",
+    "#ec4899",
+    "black",
+    "white",
+    "red",
+    "blue",
+    "green",
+    "yellow",
+    "orange",
+    "purple",
+    "pink",
+    "teal",
+    "gray",
+    "rgb(0, 0, 0)",
+    "rgba(0, 0, 0, 0.5)",
+    "transparent",
+    "inherit",
+  ],
+  "background-color": [
+    "transparent",
+    "#fff",
+    "#000",
+    "#ef4444",
+    "#3b82f6",
+    "#22c55e",
+    "#f59e0b",
+    "#a855f7",
+    "black",
+    "white",
+    "red",
+    "blue",
+    "green",
+    "yellow",
+    "orange",
+    "purple",
+    "pink",
+    "teal",
+    "gray",
+    "inherit",
+  ],
   "background-repeat": ["no-repeat", "repeat", "repeat-x", "repeat-y"],
   "background-size": ["cover", "contain", "auto"],
   "text-align": ["left", "center", "right", "justify"],
@@ -2036,9 +2092,9 @@ function getPreviewTargetForFile(rawHref) {
   if (!normalizedHref || normalizedHref === "#") {
     return {
       exists: false,
-      mode: "empty",
-      fileName: "",
-      url: "",
+      mode: "missing",
+      fileName: "#",
+      url: `/404-for-preview.html?file=${encodeURIComponent("#")}`,
     };
   }
   const fileName = normalizedHref.split("/").pop();
@@ -3476,11 +3532,18 @@ ${jsFile.content}
     },
   );
 
-  // === 3. Handle <a href> links to other HTML files
+  // === 3. Handle <a href> links to other HTML files and preview-only missing anchors
   html = html.replace(
-    /<a([^>]*)href=["']([^"']+\.html)["']([^>]*)>/gi,
+    /<a([^>]*)href=["']([^"']+)["']([^>]*)>/gi,
     (match, before, href, after) => {
+      const normalizedHref = String(href || "").trim();
+      if (!/\.html$/i.test(normalizedHref) && normalizedHref !== "#") {
+        return match;
+      }
       const target = getPreviewTargetForFile(href);
+      if (normalizedHref === "#" || !target.exists) {
+        return `<a${before}href="${target.url}"${after}>`;
+      }
       return `<a${before}href="javascript:void(0)" onclick="return window.parent.__codxOpenPreviewFile('${target.fileName}')"${after}>`;
     },
   );
@@ -3490,6 +3553,9 @@ ${jsFile.content}
     /<form([^>]*)action=["']([^"']+\.html)["']([^>]*)>/gi,
     (match, before, action, after) => {
       const target = getPreviewTargetForFile(action);
+      if (!target.exists) {
+        return `<form${before}action="${target.url}"${after}>`;
+      }
       const combinedAttrs = `${before}${after}`;
       const onsubmitMatch = combinedAttrs.match(/\bonsubmit=(["'])([\s\S]*?)\1/i);
       const existingOnsubmit = onsubmitMatch ? onsubmitMatch[2].trim() : "";
@@ -3512,6 +3578,15 @@ ${jsFile.content}
         /((?:window\.)?location(?:\.href)?\s*=\s*|window\.location\.assign\(\s*|window\.open\(\s*)(['"])([^'"]+\.html)(\2)(\s*\))?/gi,
         (_m, prefix, q, href, _q2, closing = "") => {
           const target = getPreviewTargetForFile(href);
+          if (!target.exists) {
+            if (/window\.open\(\s*$/i.test(prefix)) {
+              return `window.open(${q}${target.url}${q}${closing || ")"})`;
+            }
+            if (/assign\(\s*$/i.test(prefix)) {
+              return `window.location.assign(${q}${target.url}${q}${closing || ")"})`;
+            }
+            return `window.location.href = ${q}${target.url}${q}`;
+          }
           return `window.parent.__codxOpenPreviewFile(${q}${target.fileName}${q})`;
         },
       );
@@ -4043,7 +4118,10 @@ function handleSuggestions(e) {
       hideSuggestions();
       return;
     }
-    if (!String(cssContext.prefix || "").trim()) {
+    if (
+      !String(cssContext.prefix || "").trim() &&
+      !(cssContext.mode === "css-value" && isCssColorProperty(cssContext.propertyName))
+    ) {
       hideSuggestions();
       return;
     }
@@ -4103,7 +4181,10 @@ function handleSuggestions(e) {
 
   const inlineStyleContext = getHtmlInlineStyleSuggestionContext(textBefore);
   if (inlineStyleContext) {
-    if (!String(inlineStyleContext.prefix || "").trim()) {
+    if (
+      !String(inlineStyleContext.prefix || "").trim() &&
+      !(inlineStyleContext.mode === "css-inline-value" && isCssColorProperty(inlineStyleContext.propertyName))
+    ) {
       hideSuggestions();
       return;
     }
@@ -4182,7 +4263,7 @@ function handleSuggestions(e) {
   const closingMatch = textBefore.match(/<\/([a-zA-Z0-9-]*)$/);
   const openingMatch = textBefore.match(/<([a-zA-Z0-9-]*)$/);
   const currentLineText = textBefore.slice(textBefore.lastIndexOf("\n") + 1);
-  const plainMatch = currentLineText.match(/^\s*([a-zA-Z][a-zA-Z0-9-]*)$/);
+  const plainMatch = currentLineText.match(/([a-zA-Z][a-zA-Z0-9-]*)$/);
   const isClosing = Boolean(closingMatch);
   const isOpening = Boolean(openingMatch);
   const lastLt = textBefore.lastIndexOf("<");
@@ -4209,6 +4290,7 @@ function handleSuggestions(e) {
   }
   if (
     prefix &&
+    !isPlain &&
     suggestions.some((entry) => entry.tag.toLowerCase() === prefix.toLowerCase())
   ) {
     hideSuggestions();
@@ -4384,6 +4466,48 @@ function getHtmlInlineStyleSuggestionContext(textBefore) {
   };
 }
 
+function isCssColorProperty(propertyName) {
+  return [
+    "color",
+    "background-color",
+    "border-color",
+    "outline-color",
+    "text-decoration-color",
+    "caret-color",
+    "accent-color",
+    "column-rule-color",
+    "background",
+  ].includes(String(propertyName || "").toLowerCase());
+}
+
+function getCssColorSwatch(value, propertyName) {
+  const prop = String(propertyName || "").toLowerCase();
+  const rawValue = String(value || "").trim();
+  if (!rawValue) return "";
+  const isColorProperty =
+    prop === "color" ||
+    prop === "background-color" ||
+    prop === "border-color" ||
+    prop === "outline-color" ||
+    prop === "text-decoration-color" ||
+    prop === "caret-color" ||
+    prop === "accent-color" ||
+    prop === "column-rule-color" ||
+    prop === "background";
+  if (!isColorProperty) return "";
+  if (/^(inherit|initial|unset|currentcolor)$/i.test(rawValue)) return "";
+  if (/^url\(/i.test(rawValue)) return "";
+  if (
+    !/^(#|rgb\(|rgba\(|hsl\(|hsla\(|transparent$|black$|white$|red$|blue$|green$|yellow$|orange$|purple$|pink$|brown$|gray$|grey$|teal$|navy$|lime$|olive$|maroon$|aqua$|fuchsia$|silver$)/i.test(rawValue)
+  ) {
+    return "";
+  }
+  if (/^transparent$/i.test(rawValue)) {
+    return "linear-gradient(45deg, #d1d5db 25%, transparent 25%, transparent 50%, #d1d5db 50%, #d1d5db 75%, transparent 75%, transparent), #ffffff";
+  }
+  return rawValue;
+}
+
 function getRankedCssSuggestions(prefix, mode, propertyName) {
   const q = (prefix || "").toLowerCase();
   let source = [];
@@ -4397,7 +4521,16 @@ function getRankedCssSuggestions(prefix, mode, propertyName) {
     source = [...propertyValues, ...cssGenericValueSuggestions].map((value) => ({
       value,
       desc: `Value for ${propertyName || "property"}`,
+      swatch: getCssColorSwatch(value, propertyName),
     }));
+    const trimmedPrefix = String(prefix || "").trim();
+    if (/^-?\d*\.?\d+$/.test(trimmedPrefix)) {
+      source.unshift({
+        value: `${trimmedPrefix}px`,
+        desc: "Pixel value",
+        swatch: "",
+      });
+    }
   } else {
     source = cssSelectorSuggestions.map((value) => ({
       value,
@@ -4741,8 +4874,11 @@ function showCssSuggestions(editor, suggestions, mode) {
   suggestions.forEach((entry) => {
     const suggestionItem = document.createElement("div");
     suggestionItem.className = "suggestion-item";
+    const preview = entry.swatch
+      ? `<span class="suggestion-color-preview" style="background:${escapeHtml(entry.swatch)}"></span>`
+      : "";
     suggestionItem.innerHTML = `
-      <span class="suggestion-icon">CSS</span>
+      <span class="suggestion-icon">${preview || "CSS"}</span>
       <span class="suggestion-content">
         <div class="suggestion-tag">${escapeHtml(entry.value)}</div>
         <div class="suggestion-desc">${escapeHtml(entry.desc || "CSS suggestion")}</div>
@@ -4945,6 +5081,24 @@ function selectSuggestion(tag) {
     textBefore.length - prefix.length,
   );
   const textAfter = editor.value.substring(editor.selectionEnd);
+  const suggestionMeta = htmlTagMetaMap.get(tag);
+
+  if (suggestionMeta && suggestionMeta.insertText) {
+    const replaceStart = textBefore.length - prefix.length;
+    const insertedText = suggestionMeta.insertText;
+    const caretPos = replaceStart + insertedText.length;
+    applyEditorMutation(
+      editor,
+      replaceStart,
+      editor.selectionEnd,
+      insertedText,
+      caretPos,
+      caretPos,
+    );
+    hideSuggestions();
+    editor.focus();
+    return;
+  }
 
   const insertedTag = isPlain ? `<${tag}>` : `${tag}>`;
   const shouldAutoClose = !isClosing && !selfClosingTags.includes(tag);
@@ -5158,6 +5312,8 @@ function handleAutoCloseAndIndent(e, editor) {
   const pos = editor.selectionStart;
   const textBefore = editor.value.substring(0, pos);
   const textAfter = editor.value.substring(pos);
+  const isCssContext = fileType === "css" || (fileType === "html" && isInsideStyleTag(textBefore));
+  const isJsContext = fileType === "js" || (fileType === "html" && isInsideScriptTag(textBefore));
 
   // 1. Indent level calculation (Find the indentation of the current line)
   const lineStart = textBefore.lastIndexOf("\n") + 1;
@@ -5171,14 +5327,14 @@ function handleAutoCloseAndIndent(e, editor) {
   let closingChar = "";
   let insertNewlines = 1;
 
-  if (fileType === "css" || fileType === "js") {
+  if (isCssContext || isJsContext) {
     // Check for { (CSS blocks or JS objects/functions)
     if (e.key === "{") {
       autoClosePair = "{";
       closingChar = "}";
     }
     // Check for ( (JS function calls or definitions)
-    else if (fileType === "js" && e.key === "(") {
+    else if (isJsContext && e.key === "(") {
       autoClosePair = "(";
       closingChar = ")";
     }
@@ -5422,7 +5578,11 @@ function handleEditorKeyDown(e) {
   }
 
   // --- 3. Auto-Closing & Indentation (CSS and JS) ---
-  if (activeFile.type === "css" || activeFile.type === "js") {
+  if (
+    activeFile.type === "css" ||
+    activeFile.type === "js" ||
+    (activeFile.type === "html" && (isInsideStyleTag(editor.value.substring(0, editor.selectionStart)) || isInsideScriptTag(editor.value.substring(0, editor.selectionStart))))
+  ) {
     if (handleAutoCloseAndIndent(e, editor)) {
       return; // If auto-closing/indentation was handled, stop here
     }
@@ -7682,6 +7842,117 @@ function startCollaboration() {
   renderHostNameStep();
 }
 
+const collabColorPalette = [
+  "#4CAF50",
+  "#2196F3",
+  "#FF9800",
+  "#E91E63",
+  "#9C27B0",
+  "#00BCD4",
+  "#F44336",
+  "#8BC34A",
+  "#FFC107",
+  "#3F51B5",
+  "#009688",
+  "#795548",
+];
+
+function normalizeThemeColor(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function buildCollabColorPickerHtml(selectedTheme, participants = []) {
+  const selected = normalizeThemeColor(selectedTheme || collabColorPalette[0]);
+  const takenMap = new Map();
+  participants.forEach((participant) => {
+    const theme = normalizeThemeColor(participant.theme);
+    if (!theme) return;
+    if (!takenMap.has(theme)) takenMap.set(theme, []);
+    takenMap.get(theme).push(String(participant.name || "Participant"));
+  });
+
+  const swatches = collabColorPalette
+    .map((color) => {
+      const normalized = normalizeThemeColor(color);
+      const takenNames = takenMap.get(normalized) || [];
+      const isTaken = takenNames.length > 0;
+      const title = isTaken
+        ? `${color} taken by ${takenNames.join(", ")}`
+        : `${color} available`;
+      return `<button type="button" class="collab-color-swatch${selected === normalized ? " selected" : ""}${isTaken ? " taken" : ""}" data-color="${color}" title="${escapeHtml(title)}" style="background:${escapeHtml(color)};"></button>`;
+    })
+    .join("");
+
+  const takenItems = Array.from(takenMap.entries())
+    .map(
+      ([color, names]) =>
+        `<div class="collab-color-taken-item"><span class="collab-participant-color" style="width:14px;height:14px;flex-basis:14px;background:${escapeHtml(color)};"></span><span>${escapeHtml(names.join(", "))}</span></div>`,
+    )
+    .join("");
+
+  return `
+    <div class="collab-color-picker-wrap">
+      <div>
+        <p style="margin:0 0 10px;"><strong>Quick colors:</strong></p>
+        <div class="collab-color-swatches">${swatches}</div>
+      </div>
+      <div>
+        <p style="margin:0 0 8px;"><strong>Custom color:</strong></p>
+        <input type="color" id="userThemeInput" value="${escapeHtml(selectedTheme || collabColorPalette[0])}">
+      </div>
+      <div>
+        <p style="margin:0 0 8px;"><strong>Taken colors:</strong></p>
+        <div class="collab-color-taken-list">${takenItems || "<div>No colors are taken yet.</div>"}</div>
+      </div>
+    </div>
+  `;
+}
+
+function bindCollabColorPicker(selectedTheme) {
+  const input = document.getElementById("userThemeInput");
+  if (!input) return;
+
+  const applySelectedSwatch = (colorValue) => {
+    const normalized = normalizeThemeColor(colorValue);
+    document.querySelectorAll(".collab-color-swatch").forEach((swatch) => {
+      swatch.classList.toggle(
+        "selected",
+        normalizeThemeColor(swatch.getAttribute("data-color")) === normalized,
+      );
+    });
+  };
+
+  applySelectedSwatch(selectedTheme || input.value);
+
+  input.addEventListener("input", () => {
+    applySelectedSwatch(input.value);
+  });
+
+  document.querySelectorAll(".collab-color-swatch").forEach((swatch) => {
+    swatch.addEventListener("click", () => {
+      if (swatch.classList.contains("taken")) return;
+      const color = swatch.getAttribute("data-color");
+      if (!color) return;
+      input.value = color;
+      applySelectedSwatch(color);
+    });
+  });
+}
+
+function loadCollabPaletteParticipants(sessionId, callback) {
+  if (!sessionId || !ensureCollabSocket()) {
+    callback([]);
+    return;
+  }
+  collabSocket.emit("collab:palette", { sessionId }, (res) => {
+    if (!res || !res.ok) {
+      callback([]);
+      return;
+    }
+    callback(Array.isArray(res.participants) ? res.participants : []);
+  });
+}
+
 function promptForTheme(hostName) {
   setCollabCloseButtonVisible(true);
   modalTitle.innerHTML = "<strong>PICK COLOR</strong>";
@@ -7705,10 +7976,11 @@ function promptForTheme(hostName) {
       "
     >&#8592;</button>
     <p style="margin-top: 8px;"><strong>Your color:</strong></p>
-    <input type="color" id="userThemeInput" value="#4CAF50">
+    ${buildCollabColorPickerHtml("#4CAF50", [])}
   `;
   errorMsgEl.style.display = "none";
   setModalActions(`<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`);
+  bindCollabColorPicker("#4CAF50");
 
   const backBtn = document.getElementById("modalBackBtn");
   if (backBtn) {
@@ -7925,82 +8197,85 @@ function checkForSession() {
 function promptJoinTheme(name, sid) {
   setCollabCloseButtonVisible(false);
   modalTitle.innerHTML = "<strong>PICK COLOR</strong>";
-  modalBody.innerHTML = `
-    <button
-      id="modalBackBtn"
-      aria-label="Go back"
-      style="
-        position: absolute;
-        top: 10px;
-        left: 12px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
-        border-radius: 8px;
-        width: 34px;
-        height: 30px;
-        cursor: pointer;
-        font-size: 18px;
-        line-height: 1;
-      "
-    >&#8592;</button>
-    <p style="margin-top: 8px;"><strong>Your color:</strong></p>
-    <input type="color" id="userThemeInput" value="#2196F3">
-  `;
-  errorMsgEl.style.display = "none";
-  setModalActions(`<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`);
+  loadCollabPaletteParticipants(sid, (paletteParticipants) => {
+    modalBody.innerHTML = `
+      <button
+        id="modalBackBtn"
+        aria-label="Go back"
+        style="
+          position: absolute;
+          top: 10px;
+          left: 12px;
+          border: 1px solid var(--border-color);
+          background: var(--bg-tertiary);
+          color: var(--text-primary);
+          border-radius: 8px;
+          width: 34px;
+          height: 30px;
+          cursor: pointer;
+          font-size: 18px;
+          line-height: 1;
+        "
+      >&#8592;</button>
+      <p style="margin-top: 8px;"><strong>Your color:</strong></p>
+      ${buildCollabColorPickerHtml("#2196F3", paletteParticipants)}
+    `;
+    errorMsgEl.style.display = "none";
+    setModalActions(`<button id="modalDoneBtn" class="run-button"><strong>DONE</strong></button>`);
+    bindCollabColorPicker("#2196F3");
 
-  const backBtn = document.getElementById("modalBackBtn");
-  if (backBtn) {
-    backBtn.onclick = () => renderJoinNameStep(sid, name);
-  }
+    const backBtn = document.getElementById("modalBackBtn");
+    if (backBtn) {
+      backBtn.onclick = () => renderJoinNameStep(sid, name);
+    }
 
-  const doneBtn = getModalDoneBtn();
-  if (!doneBtn) return;
-  doneBtn.onclick = () => {
-    const theme = document.getElementById("userThemeInput").value;
-    resetTransientCollabUiState();
+    const doneBtn = getModalDoneBtn();
+    if (!doneBtn) return;
+    doneBtn.onclick = () => {
+      const theme = document.getElementById("userThemeInput").value;
+      resetTransientCollabUiState();
 
-    collabSocket.emit(
-      "collab:join",
-      { sessionId: sid, name, theme },
-      (res) => {
-        if (!res || !res.ok) {
-          if (res && res.pending) {
-            myInfo = { name, theme };
-            showJoinPendingState(sid, name);
+      collabSocket.emit(
+        "collab:join",
+        { sessionId: sid, name, theme },
+        (res) => {
+          if (!res || !res.ok) {
+            if (res && res.pending) {
+              myInfo = { name, theme };
+              showJoinPendingState(sid, name);
+              return;
+            }
+            if (res && String(res.error || "").toLowerCase().includes("session not found")) {
+              window.location.href = "/404.html";
+              return;
+            }
+            errorMsgEl.textContent = (res && res.error) || "Cannot join session.";
+            errorMsgEl.style.display = "block";
             return;
           }
-          if (res && String(res.error || "").toLowerCase().includes("session not found")) {
-            window.location.href = "/404.html";
-            return;
-          }
-          errorMsgEl.textContent = (res && res.error) || "Cannot join session.";
-          errorMsgEl.style.display = "block";
-          return;
-        }
 
-        activeSessionId = sid;
-        myInfo = { name, theme };
-        collabShareLink = `${window.location.origin}/frontend.html/${sid}`;
-        collabParticipants = res.participants || [];
-        collabHostName =
-          (collabParticipants.find((p) => p.role === "host") || {}).name ||
-          res.hostName ||
-          "";
-        collabPermissions = normalizeCollabPermissions(res.permissions);
-        collabGroupMessages = [];
-        collabPrivateMessages = [];
-        collabChatMode = "group";
-        collabChatTarget = "";
-        applyRemoteSessionState(res.files, res.activeFileName, true);
-        enforceCollabPermissionsUI();
-        showNotification(`Welcome, ${name}!`, "success");
-        startSyncing();
-        closeModal();
-      },
-    );
-  };
+          activeSessionId = sid;
+          myInfo = { name, theme };
+          collabShareLink = `${window.location.origin}/frontend.html/${sid}`;
+          collabParticipants = res.participants || [];
+          collabHostName =
+            (collabParticipants.find((p) => p.role === "host") || {}).name ||
+            res.hostName ||
+            "";
+          collabPermissions = normalizeCollabPermissions(res.permissions);
+          collabGroupMessages = [];
+          collabPrivateMessages = [];
+          collabChatMode = "group";
+          collabChatTarget = "";
+          applyRemoteSessionState(res.files, res.activeFileName, true);
+          enforceCollabPermissionsUI();
+          showNotification(`Welcome, ${name}!`, "success");
+          startSyncing();
+          closeModal();
+        },
+      );
+    };
+  });
 }
 
 function handleCodeChange() {
@@ -8078,20 +8353,66 @@ mediaInput.addEventListener("change", (e) => {
 
 // PART 14 - SEAMLESS & FULL-RANGE DIVIDER DRAG
 let isDragging = false;
-let startX, startEditorWidth, containerWidth;
+let dragAxis = "x";
+let startPointerPos = 0;
+let startEditorSize = 0;
+let startPreviewSize = 0;
+let containerSize = 0;
 
 divider.addEventListener("mousedown", startDragging);
 divider.addEventListener("touchstart", startDragging, { passive: true });
+divider.addEventListener("dblclick", resetEditorPreviewSplit);
+
+function isStackedEditorLayout() {
+  return window.getComputedStyle(editorContainer).flexDirection === "column";
+}
+
+function resetEditorPreviewSplit() {
+  if (isStackedEditorLayout()) {
+    editorsPanel.style.width = "100%";
+    editorsPanel.style.height = "52dvh";
+    editorsPanel.style.flex = "none";
+    if (previewPanel) {
+      previewPanel.style.width = "100%";
+      previewPanel.style.height = "48dvh";
+      previewPanel.style.flex = "none";
+    }
+    return;
+  }
+
+  editorsPanel.style.width = "50%";
+  editorsPanel.style.height = "";
+  editorsPanel.style.flex = "none";
+  if (previewPanel) {
+    previewPanel.style.width = "";
+    previewPanel.style.height = "";
+    previewPanel.style.flex = "1";
+  }
+}
 
 function startDragging(e) {
   isDragging = true;
   divider.classList.add("dragging");
-  document.body.style.cursor = "col-resize";
+  dragAxis = isStackedEditorLayout() ? "y" : "x";
+  document.body.style.cursor = dragAxis === "y" ? "row-resize" : "col-resize";
   document.body.style.userSelect = "none";
 
-  startX = e.type.includes("mouse") ? e.pageX : e.touches[0].pageX;
-  startEditorWidth = editorsPanel.getBoundingClientRect().width;
-  containerWidth = editorContainer.getBoundingClientRect().width; // Full container
+  startPointerPos = e.type.includes("mouse")
+    ? dragAxis === "y"
+      ? e.pageY
+      : e.pageX
+    : dragAxis === "y"
+      ? e.touches[0].pageY
+      : e.touches[0].pageX;
+  startEditorSize = dragAxis === "y"
+    ? editorsPanel.getBoundingClientRect().height
+    : editorsPanel.getBoundingClientRect().width;
+  startPreviewSize = dragAxis === "y" && previewPanel
+    ? previewPanel.getBoundingClientRect().height
+    : 0;
+  containerSize = dragAxis === "y"
+    ? editorContainer.getBoundingClientRect().height
+    : editorContainer.getBoundingClientRect().width;
 
   e.preventDefault();
 
@@ -8104,18 +8425,45 @@ function startDragging(e) {
 function doDrag(e) {
   if (!isDragging) return;
 
-  const currentX = e.type.includes("mouse") ? e.pageX : e.touches[0].pageX;
-  const diff = currentX - startX;
-  let newWidth = startEditorWidth + diff;
+  const currentPointerPos = e.type.includes("mouse")
+    ? dragAxis === "y"
+      ? e.pageY
+      : e.pageX
+    : dragAxis === "y"
+      ? e.touches[0].pageY
+      : e.touches[0].pageX;
+  const diff = currentPointerPos - startPointerPos;
 
-  // === MIN / MAX BOUNDS ===
-  const minWidth = 200;
-  const maxWidth = containerWidth - 100; // Leave 100px for preview
-  newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+  if (dragAxis === "y") {
+    const minHeight = 260;
+    const dividerSize = divider.getBoundingClientRect().height || 6;
+    const maxHeight = Math.max(minHeight, containerSize - dividerSize - 220);
+    const newEditorHeight = Math.max(minHeight, Math.min(startEditorSize + diff, maxHeight));
+    const newPreviewHeight = Math.max(220, containerSize - dividerSize - newEditorHeight);
 
-  // Apply instantly
-  editorsPanel.style.width = `${newWidth}px`;
-  editorsPanel.style.flex = "none"; // Prevent flex from overriding
+    editorsPanel.style.height = `${newEditorHeight}px`;
+    editorsPanel.style.width = "100%";
+    editorsPanel.style.flex = "none";
+    if (previewPanel) {
+      previewPanel.style.height = `${newPreviewHeight}px`;
+      previewPanel.style.flex = "none";
+      previewPanel.style.width = "100%";
+    }
+  } else {
+    const minWidth = 200;
+    const dividerSize = divider.getBoundingClientRect().width || 8;
+    const maxWidth = Math.max(minWidth, containerSize - dividerSize - 100);
+    const newWidth = Math.max(minWidth, Math.min(startEditorSize + diff, maxWidth));
+
+    editorsPanel.style.width = `${newWidth}px`;
+    editorsPanel.style.height = "";
+    editorsPanel.style.flex = "none";
+    if (previewPanel) {
+      previewPanel.style.height = "";
+      previewPanel.style.width = "";
+      previewPanel.style.flex = "1";
+    }
+  }
 
   if (e.type === "touchmove") e.preventDefault();
 }
@@ -8127,10 +8475,6 @@ function stopDragging() {
   document.body.style.cursor = "";
   document.body.style.userSelect = "";
 
-  // Restore flex after drag (optional smooth reset)
-  editorsPanel.style.flex = "";
-  editorsPanel.style.maxWidth = "80%";
-
   document.removeEventListener("mousemove", doDrag);
   document.removeEventListener("touchmove", doDrag);
   document.removeEventListener("mouseup", stopDragging);
@@ -8140,10 +8484,30 @@ function stopDragging() {
 // Reset on window resize
 window.addEventListener("resize", () => {
   if (!isDragging) {
-    const current = editorsPanel.getBoundingClientRect().width;
-    const max = window.innerWidth * 0.8;
-    if (current > max) {
-      editorsPanel.style.width = "50%";
+    if (isStackedEditorLayout()) {
+      editorsPanel.style.width = "100%";
+      if (!editorsPanel.style.height) {
+        editorsPanel.style.height = "52dvh";
+      }
+      if (previewPanel) {
+        previewPanel.style.width = "100%";
+        if (!previewPanel.style.height) {
+          previewPanel.style.height = "48dvh";
+        }
+        previewPanel.style.flex = "none";
+      }
+    } else {
+      const current = editorsPanel.getBoundingClientRect().width;
+      const max = window.innerWidth * 0.8;
+      if (current > max || editorsPanel.style.width === "100%") {
+        editorsPanel.style.width = "50%";
+      }
+      editorsPanel.style.height = "";
+      if (previewPanel) {
+        previewPanel.style.height = "";
+        previewPanel.style.width = "";
+        previewPanel.style.flex = "1";
+      }
     }
   }
 });

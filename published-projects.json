@@ -24,5 +24,83 @@
     ],
     "activeFileName": "register.html",
     "createdAt": 1775486893478
+  },
+  {
+    "id": "PUB-FHZYF5-MNNTNORR",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "register.html",
+        "type": "html",
+        "content": "",
+        "active": true
+      },
+      {
+        "name": "dashboard.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Dashboard</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">WELCOME TO MY PAGE</h1>\n<hr>\n      <a href=\"about.html\">About Me</a><br>\n      <a href=\"contact.html\">Contact Me</a><br>\n      <a href=\"projects.html\">Projects</a><br>\n      <img src=\"img.png\">\n      <footer>Copyright &copy 2026</footer>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      },
+      {
+        "name": "contact.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Contact</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">GET IN TOUCH</h1> \n<hr>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "register.html",
+    "createdAt": 1775518139943
+  },
+  {
+    "id": "PUB-1TD1MA-MNNTNWTP",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "register.html",
+        "type": "html",
+        "content": "",
+        "active": true
+      },
+      {
+        "name": "dashboard.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Dashboard</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">WELCOME TO MY PAGE</h1>\n<hr>\n      <a href=\"about.html\">About Me</a><br>\n      <a href=\"contact.html\">Contact Me</a><br>\n      <a href=\"projects.html\">Projects</a><br>\n      <img src=\"img.png\">\n      <footer>Copyright &copy 2026</footer>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      },
+      {
+        "name": "contact.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Contact</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">GET IN TOUCH</h1> \n<hr>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "register.html",
+    "createdAt": 1775518150381
+  },
+  {
+    "id": "PUB-Z17F60-MNNTOTMZ",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "register.html",
+        "type": "html",
+        "content": "xxsxs",
+        "active": true
+      },
+      {
+        "name": "dashboard.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Dashboard</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">WELCOME TO MY PAGE</h1>\n<hr>\n      <a href=\"about.html\">About Me</a><br>\n      <a href=\"contact.html\">Contact Me</a><br>\n      <a href=\"projects.html\">Projects</a><br>\n      <img src=\"img.png\">\n      <footer>Copyright &copy 2026</footer>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      },
+      {
+        "name": "contact.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Contact</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<h1 style=\"text-align: center;\">GET IN TOUCH</h1> \n<hr>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "register.html",
+    "createdAt": 1775518192907
   }
 ]

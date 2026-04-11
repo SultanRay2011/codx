@@ -51,6 +51,10 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 loadPublishedProjects();
 
+app.get("/404-for-preview.html", (_req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "404-for-preview.html"));
+});
+
 app.get(/^\/frontend\.html\/([A-Za-z0-9-]+)$/, (req, res) => {
   const sessionId = normalizeSessionId(req.params[0]);
   if (!isValidSessionId(sessionId)) {
@@ -834,6 +838,13 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Name already taken." });
         return;
       }
+      const colorTaken = session.participants.some(
+        (p) => String(p.theme || "").trim().toLowerCase() === theme.trim().toLowerCase(),
+      );
+      if (colorTaken) {
+        ack?.({ ok: false, error: "Color already taken." });
+        return;
+      }
       if (session.permissions?.requireJoinApproval) {
         const alreadyPending = (session.pendingJoins || []).some(
           (entry) => entry.name.toLowerCase() === name.toLowerCase(),
@@ -882,6 +893,23 @@ io.on("connection", (socket) => {
       emitSessionMeta(sessionId);
     } catch {
       ack?.({ ok: false, error: "Failed to join session." });
+    }
+  });
+
+  socket.on("collab:palette", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      ack?.({
+        ok: true,
+        participants: session.participants.map(sanitizeParticipant),
+      });
+    } catch {
+      ack?.({ ok: false, error: "Failed to load participant colors." });
     }
   });
 
