@@ -2087,6 +2087,12 @@ let currentPreviewTarget = {
   fileName: "index.html",
 };
 let zenModeLayoutSnapshot = null;
+let backgroundTimersRunning = false;
+let cursorPruneInterval = null;
+let roomIndicatorInterval = null;
+let isPointerInsideEditor = false;
+let lastPointerClientX = null;
+let lastPointerClientY = null;
 
 function getPreviewTargetForFile(rawHref) {
   const normalizedHref = String(rawHref || "").trim().replace(/^\.\/+/, "");
@@ -5709,6 +5715,18 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    stopBackgroundTimers();
+    clearOwnSessionCursorBroadcast();
+    return;
+  }
+  startBackgroundTimers();
+  pruneRemoteCursors();
+  applyRoomIndicators();
+  resumeCollabSession();
+});
+
 document.addEventListener("keyup", (e) => {
   if (e.key === "Control" || e.key === "Meta") {
     setDeveloperChordArmed(false);
@@ -5776,10 +5794,16 @@ editorContainer.addEventListener("drop", (e) => {
 });
 
 document.getElementById("activeEditor").addEventListener("pointermove", announceCursorPosition);
-document.getElementById("activeEditor").addEventListener("mouseenter", announceCursorPosition);
-document.getElementById("activeEditor").addEventListener("mouseleave", clearOwnSessionCursorBroadcast);
+document.getElementById("activeEditor").addEventListener("mouseenter", (event) => {
+  isPointerInsideEditor = true;
+  announceCursorPosition(event);
+});
+document.getElementById("activeEditor").addEventListener("mouseleave", () => {
+  isPointerInsideEditor = false;
+  clearOwnSessionCursorBroadcast();
+});
 window.addEventListener("beforeunload", clearOwnSessionCursorBroadcast);
-setInterval(pruneRemoteCursors, 1000);
+startBackgroundTimers();
 
 // PART 9 - ZIP EXPORT
 async function exportAsZip() {
@@ -5959,7 +5983,12 @@ function validateUsername(u) {
 }
 
 function getMyParticipant() {
-  return collabParticipants.find((p) => p.name === myInfo.name) || null;
+  const target = String(myInfo.name || "").trim().toLowerCase();
+  return (
+    collabParticipants.find(
+      (p) => String(p.name || "").trim().toLowerCase() === target,
+    ) || null
+  );
 }
 
 function getParticipantByName(name) {
@@ -5978,7 +6007,13 @@ function getMyRole() {
   if (me?.role) return me.role;
 
   const hostName = getCurrentHostName();
-  if (hostName && myInfo.name === hostName) return "host";
+  if (
+    hostName &&
+    String(myInfo.name || "").trim().toLowerCase() ===
+      String(hostName || "").trim().toLowerCase()
+  ) {
+    return "host";
+  }
   return "participant";
 }
 
@@ -7039,17 +7074,7 @@ function requestCollabChatHistory() {
   });
 }
 
-setInterval(() => {
-  applyRoomIndicators();
-  if (
-    activeSessionId &&
-    collabModal.style.display === "flex" &&
-    collabModalView === "session" &&
-    collabPermissions.sessionEndsAt
-  ) {
-    showSessionDetails(activeSessionId);
-  }
-}, 1000);
+// background timers now managed in startBackgroundTimers()
 
 function requestKickParticipant(targetName) {
   if (!collabSocket || !activeSessionId || !canUseCoHostTools()) {
@@ -7340,6 +7365,42 @@ function showKickedOutModal() {
   }
 }
 
+function resumeCollabSession(successMessage) {
+  if (!collabSocket || !collabSocket.connected || !activeSessionId || !myInfo.name) return;
+  collabSocket.emit(
+    "collab:resume",
+    {
+      sessionId: activeSessionId,
+      name: myInfo.name,
+      theme: myInfo.theme || "#4CAF50",
+    },
+    (res) => {
+      if (!res?.ok) {
+        showNotification(
+          (res && res.error) || "Collaboration reconnected, but session resume failed.",
+          "error",
+        );
+        return;
+      }
+      collabParticipants = res.participants || [];
+      collabHostName =
+        (collabParticipants.find((p) => p.role === "host") || {}).name ||
+        res.hostName ||
+        collabHostName;
+      collabPermissions = normalizeCollabPermissions(res.permissions);
+      applyRemoteSessionState(res.files, res.activeFileName, true);
+      enforceCollabPermissionsUI();
+      if (collabModal.style.display === "flex" && collabModalView === "session") {
+        showSessionDetails(activeSessionId);
+      }
+      requestCollabChatHistory();
+      if (successMessage) {
+        showNotification(successMessage, "success");
+      }
+    },
+  );
+}
+
 function ensureCollabSocket() {
   if (collabSocket && collabSocket.connected) return true;
   if (typeof io !== "function") {
@@ -7359,37 +7420,7 @@ function ensureCollabSocket() {
     }
   });
   collabSocket.on("reconnect", () => {
-    if (!activeSessionId || !myInfo.name) return;
-    collabSocket.emit(
-      "collab:resume",
-      {
-        sessionId: activeSessionId,
-        name: myInfo.name,
-        theme: myInfo.theme || "#4CAF50",
-      },
-      (res) => {
-        if (!res?.ok) {
-          showNotification(
-            (res && res.error) || "Collaboration reconnected, but session resume failed.",
-            "error",
-          );
-          return;
-        }
-        collabParticipants = res.participants || [];
-        collabHostName =
-          (collabParticipants.find((p) => p.role === "host") || {}).name ||
-          res.hostName ||
-          collabHostName;
-        collabPermissions = normalizeCollabPermissions(res.permissions);
-        applyRemoteSessionState(res.files, res.activeFileName, true);
-        enforceCollabPermissionsUI();
-        if (collabModal.style.display === "flex" && collabModalView === "session") {
-          showSessionDetails(activeSessionId);
-        }
-        requestCollabChatHistory();
-        showNotification("Collaboration reconnected.", "success");
-      },
-    );
+    resumeCollabSession("Collaboration reconnected.");
   });
 
   collabSocket.on("collab:state", (payload) => {
@@ -7717,6 +7748,38 @@ function renderRemoteCursors() {
   const width = wrapper.clientWidth;
   const height = wrapper.clientHeight;
   const editor = document.getElementById("activeEditor");
+  const wrapperRect = wrapper.getBoundingClientRect();
+  let contentLeft = 0;
+  let contentTop = 0;
+  let contentWidth = width;
+  let contentHeight = height;
+  let totalWidth = width;
+  let totalHeight = height;
+  if (editor) {
+    const editorRect = editor.getBoundingClientRect();
+    const style = window.getComputedStyle(editor);
+    const padLeft = parseFloat(style.paddingLeft) || 0;
+    const padRight = parseFloat(style.paddingRight) || 0;
+    const padTop = parseFloat(style.paddingTop) || 0;
+    const padBottom = parseFloat(style.paddingBottom) || 0;
+    contentLeft = editorRect.left - wrapperRect.left + padLeft;
+    contentTop = editorRect.top - wrapperRect.top + padTop;
+    contentWidth = Math.max(1, editorRect.width - padLeft - padRight);
+    contentHeight = Math.max(1, editorRect.height - padTop - padBottom);
+    totalWidth = Math.max(1, (editor.scrollWidth || contentWidth) - padLeft - padRight);
+    totalHeight = Math.max(1, (editor.scrollHeight || contentHeight) - padTop - padBottom);
+    const lineNumbersEl = document.getElementById("lineNumbers");
+    if (lineNumbersEl) {
+      const lineRect = lineNumbersEl.getBoundingClientRect();
+      const contentLeftAbs = wrapperRect.left + contentLeft;
+      if (lineRect.right > contentLeftAbs) {
+        const delta = lineRect.right - contentLeftAbs;
+        contentLeft += delta;
+        contentWidth = Math.max(1, contentWidth - delta);
+        totalWidth = Math.max(1, totalWidth - delta);
+      }
+    }
+  }
   const typingHtml = editor
     ? getVisibleTypingParticipants()
         .map((entry) => {
@@ -7734,8 +7797,22 @@ function renderRemoteCursors() {
     : "";
   const cursorHtml = getVisibleCursorParticipants()
     .map((entry) => {
-      const left = Math.max(0, Math.min(width - 2, Math.round((entry.x || 0) * width)));
-      const top = Math.max(0, Math.min(height - 18, Math.round((entry.y || 0) * height)));
+      const scrollLeft = editor ? editor.scrollLeft : 0;
+      const scrollTop = editor ? editor.scrollTop : 0;
+      const left = Math.max(
+        0,
+        Math.min(
+          width - 2,
+          Math.round(contentLeft + (entry.x || 0) * totalWidth - scrollLeft),
+        ),
+      );
+      const top = Math.max(
+        0,
+        Math.min(
+          height - 18,
+          Math.round(contentTop + (entry.y || 0) * totalHeight - scrollTop),
+        ),
+      );
       return `<div class="remote-cursor" style="left:${left}px;top:${top}px;--cursor-color:${escapeHtml(entry.theme || "#4CAF50")};">
         <span class="remote-cursor-label">${escapeHtml(entry.name || "User")}</span>
       </div>`;
@@ -7762,15 +7839,66 @@ function pruneRemoteCursors() {
   if (changed) renderRemoteCursors();
 }
 
-function announceCursorPosition(event) {
+function startBackgroundTimers() {
+  if (backgroundTimersRunning) return;
+  cursorPruneInterval = setInterval(pruneRemoteCursors, 1000);
+  roomIndicatorInterval = setInterval(() => {
+    applyRoomIndicators();
+    if (
+      activeSessionId &&
+      collabModal.style.display === "flex" &&
+      collabModalView === "session" &&
+      collabPermissions.sessionEndsAt
+    ) {
+      showSessionDetails(activeSessionId);
+    }
+  }, 1000);
+  backgroundTimersRunning = true;
+}
+
+function stopBackgroundTimers() {
+  if (cursorPruneInterval) {
+    clearInterval(cursorPruneInterval);
+    cursorPruneInterval = null;
+  }
+  if (roomIndicatorInterval) {
+    clearInterval(roomIndicatorInterval);
+    roomIndicatorInterval = null;
+  }
+  backgroundTimersRunning = false;
+}
+
+function emitCursorFromClientCoords(clientX, clientY) {
   if (!collabSocket || !activeSessionId || !myInfo.name || !activeFile) return;
+  if (document.hidden) return;
   const editor = document.getElementById("activeEditor");
   if (!editor) return;
-
   const rect = editor.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
-  const x = (event.clientX - rect.left) / rect.width;
-  const y = (event.clientY - rect.top) / rect.height;
+  const style = window.getComputedStyle(editor);
+  const padLeft = parseFloat(style.paddingLeft) || 0;
+  const padRight = parseFloat(style.paddingRight) || 0;
+  const padTop = parseFloat(style.paddingTop) || 0;
+  const padBottom = parseFloat(style.paddingBottom) || 0;
+  let left = rect.left + padLeft;
+  let top = rect.top + padTop;
+  let width = Math.max(1, rect.width - padLeft - padRight);
+  let height = Math.max(1, rect.height - padTop - padBottom);
+  const lineNumbersEl = document.getElementById("lineNumbers");
+  if (lineNumbersEl) {
+    const lineRect = lineNumbersEl.getBoundingClientRect();
+    if (lineRect.right > left) {
+      const delta = lineRect.right - left;
+      left = left + delta;
+      width = Math.max(1, width - delta);
+    }
+  }
+  const totalWidth = Math.max(1, (editor.scrollWidth || width) - padLeft - padRight);
+  const totalHeight = Math.max(1, (editor.scrollHeight || height) - padTop - padBottom);
+  const contentX = (clientX - left) + editor.scrollLeft;
+  const contentY = (clientY - top) + editor.scrollTop;
+  const x = contentX / totalWidth;
+  const y = contentY / totalHeight;
   if (x < 0 || x > 1 || y < 0 || y > 1) return;
 
   collabSocket.emit("collab:cursor", {
@@ -7785,6 +7913,24 @@ function announceCursorPosition(event) {
     },
   });
 }
+
+function announceCursorPosition(event) {
+  lastPointerClientX = event.clientX;
+  lastPointerClientY = event.clientY;
+  emitCursorFromClientCoords(event.clientX, event.clientY);
+}
+
+window.addEventListener(
+  "scroll",
+  () => {
+    if (isPointerInsideEditor) {
+      if (lastPointerClientX !== null && lastPointerClientY !== null) {
+        emitCursorFromClientCoords(lastPointerClientX, lastPointerClientY);
+      }
+    }
+  },
+  true,
+);
 
 function clearOwnSessionCursorBroadcast() {
   if (!collabSocket || !activeSessionId || !myInfo.name) return;
