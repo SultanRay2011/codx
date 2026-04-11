@@ -2086,6 +2086,7 @@ let currentPreviewTarget = {
   mode: "html",
   fileName: "index.html",
 };
+let zenModeLayoutSnapshot = null;
 
 function getPreviewTargetForFile(rawHref) {
   const normalizedHref = String(rawHref || "").trim().replace(/^\.\/+/, "");
@@ -6182,8 +6183,41 @@ function updateZenModeButtonState() {
 }
 
 function toggleZenMode(forceState) {
-  isZenMode =
+  const nextZenState =
     typeof forceState === "boolean" ? forceState : !document.body.classList.contains("zen-mode");
+  if (nextZenState && !isZenMode) {
+    zenModeLayoutSnapshot = {
+      editorsWidth: editorsPanel ? editorsPanel.style.width : "",
+      editorsHeight: editorsPanel ? editorsPanel.style.height : "",
+      editorsFlex: editorsPanel ? editorsPanel.style.flex : "",
+      previewWidth: previewPanel ? previewPanel.style.width : "",
+      previewHeight: previewPanel ? previewPanel.style.height : "",
+      previewFlex: previewPanel ? previewPanel.style.flex : "",
+    };
+    if (editorsPanel) {
+      editorsPanel.style.width = "100%";
+      editorsPanel.style.height = "100%";
+      editorsPanel.style.flex = "1 1 auto";
+    }
+    if (previewPanel) {
+      previewPanel.style.width = "";
+      previewPanel.style.height = "";
+      previewPanel.style.flex = "";
+    }
+  } else if (!nextZenState && isZenMode && zenModeLayoutSnapshot) {
+    if (editorsPanel) {
+      editorsPanel.style.width = zenModeLayoutSnapshot.editorsWidth || "";
+      editorsPanel.style.height = zenModeLayoutSnapshot.editorsHeight || "";
+      editorsPanel.style.flex = zenModeLayoutSnapshot.editorsFlex || "";
+    }
+    if (previewPanel) {
+      previewPanel.style.width = zenModeLayoutSnapshot.previewWidth || "";
+      previewPanel.style.height = zenModeLayoutSnapshot.previewHeight || "";
+      previewPanel.style.flex = zenModeLayoutSnapshot.previewFlex || "";
+    }
+    zenModeLayoutSnapshot = null;
+  }
+  isZenMode = nextZenState;
   document.body.classList.toggle("zen-mode", isZenMode);
   updateZenModeButtonState();
   updateLineNumbers(editorTextarea);
@@ -6194,6 +6228,9 @@ function toggleZenMode(forceState) {
       syncSyntaxLayerStyle(editorTextarea);
       renderSyntaxHighlight(editorTextarea);
       renderErrorHighlights(editorTextarea);
+    }
+    if (!isZenMode) {
+      handleLayoutResize();
     }
   }, 0);
   if (isZenMode) {
