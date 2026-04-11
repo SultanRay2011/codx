@@ -440,6 +440,7 @@ body.zen-mode #zenExitBtn {
 .remote-cursor {
   position: absolute;
   transform: translate(-1px, -1px);
+  transition: left 0.08s linear, top 0.08s linear;
 }
 
 .remote-cursor::before {
@@ -477,6 +478,7 @@ body.zen-mode #zenExitBtn {
     0 0 0 1px color-mix(in srgb, var(--typing-color, var(--accent-color)) 22%, transparent),
     0 8px 20px color-mix(in srgb, var(--typing-color, var(--accent-color)) 20%, transparent);
   animation: remoteTypingPulse 0.95s ease-in-out infinite alternate;
+  transition: left 0.08s linear, top 0.08s linear, width 0.08s linear, height 0.08s linear;
 }
 
 .remote-typing-label {
@@ -1228,6 +1230,17 @@ iframe {
   font-size: 14px;
 }
 
+.console-output .error .error-fix {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(248, 81, 73, 0.18);
+  color: #ffd6d3;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .console-output .warn {
   color: var(--warning-color);
   font-size: 14px;
@@ -1705,6 +1718,63 @@ header {
 .collab-participant-list {
   display: grid;
   gap: 10px;
+}
+
+.collab-timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.collab-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-tertiary) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  font-size: 12px;
+}
+
+.collab-timeline-time {
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 52px;
+}
+
+.collab-timeline-text {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.collab-timeline-item.chat {
+  border-left: 3px solid color-mix(in srgb, var(--accent-color) 70%, #ffffff);
+}
+
+.collab-timeline-item.role {
+  border-left: 3px solid #8b5cf6;
+}
+
+.collab-timeline-item.moderation {
+  border-left: 3px solid #f59e0b;
+}
+
+.collab-timeline-item.focus {
+  border-left: 3px solid #22c55e;
+}
+
+.collab-timeline-item.session {
+  border-left: 3px solid #38bdf8;
+}
+
+.collab-timeline-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 6px 4px;
 }
 
 .collab-participant-row {

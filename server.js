@@ -263,7 +263,14 @@ app.get("/published/:id", (req, res) => {
     res.status(404).sendFile(path.join(__dirname, "404.html"));
     return;
   }
-  res.send(buildPublishedHtml(project));
+  res.setHeader("Cache-Control", "no-store, max-age=0, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  const sentTitle =
+    req.headers["x-codx-publish-title"] ||
+    req.headers["x-publish-title"] ||
+    "";
+  const requestedFile = String(req.query.file || "").trim();
+  res.send(buildPublishedHtml(project, requestedFile, sentTitle));
 });
 
 // Fallback: unknown GET routes go to custom 404 page.
@@ -348,9 +355,11 @@ function buildShareLink(baseUrl, sessionId) {
   return `/frontend.html/${sessionId}`;
 }
 
-function buildPublishedHtml(project) {
+function buildPublishedHtml(project, requestedFileName = "", requestTitle = "") {
   const files = Array.isArray(project?.files) ? project.files : [];
   const activeFileName = String(project?.activeFileName || "");
+  const requestedFile = String(requestedFileName || "").trim();
+  const requestTitleText = String(requestTitle || "").trim();
   const normalizeFileName = (value) => String(value || "").trim().replace(/^\.\/+/, "").toLowerCase();
   const resolveFile = (rawName, typeHint = "") => {
     const target = normalizeFileName(rawName);
@@ -368,10 +377,20 @@ function buildPublishedHtml(project) {
   };
 
   const htmlFile =
-    files.find((file) => String(file?.name || "") === activeFileName && String(file?.type || "").toLowerCase() === "html") ||
+    (requestedFile
+      ? resolveFile(requestedFile, "html")
+      : resolveFile("index.html", "html") ||
+        files.find(
+          (file) =>
+            String(file?.name || "") === activeFileName &&
+            String(file?.type || "").toLowerCase() === "html",
+        )) ||
     files.find((file) => String(file?.type || "").toLowerCase() === "html");
 
   if (!htmlFile) {
+    if (requestedFile) {
+      return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Published Page Not Found</title><style>html,body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;background:#f6fff7;color:#18211b}body{padding:32px}div{max-width:760px;margin:0 auto;background:#fff;border:1px solid rgba(20,41,27,.12);border-radius:20px;padding:24px;box-shadow:0 18px 40px rgba(24,46,31,.08)}h1{margin:0 0 12px}p{color:#5b675f;line-height:1.7}</style></head><body><div><h1>Page not found</h1><p>The published project does not contain <strong>${escapeHtmlAttribute(requestedFile)}</strong>.</p></div></body></html>`;
+    }
     return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtmlAttribute(project?.projectName || "Published Project")}</title><style>body{font-family:Segoe UI,Tahoma,sans-serif;background:#f6fff7;color:#18211b;padding:32px}.box{max-width:760px;margin:0 auto;background:#fff;border:1px solid rgba(20,41,27,.12);border-radius:20px;padding:24px;box-shadow:0 18px 40px rgba(24,46,31,.08)}h1{margin:0 0 12px}p{color:#5b675f;line-height:1.7}</style></head><body><div class="box"><h1>No HTML file to publish</h1><p>This project does not contain an HTML file, so there is nothing previewable to publish yet.</p></div></body></html>`;
   }
 
@@ -388,11 +407,68 @@ function buildPublishedHtml(project) {
     return `<script data-published-source="${escapeHtmlAttribute(jsFile.name)}">\n${String(jsFile.content || "")}\n<\/script>`;
   });
 
+  const publishLinkBase = `/published/${encodeURIComponent(project.id)}`;
+  const toPublishedLink = (rawHref) => {
+    const raw = String(rawHref || "").trim();
+    if (!raw) return "";
+    const [pathPart, hashPart] = raw.split("#");
+    const [pathOnly] = pathPart.split("?");
+    const baseName = pathOnly.replace(/^\.\/+/, "").replace(/^\/+/, "");
+    const linked = resolveFile(baseName, "html");
+    const target = linked ? linked.name : baseName || raw;
+    const hash = hashPart ? `#${hashPart}` : "";
+    return `${publishLinkBase}?file=${encodeURIComponent(target)}${hash}`;
+  };
+
+  html = html.replace(
+    /<a([^>]*)href=["']([^"']+\.html(?:[?#][^"']*)?)["']([^>]*)>/gi,
+    (full, before, href, after) => {
+      const url = toPublishedLink(href);
+      return url ? `<a${before}href="${url}"${after}>` : full;
+    },
+  );
+
+  html = html.replace(
+    /<form([^>]*)action=["']([^"']+\.html(?:[?#][^"']*)?)["']([^>]*)>/gi,
+    (full, before, action, after) => {
+      const url = toPublishedLink(action);
+      return url ? `<form${before}action="${url}"${after}>` : full;
+    },
+  );
+
+  html = html.replace(
+    /\bonclick=(["'])([\s\S]*?)\1/gi,
+    (match, quote, handlerCode) => {
+      const rewritten = handlerCode.replace(
+        /((?:window\.)?location(?:\.href)?\s*=\s*|window\.location\.assign\(\s*|window\.open\(\s*)(['"])([^'"]+\.html(?:[?#][^'"]*)?)(\2)(\s*\))?/gi,
+        (_m, prefix, q, href, _q2, closing = "") => {
+          const url = toPublishedLink(href);
+          if (!url) return _m;
+          if (/window\.open\(\s*$/i.test(prefix)) {
+            return `window.open(${q}${url}${q}${closing || ")"})`;
+          }
+          if (/assign\(\s*$/i.test(prefix)) {
+            return `window.location.assign(${q}${url}${q}${closing || ")"})`;
+          }
+          return `window.location.href = ${q}${url}${q}`;
+        },
+      );
+      return `onclick=${quote}${rewritten}${quote}`;
+    },
+  );
+
+  const publishTitle = escapeHtmlAttribute(requestTitleText || project?.projectName || htmlFile.name);
   if (!/<title\b/i.test(html)) {
     html = html.replace(
       /<head([^>]*)>/i,
-      `<head$1><title>${escapeHtmlAttribute(project?.projectName || htmlFile.name)}</title>`,
+      `<head$1><title>${publishTitle}</title>`,
     );
+  } else {
+    html = html.replace(/<title[^>]*>([\s\S]*?)<\/title>/i, (_m, existing) => {
+      const base = String(existing || "").trim();
+      if (!base) return `<title>${publishTitle}</title>`;
+      return `<title>${escapeHtmlAttribute(base)} | ${publishTitle}</title>`;
+    });
   }
 
   const publishBaseReset =

@@ -959,6 +959,8 @@ let typingTimer;
 let myInfo = {};
 let collabSocket = null;
 let collabParticipants = [];
+let collabTimeline = [];
+let lastParticipantsSnapshot = new Map();
 let activeSessionId = null;
 let isApplyingRemoteState = false;
 let currentTypingIndicator = null;
@@ -1907,6 +1909,8 @@ function updateFileErrorCountsFromConsole() {
   fileErrorCounts = next;
   fileErrorLocations = locations;
   renderFileList();
+  const editor = document.getElementById("activeEditor");
+  if (editor) renderErrorHighlights(editor);
 }
 let projectFiles = [
   {
@@ -3833,7 +3837,12 @@ ${jsFile.content}
 function appendConsoleMessage(type, message) {
   const line = document.createElement("div");
   line.className = type;
-  line.textContent = message;
+  if (type === "error" && String(message || "").includes("Fix:")) {
+    const parts = String(message).split("Fix:");
+    line.innerHTML = `${escapeHtml(parts[0].trim())} <span class="error-fix">Fix: ${escapeHtml(parts.slice(1).join("Fix:").trim())}</span>`;
+  } else {
+    line.textContent = message;
+  }
   consoleOutput.appendChild(line);
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
   if (type === "error") {
@@ -5477,6 +5486,18 @@ function handleTagClosing(e) {
       pos + 1,
       pos + 1,
     );
+
+    const loweredTag = tagName.toLowerCase();
+    if (loweredTag === "style" || loweredTag === "script") {
+      const after = editor.value.substring(pos + 1);
+      const wsMatch = after.match(/^\s+(<\/(?:style|script)>)/i);
+      if (wsMatch) {
+        const wsLen = wsMatch[0].length - wsMatch[1].length;
+        if (wsLen > 0) {
+          applyEditorMutation(editor, pos + 1, pos + 1 + wsLen, "", pos + 1, pos + 1);
+        }
+      }
+    }
   }
 }
 
@@ -5809,7 +5830,7 @@ startBackgroundTimers();
 async function exportAsZip() {
   if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableExportZip) {
     showNotification("The host disabled ZIP export for participants.", "error");
-    return;
+    return false;
   }
   const dialog = await showAppPrompt(
     "EXPORT ZIP",
@@ -5819,11 +5840,11 @@ async function exportAsZip() {
   );
   if (!dialog?.ok) return;
   const requestedName = dialog.value;
-  if (!requestedName) return;
+  if (!requestedName) return false;
   const trimmedName = requestedName.trim();
   if (!trimmedName) {
     showNotification("ZIP file name cannot be empty.", "error");
-    return;
+    return false;
   }
   const zipFileName = /\.zip$/i.test(trimmedName) ? trimmedName : `${trimmedName}.zip`;
   const zip = new JSZip();
@@ -5839,9 +5860,11 @@ async function exportAsZip() {
     a.click();
     URL.revokeObjectURL(url);
     showNotification(`Project exported as ${zipFileName}!`, "success");
+    return true;
   } catch (err) {
     console.error("Export error:", err);
     showNotification("Error creating ZIP file", "error");
+    return false;
   }
 }
 
@@ -6000,6 +6023,73 @@ function getCurrentHostName() {
   const hostParticipant = collabParticipants.find((p) => p.role === "host");
   if (hostParticipant?.name) return hostParticipant.name;
   return collabHostName || "";
+}
+
+function addTimelineEntry(text, type = "info") {
+  const entry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    text: String(text || "").trim(),
+    type,
+    ts: Date.now(),
+  };
+  if (!entry.text) return;
+  collabTimeline.unshift(entry);
+  if (collabTimeline.length > 60) collabTimeline.length = 60;
+}
+
+function formatTimelineTime(ts) {
+  try {
+    return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
+function renderTimelineHtml() {
+  if (!collabTimeline.length) {
+    return `<div class="collab-timeline-empty">No activity yet.</div>`;
+  }
+  return `
+    <div class="collab-timeline-list">
+      ${collabTimeline
+        .map(
+          (entry) => `
+        <div class="collab-timeline-item ${escapeHtml(entry.type)}">
+          <span class="collab-timeline-time">${escapeHtml(formatTimelineTime(entry.ts))}</span>
+          <span class="collab-timeline-text">${escapeHtml(entry.text)}</span>
+        </div>`,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function updateTimelineFromParticipants(participants) {
+  const next = new Map();
+  participants.forEach((p) => {
+    const key = String(p.name || "").trim().toLowerCase();
+    if (!key) return;
+    next.set(key, p);
+  });
+
+  next.forEach((p, key) => {
+    if (!lastParticipantsSnapshot.has(key)) {
+      addTimelineEntry(`${p.name} joined the session.`);
+    } else {
+      const prev = lastParticipantsSnapshot.get(key);
+      if (prev && prev.role !== p.role) {
+        addTimelineEntry(`${p.name} is now ${p.role || "participant"}.`);
+      }
+    }
+  });
+
+  lastParticipantsSnapshot.forEach((prev, key) => {
+    if (!next.has(key)) {
+      addTimelineEntry(`${prev.name} left the session.`);
+    }
+  });
+
+  lastParticipantsSnapshot = next;
 }
 
 function getMyRole() {
@@ -6306,6 +6396,9 @@ function updateGroupPermission(partial, successMessage) {
         collabPermissions = normalizeCollabPermissions(res.permissions || next);
         enforceCollabPermissionsUI();
         applyRoomIndicators();
+        if (successMessage) {
+          addTimelineEntry(successMessage, "session");
+        }
         if (collabModal.style.display === "flex") {
           if (collabModalView === "group-controls") {
             showGroupControls(activeSessionId);
@@ -7382,6 +7475,7 @@ function resumeCollabSession(successMessage) {
         );
         return;
       }
+      updateTimelineFromParticipants(res.participants || []);
       collabParticipants = res.participants || [];
       collabHostName =
         (collabParticipants.find((p) => p.role === "host") || {}).name ||
@@ -7441,7 +7535,9 @@ function ensureCollabSocket() {
   });
 
   collabSocket.on("collab:participants", (participants) => {
-    collabParticipants = Array.isArray(participants) ? participants : [];
+    const nextParticipants = Array.isArray(participants) ? participants : [];
+    updateTimelineFromParticipants(nextParticipants);
+    collabParticipants = nextParticipants;
     const hostFromParticipants = collabParticipants.find((p) => p.role === "host")?.name;
     if (hostFromParticipants) {
       collabHostName = hostFromParticipants;
@@ -7497,10 +7593,12 @@ function ensureCollabSocket() {
     const actorName = String(payload?.by || "The host").trim() || "The host";
     if (nextRole === "co-host") {
       showNotification(`${actorName} made you a co-host.`, "success");
+      addTimelineEntry(`${actorName} made you a co-host.`, "role");
       return;
     }
     if (nextRole === "participant") {
       showNotification(`${actorName} removed your co-host access.`, "info");
+      addTimelineEntry(`${actorName} removed your co-host access.`, "role");
     }
   });
 
@@ -7522,6 +7620,9 @@ function ensureCollabSocket() {
     collabGroupMessages.push(message);
     if (collabGroupMessages.length > 300) collabGroupMessages.shift();
     renderCollabChatMessages();
+    if (message.name) {
+      addTimelineEntry(`${message.name} sent a group message.`, "chat");
+    }
   });
 
   collabSocket.on("collab:chat:private", (message) => {
@@ -7529,6 +7630,9 @@ function ensureCollabSocket() {
     collabPrivateMessages.push(message);
     if (collabPrivateMessages.length > 500) collabPrivateMessages.shift();
     renderCollabChatMessages();
+    if (message.name) {
+      addTimelineEntry(`${message.name} sent a private message.`, "chat");
+    }
   });
 
   collabSocket.on("collab:chat:cleared", (payload) => {
@@ -7536,6 +7640,7 @@ function ensureCollabSocket() {
       collabGroupMessages = [];
       renderCollabChatMessages();
       showNotification("Group chat was cleared.", "info");
+      addTimelineEntry("Group chat was cleared.", "moderation");
     }
   });
 
@@ -7544,6 +7649,7 @@ function ensureCollabSocket() {
     if (!fileName) return;
     switchFile(fileName);
     showNotification(`The host brought everyone to ${fileName}.`, "info");
+    addTimelineEntry(`Everyone was brought to ${fileName}.`, "focus");
   });
 
   collabSocket.on("collab:link-regenerated", (payload) => {
@@ -7551,6 +7657,7 @@ function ensureCollabSocket() {
     activeSessionId = payload.sessionId || activeSessionId;
     collabShareLink = payload.shareLink || collabShareLink;
     window.history.replaceState({}, "", `/frontend.html/${activeSessionId}`);
+    addTimelineEntry("Invite link was regenerated.", "session");
     if (collabModal.style.display === "flex" && collabModalView === "session") {
       showSessionDetails(activeSessionId);
     }
@@ -7785,9 +7892,15 @@ function renderRemoteCursors() {
         .map((entry) => {
           const caretPos = Math.max(0, Math.min(Number(entry.caretPos || 0), editor.value.length));
           const coords = getCaretCoordinates(editor, caretPos);
+          const nextPos = Math.min(editor.value.length, caretPos + 1);
+          const nextCoords = getCaretCoordinates(editor, nextPos);
           const left = Math.max(0, coords.left);
           const top = Math.max(0, coords.top);
-          const widthPx = Math.max(14, Math.min(90, Math.round((coords.lineHeight || 20) * 1.2)));
+          const charWidth =
+            nextCoords && nextCoords.top === coords.top
+              ? Math.max(8, Math.min(26, Math.round(nextCoords.left - coords.left)))
+              : Math.max(8, Math.round((coords.lineHeight || 20) * 0.6));
+          const widthPx = charWidth;
           const heightPx = Math.max(16, Math.round((coords.lineHeight || 20) * 0.9));
           return `<div class="remote-typing-highlight" style="left:${left}px;top:${top}px;width:${widthPx}px;height:${heightPx}px;--typing-color:${escapeHtml(entry.theme || "#4CAF50")};">
             <span class="remote-typing-label">${escapeHtml(entry.name || "User")} typing</span>
@@ -8283,6 +8396,10 @@ function showSessionDetails(sid) {
     <div class="collab-section-card">
       <h4 class="collab-section-title">Participants</h4>
       <div class="collab-participant-list">${listItems}</div>
+    </div>
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">Live Timeline</h4>
+      ${renderTimelineHtml()}
     </div>
     ${buildCollabChatPanelHtml()}
   `;

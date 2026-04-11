@@ -102,5 +102,145 @@
     ],
     "activeFileName": "register.html",
     "createdAt": 1775518192907
+  },
+  {
+    "id": "PUB-1WYUCP-MNUB170F",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CSS BOX MODEL</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<style>\n.box{\n   margin: 20px 30px 20px 0px;\n   width: 200px;\n   height: 200px;\n   border: 2px solid red;\n   color: white;\n}\n.box1 {\n   background-color: blue;\n}\n\n.box2 {\n   background-color: red;\n}\n\n.box3 {\n   background-color: green;\n}\n\n.box4 {\n   background-color: yellow;\n   }\n</style>\n\n<div class=\"box1 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box2 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box3 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box4 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n\n<a href=\"next.html\">next page</a>\n<script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      },
+      {
+        "name": "next.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\npae\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      }
+    ],
+    "activeFileName": "next.html",
+    "createdAt": 1775910120639
+  },
+  {
+    "id": "PUB-41Z1WC-MNUB1HKN",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CSS BOX MODEL</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<style>\n.box{\n   margin: 20px 30px 20px 0px;\n   width: 200px;\n   height: 200px;\n   border: 2px solid red;\n   color: white;\n}\n.box1 {\n   background-color: blue;\n}\n\n.box2 {\n   background-color: red;\n}\n\n.box3 {\n   background-color: green;\n}\n\n.box4 {\n   background-color: yellow;\n   }\n</style>\n\n<div class=\"box1 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box2 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box3 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box4 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n\n<a href=\"next.html\">next page</a>\n<script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "next.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\npae\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1775910134327
+  },
+  {
+    "id": "PUB-YJ9O5Z-MNUBAH2O",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CSS BOX MODEL</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<style>\n.box{\n   margin: 20px 30px 20px 0px;\n   width: 200px;\n   height: 200px;\n   border: 2px solid red;\n   color: white;\n}\n.box1 {\n   background-color: blue;\n}\n\n.box2 {\n   background-color: red;\n}\n\n.box3 {\n   background-color: green;\n}\n\n.box4 {\n   background-color: yellow;\n   }\n</style>\n\n<div class=\"box1 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box2 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box3 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box4 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n\n<a href=\"next.html\">next page</a>\n<script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "next.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1775910553584
+  },
+  {
+    "id": "PUB-7D6DKK-MNUBDPM0",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CSS BOX MODEL</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<style>\n.box{\n   margin: 20px 30px 20px 0px;\n   width: 200px;\n   height: 200px;\n   border: 2px solid red;\n   color: white;\n}\n.box1 {\n   background-color: blue;\n}\n\n.box2 {\n   background-color: red;\n}\n\n.box3 {\n   background-color: green;\n}\n\n.box4 {\n   background-color: yellow;\n   }\n</style>\n\n<div class=\"box1 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box2 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box3 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box4 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n\n<a href=\"next.html\">next page</a>\n<script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "next.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1775910704616
+  },
+  {
+    "id": "PUB-IDB5RQ-MNUBFAOK",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CSS BOX MODEL</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<style>\n.box{\n   margin: 20px 30px 20px 0px;\n   width: 200px;\n   height: 200px;\n   border: 2px solid red;\n   color: white;\n}\n.box1 {\n   background-color: blue;\n}\n\n.box2 {\n   background-color: red;\n}\n\n.box3 {\n   background-color: green;\n}\n\n.box4 {\n   background-color: yellow;\n   }\n</style>\n\n<div class=\"box1 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box2 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box3 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box4 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n\n<a href=\"next.html\">next page</a>\n<script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "next.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1775910778580
+  },
+  {
+    "id": "PUB-4A9DG8-MNUBJSMV",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CSS BOX MODEL</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<style>\n.box{\n   margin: 20px 30px 20px 0px;\n   width: 200px;\n   height: 200px;\n   border: 2px solid red;\n   color: white;\n}\n.box1 {\n   background-color: blue;\n}\n\n.box2 {\n   background-color: red;\n}\n\n.box3 {\n   background-color: green;\n}\n\n.box4 {\n   background-color: yellow;\n   }\n</style>\n\n<div class=\"box1 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box2 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box3 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box4 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n\n<a href=\"next.html\">next page</a>\n<script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "next.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1775910988471
+  },
+  {
+    "id": "PUB-74FIV9-MNUBUUQY",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CSS BOX MODEL</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n<style>\n.box{\n   margin: 20px 30px 20px 0px;\n   width: 200px;\n   height: 200px;\n   border: 2px solid red;\n   color: white;\n}\n.box1 {\n   background-color: blue;\n}\n\n.box2 {\n   background-color: red;\n}\n\n.box3 {\n   background-color: green;\n}\n\n.box4 {\n   background-color: yellow;\n   }\n</style>\n\n<div class=\"box1 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box2 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box3 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n<div class=\"box4 box\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</div>\n\n<a href=\"next.html\">next page</a>\n<script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "next.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1775911504426
   }
 ]
