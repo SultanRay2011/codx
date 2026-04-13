@@ -13,11 +13,13 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const sessions = new Map();
 const socketMeta = new Map();
+const editorPresenceSockets = new Set();
 const adminActivity = [];
 const adminSessions = new Map();
 const publishedProjects = new Map();
 const PUBLISHED_PROJECTS_FILE = path.join(__dirname, "published-projects.json");
-const ADMIN_PIN = String(process.env.ADMIN_PIN || "1579");
+const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || "administrator");
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "admin1579");
 const ADMIN_COOKIE = "codx_admin_session";
 const MODERN_SESSION_ID_RE = /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/;
 const LEGACY_SESSION_ID_RE = /^\d{10,}$/;
@@ -69,9 +71,10 @@ app.get("/health", (_req, res) => {
 });
 
 app.post("/admin/api/auth", (req, res) => {
-  const pin = String(req.body?.pin || "").trim();
-  if (pin !== ADMIN_PIN) {
-    res.status(401).json({ ok: false, error: "Invalid admin PIN." });
+  const username = String(req.body?.username || "").trim();
+  const password = String(req.body?.password || "");
+  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    res.status(401).json({ ok: false, error: "Invalid admin username or password." });
     return;
   }
   const token = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
@@ -569,10 +572,14 @@ function buildAdminOverview() {
       connectedSockets: io.engine.clientsCount,
     },
     stats: {
-      activeUsers: participants,
+      activeUsers: editorPresenceSockets.size,
+      collaboratingUsers: participants,
       liveSessions: sessions.size,
       moderationItems: pending + flagged,
-      capacityLoad: sessions.size === 0 ? 0 : Math.min(100, Math.round((participants / 200) * 100)),
+      capacityLoad:
+        editorPresenceSockets.size === 0
+          ? 0
+          : Math.min(100, Math.round((editorPresenceSockets.size / 200) * 100)),
       pendingJoins: pending,
       lockedRooms: locked,
       publishedProjects: publishedProjects.size,
@@ -615,6 +622,15 @@ function sanitizeParticipant(p) {
     joinedAt: p.joinedAt || Date.now(),
     allowedFiles: Array.isArray(p.allowedFiles) ? [...p.allowedFiles] : null,
     disabledFeatures: Array.isArray(p.disabledFeatures) ? [...p.disabledFeatures] : [],
+  };
+}
+
+function sanitizeBanEntry(entry) {
+  return {
+    deviceId: String(entry?.deviceId || ""),
+    name: String(entry?.name || "Unknown"),
+    bannedAt: Number(entry?.bannedAt || Date.now()),
+    bannedBy: String(entry?.bannedBy || "Host"),
   };
 }
 
@@ -774,6 +790,7 @@ function emitSessionMeta(sessionId) {
       theme: entry.theme,
       requestedAt: entry.requestedAt,
     })),
+    bans: (session.bans || []).map(sanitizeBanEntry),
     shareLink: buildShareLink(session.baseUrl || "", sessionId),
   });
   emitAdminUpdate("meta");
@@ -805,6 +822,12 @@ function endSession(sessionId, reason = "Session ended.") {
 function finalizeApprovedJoin(sessionId, socketId, name, theme) {
   const session = sessions.get(sessionId);
   if (!session) return false;
+  const meta = socketMeta.get(socketId) || {};
+  const deviceId = String(meta.deviceId || "").trim();
+  if (deviceId && Array.isArray(session.bans) && session.bans.some((entry) => entry.deviceId === deviceId)) {
+    io.to(socketId).emit("collab:join-rejected", { reason: "This device is banned from the session." });
+    return false;
+  }
   if (session.participants.some((p) => p.name.toLowerCase() === String(name || "").trim().toLowerCase())) {
     return false;
   }
@@ -820,10 +843,11 @@ function finalizeApprovedJoin(sessionId, socketId, name, theme) {
     joinedAt: Date.now(),
     allowedFiles: null,
     disabledFeatures: [],
+    deviceId,
   });
   const socketRef = io.sockets.sockets.get(socketId);
   if (socketRef) socketRef.join(sessionId);
-  socketMeta.set(socketId, { sessionId, name, theme });
+  socketMeta.set(socketId, { sessionId, name, theme, deviceId });
   io.to(socketId).emit("collab:join-approved", {
     ok: true,
     sessionId,
@@ -841,6 +865,13 @@ function finalizeApprovedJoin(sessionId, socketId, name, theme) {
 }
 
 io.on("connection", (socket) => {
+  socket.on("editor:presence", () => {
+    if (!editorPresenceSockets.has(socket.id)) {
+      editorPresenceSockets.add(socket.id);
+      emitAdminUpdate("editor-presence");
+    }
+  });
+
   socket.on("collab:create", (payload, ack) => {
     try {
       const requestedId = normalizeSessionId(payload?.sessionId);
@@ -850,6 +881,7 @@ io.on("connection", (socket) => {
       const files = cloneFiles(payload?.files);
       const activeFileName = payload?.activeFileName || null;
       const baseUrl = String(payload?.baseUrl || "");
+      const deviceId = String(payload?.deviceId || "").trim();
 
       if (!isValidSessionId(sessionId)) {
         ack?.({ ok: false, error: "Invalid session id." });
@@ -876,6 +908,7 @@ io.on("connection", (socket) => {
         joinedAt: Date.now(),
         allowedFiles: null,
         disabledFeatures: [],
+        deviceId,
       }];
       sessions.set(sessionId, {
         files,
@@ -887,10 +920,11 @@ io.on("connection", (socket) => {
         permissions: normalizePermissions(payload?.permissions, files),
         chat: { group: [], private: {} },
         pendingJoins: [],
+        bans: [],
       });
 
       socket.join(sessionId);
-      socketMeta.set(socket.id, { sessionId, name, theme });
+      socketMeta.set(socket.id, { sessionId, name, theme, deviceId });
       ack?.({
         ok: true,
         sessionId,
@@ -912,6 +946,7 @@ io.on("connection", (socket) => {
       const sessionId = normalizeSessionId(payload?.sessionId);
       const name = String(payload?.name || "").trim();
       const theme = String(payload?.theme || "#2196F3");
+      const deviceId = String(payload?.deviceId || "").trim();
 
       const session = sessions.get(sessionId);
       if (!session) {
@@ -920,6 +955,10 @@ io.on("connection", (socket) => {
       }
       if (!name) {
         ack?.({ ok: false, error: "Name is required." });
+        return;
+      }
+      if (deviceId && Array.isArray(session.bans) && session.bans.some((entry) => entry.deviceId === deviceId)) {
+        ack?.({ ok: false, error: "This device is banned from the session." });
         return;
       }
       if (session.permissions?.roomLocked) {
@@ -953,7 +992,9 @@ io.on("connection", (socket) => {
           name,
           theme,
           requestedAt: Date.now(),
+          deviceId,
         });
+        socketMeta.set(socket.id, { sessionId, name, theme, deviceId });
         logAdminEvent("Join approval requested", `${name} requested access to session ${sessionId}.`, sessionId);
         emitSessionMeta(sessionId);
         ack?.({ ok: false, pending: true, error: "Waiting for host approval." });
@@ -972,9 +1013,10 @@ io.on("connection", (socket) => {
         joinedAt: Date.now(),
         allowedFiles: null,
         disabledFeatures: [],
+        deviceId,
       });
       socket.join(sessionId);
-      socketMeta.set(socket.id, { sessionId, name, theme });
+      socketMeta.set(socket.id, { sessionId, name, theme, deviceId });
 
       ack?.({
         ok: true,
@@ -1014,6 +1056,7 @@ io.on("connection", (socket) => {
       const sessionId = normalizeSessionId(payload?.sessionId);
       const name = String(payload?.name || "").trim();
       const theme = String(payload?.theme || "#2196F3");
+      const deviceId = String(payload?.deviceId || "").trim();
 
       const session = sessions.get(sessionId);
       if (!session) {
@@ -1024,6 +1067,10 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "Name is required." });
         return;
       }
+      if (deviceId && Array.isArray(session.bans) && session.bans.some((entry) => entry.deviceId === deviceId)) {
+        ack?.({ ok: false, error: "This device is banned from the session." });
+        return;
+      }
 
       let participant = session.participants.find(
         (p) => p.name.toLowerCase() === name.toLowerCase(),
@@ -1032,6 +1079,7 @@ io.on("connection", (socket) => {
       if (participant) {
         participant.socketId = socket.id;
         participant.theme = theme || participant.theme;
+        participant.deviceId = deviceId || participant.deviceId || "";
       } else {
         participant = {
           socketId: socket.id,
@@ -1045,6 +1093,7 @@ io.on("connection", (socket) => {
           joinedAt: Date.now(),
           allowedFiles: null,
           disabledFeatures: [],
+          deviceId,
         };
         session.participants.push(participant);
       }
@@ -1055,7 +1104,12 @@ io.on("connection", (socket) => {
       }
 
       socket.join(sessionId);
-      socketMeta.set(socket.id, { sessionId, name: participant.name, theme: participant.theme });
+      socketMeta.set(socket.id, {
+        sessionId,
+        name: participant.name,
+        theme: participant.theme,
+        deviceId: participant.deviceId || deviceId,
+      });
 
       ack?.({
         ok: true,
@@ -1788,6 +1842,83 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("collab:ban", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      const targetName = normalizeName(payload?.targetName);
+      const target = session.participants.find((p) => normalizeName(p.name) === targetName);
+      if (!target) {
+        ack?.({ ok: false, error: "Participant not found." });
+        return;
+      }
+      const actor = canModerateTarget(session, socket.id, target);
+      if (!actor) {
+        ack?.({ ok: false, error: "You do not have permission to ban this participant." });
+        return;
+      }
+      const targetMeta = socketMeta.get(target.socketId);
+      const deviceId = String(target.deviceId || targetMeta?.deviceId || "").trim();
+      if (!deviceId) {
+        ack?.({ ok: false, error: "This participant device cannot be banned right now." });
+        return;
+      }
+      if (!Array.isArray(session.bans)) session.bans = [];
+      if (!session.bans.some((entry) => String(entry.deviceId || "") === deviceId)) {
+        session.bans.unshift({
+          deviceId,
+          name: target.name,
+          bannedAt: Date.now(),
+          bannedBy: actor.name,
+        });
+      }
+      session.pendingJoins = (session.pendingJoins || []).filter((entry) => String(entry.deviceId || "") !== deviceId);
+      session.participants = session.participants.filter((p) => p.socketId !== target.socketId);
+      io.to(target.socketId).emit("collab:banned", { sessionId });
+      const socketRef = io.sockets.sockets.get(target.socketId);
+      if (socketRef) socketRef.leave(sessionId);
+      socketMeta.delete(target.socketId);
+      logAdminEvent("Participant banned", `${target.name} was banned from session ${sessionId}.`, sessionId);
+      emitParticipants(sessionId);
+      emitSessionMeta(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to ban participant." });
+    }
+  });
+
+  socket.on("collab:unban", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      const actor = canUseLimitedRoomTools(session, socket.id);
+      if (!actor) {
+        ack?.({ ok: false, error: "Only host or co-host can unban devices." });
+        return;
+      }
+      const deviceId = String(payload?.deviceId || "").trim();
+      const before = Array.isArray(session.bans) ? session.bans.length : 0;
+      session.bans = (session.bans || []).filter((entry) => String(entry.deviceId || "") !== deviceId);
+      if (session.bans.length === before) {
+        ack?.({ ok: false, error: "Ban entry not found." });
+        return;
+      }
+      logAdminEvent("Device unbanned", `${actor.name} removed a device ban in session ${sessionId}.`, sessionId);
+      emitSessionMeta(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to unban device." });
+    }
+  });
+
   socket.on("collab:cursor", (payload) => {
     const sessionId = normalizeSessionId(payload?.sessionId);
     const session = sessions.get(sessionId);
@@ -1813,12 +1944,19 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    const removedEditorPresence = editorPresenceSockets.delete(socket.id);
     const meta = socketMeta.get(socket.id);
     socketMeta.delete(socket.id);
-    if (!meta) return;
+    if (!meta) {
+      if (removedEditorPresence) emitAdminUpdate("editor-presence");
+      return;
+    }
 
     const session = sessions.get(meta.sessionId);
-    if (!session) return;
+    if (!session) {
+      if (removedEditorPresence) emitAdminUpdate("editor-presence");
+      return;
+    }
 
     if (Array.isArray(session.pendingJoins) && session.pendingJoins.length) {
       const before = session.pendingJoins.length;
@@ -1836,6 +1974,8 @@ io.on("connection", (socket) => {
 
     if (session.participants.length === 0) {
       sessions.delete(meta.sessionId);
+      emitAdminUpdate("disconnect");
+      if (removedEditorPresence) emitAdminUpdate("editor-presence");
       return;
     }
 
@@ -1852,6 +1992,8 @@ io.on("connection", (socket) => {
 
     emitParticipants(meta.sessionId);
     emitSessionMeta(meta.sessionId);
+    emitAdminUpdate("disconnect");
+    if (removedEditorPresence) emitAdminUpdate("editor-presence");
   });
 });
 

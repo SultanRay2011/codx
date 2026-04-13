@@ -1007,15 +1007,18 @@ let activeGroupFeatureManager = { selectedName: "" };
 let followedParticipantName = "";
 let collabPendingJoins = [];
 let collabShareLink = "";
+let collabBans = [];
 let joinRequestContext = { sessionId: "", name: "" };
 let lastAnnouncementText = "";
 let activeDialogResolver = null;
 let developerChordArmed = false;
 let developerChordTimer = null;
+let editorPresenceSocket = null;
 const editableTextExtensions = ["html", "css", "js", "env"];
 const SAVED_PROJECTS_KEY = "codxSavedProjects";
 const AUTOSAVE_PROJECT_KEY = "codxAutosaveProject";
 const AUTOSAVE_META_KEY = "codxAutosaveMeta";
+const DEVICE_ID_KEY = "codxDeviceId";
 let autosaveTimer = null;
 let lastAutosaveAt = null;
 
@@ -1573,6 +1576,7 @@ function closeAppDialog(result = null) {
 function showAppDialog({
   title = "Dialog",
   message = "",
+  messageHtml = "",
   input = false,
   inputValue = "",
   inputPlaceholder = "",
@@ -1583,7 +1587,13 @@ function showAppDialog({
   return new Promise((resolve) => {
     activeDialogResolver = resolve;
     if (appDialogTitle) appDialogTitle.textContent = title;
-    if (appDialogMessage) appDialogMessage.textContent = message;
+    if (appDialogMessage) {
+      if (messageHtml) {
+        appDialogMessage.innerHTML = messageHtml;
+      } else {
+        appDialogMessage.textContent = message;
+      }
+    }
     if (appDialogInput) {
       appDialogInput.style.display = input ? "block" : "none";
       appDialogInput.value = input ? String(inputValue || "") : "";
@@ -1641,6 +1651,17 @@ function showAppConfirm(title, message, okText = "YES", cancelText = "NO", okVar
   return showAppDialog({
     title,
     message,
+    input: false,
+    okText,
+    cancelText,
+    okVariant,
+  });
+}
+
+function showAppConfirmHtml(title, messageHtml, okText = "YES", cancelText = "NO", okVariant = "") {
+  return showAppDialog({
+    title,
+    messageHtml,
     input: false,
     okText,
     cancelText,
@@ -2319,6 +2340,14 @@ function safeLocalStorage(method, key, value = null) {
   }
 }
 
+function getOrCreateDeviceId() {
+  const existing = safeLocalStorage("get", DEVICE_ID_KEY);
+  if (existing) return String(existing);
+  const next = `device-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  safeLocalStorage("set", DEVICE_ID_KEY, next);
+  return next;
+}
+
 function serializeProjectState() {
   return {
     version: 1,
@@ -2688,6 +2717,18 @@ function closeProjectLibrary() {
   if (projectLibraryModal) {
     projectLibraryModal.style.display = "none";
   }
+}
+
+function initializeEditorPresence() {
+  if (typeof io !== "function" || editorPresenceSocket) return;
+  editorPresenceSocket = io();
+  const announcePresence = () => {
+    if (editorPresenceSocket && editorPresenceSocket.connected) {
+      editorPresenceSocket.emit("editor:presence");
+    }
+  };
+  editorPresenceSocket.on("connect", announcePresence);
+  if (editorPresenceSocket.connected) announcePresence();
 }
 
 function tryRestoreAutosaveDraft() {
@@ -6734,6 +6775,23 @@ function showGroupControls(sessionId) {
         )
         .join("")
     : `<div class="collab-section-note">No pending join requests.</div>`;
+  const banLogHtml = collabBans.length
+    ? collabBans
+        .map(
+          (entry) => `<div class="collab-pending-row">
+            <div class="collab-participant-main">
+              <div class="collab-participant-text">
+                <div class="collab-participant-name">${escapeHtml(entry.name || "Unknown device")}</div>
+                <div class="collab-participant-meta">Banned by ${escapeHtml(entry.bannedBy || "Host")} • ${escapeHtml(formatParticipantJoinedAt(entry.bannedAt))}</div>
+              </div>
+            </div>
+            <span class="collab-pending-actions">
+              <button class="run-button unban-device-btn" data-device-id="${escapeHtml(entry.deviceId || "")}"><strong>UNBAN</strong></button>
+            </span>
+          </div>`,
+        )
+        .join("")
+    : `<div class="collab-section-note">No banned devices in this session.</div>`;
 
   collabModalView = "group-controls";
   setCollabCloseButtonVisible(true);
@@ -6776,6 +6834,10 @@ function showGroupControls(sessionId) {
     ${hostView ? `<div class="collab-section-card">
     <h4 class="collab-section-title">Pending Join Requests</h4>
     <div class="collab-participant-list">${pendingHtml}</div>
+    </div>` : ""}
+    ${hostView ? `<div class="collab-section-card">
+    <h4 class="collab-section-title">Ban Log</h4>
+    <div class="collab-participant-list">${banLogHtml}</div>
     </div>` : ""}
   `;
   setModalActions("");
@@ -6874,6 +6936,9 @@ function showGroupControls(sessionId) {
     });
     modalBody.querySelectorAll(".reject-join-btn").forEach((btn) => {
       btn.addEventListener("click", () => rejectJoinRequest(btn.getAttribute("data-socket") || ""));
+    });
+    modalBody.querySelectorAll(".unban-device-btn").forEach((btn) => {
+      btn.addEventListener("click", () => requestUnbanDevice(btn.getAttribute("data-device-id") || ""));
     });
   }
 }
@@ -7520,6 +7585,77 @@ function requestKickParticipant(targetName) {
   );
 }
 
+function requestBanParticipant(targetName) {
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) {
+    showNotification("Only the host or co-host can ban participants.", "error");
+    return;
+  }
+  const safeName = String(targetName || "").trim();
+  if (!safeName) return;
+  const participant = getParticipantByName(safeName);
+  if (!canModerateParticipant(participant)) {
+    showNotification("You do not have permission to ban this participant.", "error");
+    return;
+  }
+  let finished = false;
+  const finishSuccess = () => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(ackTimer);
+    clearInterval(stateCheckTimer);
+    showNotification(`${safeName} was banned from the session.`, "success");
+    showGroupControls(activeSessionId);
+  };
+  const finishError = (message) => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(ackTimer);
+    clearInterval(stateCheckTimer);
+    showNotification(message || "Failed to ban participant", "error");
+  };
+  const stateCheckTimer = setInterval(() => {
+    const stillPresent = Boolean(getParticipantByName(safeName));
+    const inBanLog = collabBans.some(
+      (entry) => String(entry?.name || "").trim().toLowerCase() === safeName.toLowerCase(),
+    );
+    if (!stillPresent || inBanLog) {
+      finishSuccess();
+    }
+  }, 200);
+  const ackTimer = setTimeout(() => {
+    const stillPresent = Boolean(getParticipantByName(safeName));
+    const inBanLog = collabBans.some(
+      (entry) => String(entry?.name || "").trim().toLowerCase() === safeName.toLowerCase(),
+    );
+    if (!stillPresent || inBanLog) {
+      finishSuccess();
+      return;
+    }
+    finishError("Ban request timed out. Restart the server and try again.");
+  }, 6000);
+  collabSocket.emit("collab:ban", { sessionId: activeSessionId, targetName: safeName }, (res) => {
+    if (!res?.ok) {
+      finishError((res && res.error) || "Failed to ban participant");
+    } else {
+      finishSuccess();
+    }
+  });
+}
+
+function requestUnbanDevice(deviceId) {
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return;
+  const safeDeviceId = String(deviceId || "").trim();
+  if (!safeDeviceId) return;
+  collabSocket.emit("collab:unban", { sessionId: activeSessionId, deviceId: safeDeviceId }, (res) => {
+    if (!res?.ok) {
+      showNotification((res && res.error) || "Failed to unban device", "error");
+    } else {
+      showNotification("Device ban removed.", "success");
+      showGroupControls(activeSessionId);
+    }
+  });
+}
+
 function copyTextValue(text, successMessage) {
   const value = String(text || "");
   if (!value) {
@@ -7654,6 +7790,9 @@ function showParticipantActions(targetName) {
       <button id="participantKickBtn" class="run-button" style="background:#d32f2f;">
         <strong>KICK</strong>
       </button>
+      <button id="participantBanBtn" class="run-button" style="background:#a22121;">
+        <strong>BAN</strong>
+      </button>
       <button id="participantDoneBtn" class="run-button">
         <strong>DONE</strong>
       </button>
@@ -7677,6 +7816,7 @@ function showParticipantActions(targetName) {
   const copyColorBtn = document.getElementById("participantCopyColorBtn");
   const copyRoleBtn = document.getElementById("participantCopyRoleBtn");
   const kickBtn = document.getElementById("participantKickBtn");
+  const banBtn = document.getElementById("participantBanBtn");
   const doneBtn = document.getElementById("participantDoneBtn");
   groupFeatureControlConfig.forEach((entry) => {
     const btn = document.getElementById(`participantFeatureToggle-${entry.key}`);
@@ -7766,6 +7906,19 @@ function showParticipantActions(targetName) {
   if (kickBtn) {
     kickBtn.onclick = () => showKickConfirmation(safeName);
   }
+  if (banBtn) {
+    banBtn.onclick = async () => {
+      const dialog = await showAppConfirmHtml(
+        "BAN",
+        `Ban <strong>${escapeHtml(safeName)}</strong> from this session on this device? They will not be able to join again from the same device until unbanned.`,
+        "BAN",
+        "CANCEL",
+        "background:#a22121;",
+      );
+      if (!dialog?.ok) return;
+      requestBanParticipant(safeName);
+    };
+  }
   if (doneBtn) {
     doneBtn.onclick = () => showSessionDetails(activeSessionId);
   }
@@ -7826,6 +7979,7 @@ function resumeCollabSession(successMessage) {
       sessionId: activeSessionId,
       name: myInfo.name,
       theme: myInfo.theme || "#4CAF50",
+      deviceId: getOrCreateDeviceId(),
     },
     (res) => {
       if (!res?.ok) {
@@ -7927,6 +8081,7 @@ function ensureCollabSocket() {
     collabHostName = meta.hostName || collabHostName;
     collabPermissions = normalizeCollabPermissions(meta.permissions);
     collabPendingJoins = Array.isArray(meta.pendingJoins) ? meta.pendingJoins : [];
+    collabBans = Array.isArray(meta.bans) ? meta.bans : [];
     collabShareLink = meta.shareLink || collabShareLink;
     const nextAnnouncement = String(collabPermissions.announcementBar || "").trim();
     if (nextAnnouncement) {
@@ -7952,6 +8107,29 @@ function ensureCollabSocket() {
 
   collabSocket.on("collab:kicked", () => {
     showKickedOutModal();
+  });
+
+  collabSocket.on("collab:banned", () => {
+    resetTransientCollabUiState();
+    activeSessionId = null;
+    collabParticipants = [];
+    collabPendingJoins = [];
+    collabBans = [];
+    collabShareLink = "";
+    collabPermissions = { ...defaultCollabPermissions };
+    setCollabCloseButtonVisible(false);
+    modalTitle.innerHTML = "<strong>BANNED FROM SESSION</strong>";
+    modalBody.innerHTML = `<p style="margin:8px 0 16px;color:var(--text-primary);">You have been banned from this collaboration session on this device by the host.</p>`;
+    setModalActions(`<button id="sessionBannedOkBtn" class="run-button"><strong>OK</strong></button>`);
+    collabModal.style.display = "flex";
+    const okBtn = document.getElementById("sessionBannedOkBtn");
+    if (okBtn) {
+      okBtn.onclick = () => {
+        resetCollabUrlToFreshState();
+        closeModal();
+      };
+    }
+    showNotification("You were banned from the session.", "error");
   });
 
   collabSocket.on("collab:role-notice", (payload) => {
@@ -8666,6 +8844,7 @@ function createNumericSession() {
     {
       name: sessionData.host,
       theme: sessionData.theme,
+      deviceId: getOrCreateDeviceId(),
       files: projectFiles,
       activeFileName: activeFile ? activeFile.name : null,
       permissions: defaultCollabPermissions,
@@ -8903,7 +9082,7 @@ function promptJoinTheme(name, sid) {
 
       collabSocket.emit(
         "collab:join",
-        { sessionId: sid, name, theme },
+        { sessionId: sid, name, theme, deviceId: getOrCreateDeviceId() },
         (res) => {
           if (!res || !res.ok) {
             if (res && res.pending) {
@@ -9180,6 +9359,7 @@ window.addEventListener("resize", () => {
 
 // PART 15 - APPLICATION INITIALIZATION
 window.addEventListener("load", () => {
+  initializeEditorPresence();
   loadSettings();
   renderFileList();
   initializeEditor();
