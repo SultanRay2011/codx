@@ -1023,6 +1023,7 @@ let autosaveTimer = null;
 let lastAutosaveAt = null;
 let sessionSyncTimeout = null;
 let lastEditorInputType = "";
+const defaultScriptWelcomeText = `console.log("WELCOME TO CODX EDITOR");`;
 
 const starterTemplates = [
   {
@@ -1983,6 +1984,7 @@ let projectFiles = [
             <li><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>
             <li><kbd>Esc</kbd> Exit Zen Mode</li>
             <li>Type <strong>cxstart</strong> in an empty HTML file and press <kbd>Enter</kbd></li>
+            <li><kbd>Ctrl/Cmd</kbd> + <kbd>C</kbd>, then <kbd>X</kbd> Open developer tools</li>
           </ul>
         </article>
       </section>
@@ -2110,7 +2112,7 @@ kbd {
   {
     name: "script.js",
     type: "js",
-    content: `console.log('Hello World from CodX Editor!');`,
+    content: defaultScriptWelcomeText,
     active: false,
   },
 ];
@@ -2208,7 +2210,7 @@ function getFreshProjectState() {
       {
         name: "script.js",
         type: "js",
-        content: "",
+        content: defaultScriptWelcomeText,
         active: false,
       },
     ],
@@ -2375,6 +2377,25 @@ function serializeProjectState() {
   };
 }
 
+function upgradeStarterScriptIfNeeded(files) {
+  if (!Array.isArray(files) || !files.length) return files;
+  const htmlFile = files.find((file) => String(file.type || "").toLowerCase() === "html");
+  const cssFile = files.find((file) => String(file.name || "").toLowerCase() === "style.css");
+  const jsFile = files.find((file) => String(file.name || "").toLowerCase() === "script.js");
+  if (!htmlFile || !jsFile) return files;
+
+  const htmlMatchesStarter = String(htmlFile.content || "").trim() === getDefaultHtmlStarter().trim();
+  const cssLooksUntouched = !cssFile || !String(cssFile.content || "").trim();
+  const jsContent = String(jsFile.content || "").trim();
+  const jsNeedsUpgrade =
+    !jsContent || jsContent === `console.log('Hello World from CodX Editor!');`;
+
+  if (htmlMatchesStarter && cssLooksUntouched && jsNeedsUpgrade) {
+    jsFile.content = defaultScriptWelcomeText;
+  }
+  return files;
+}
+
 function applyProjectState(snapshot, sourceLabel = "project") {
   const files = Array.isArray(snapshot?.files) ? snapshot.files : [];
   if (!files.length) {
@@ -2382,7 +2403,7 @@ function applyProjectState(snapshot, sourceLabel = "project") {
     return false;
   }
 
-  projectFiles = files.map((file, index) => ({
+  projectFiles = upgradeStarterScriptIfNeeded(files).map((file, index) => ({
     name: String(file.name || `file-${index + 1}.html`),
     type: String(file.type || "html"),
     content: String(file.content || ""),
@@ -10212,6 +10233,8 @@ console.log("Ctrl/Cmd + S: Exports the project as a ZIP.");
 console.log("Ctrl/Cmd + Enter: Manually triggers an update of the preview pane.");
 console.log("Ctrl/Cmd + Q: Creates a new file in the project.");
 console.log("Ctrl/Cmd + Shift + C: Opens the console panel.");
+console.log("Esc: Exits Zen Mode and closes supported overlays.");
+console.log("Type cxstart in an empty HTML file and press Enter to insert the starter.");
 console.log("Ctrl/Cmd + C, then X: Opens hidden developer tools.");
 console.log("CodX Editor loaded with file linking and tag suggestions!");
 

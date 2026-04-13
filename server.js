@@ -364,6 +364,11 @@ function buildPublishedHtml(project, requestedFileName = "", requestTitle = "") 
   const requestedFile = String(requestedFileName || "").trim();
   const requestTitleText = String(requestTitle || "").trim();
   const normalizeFileName = (value) => String(value || "").trim().replace(/^\.\/+/, "").toLowerCase();
+  const resolveBuiltInAsset = (rawPath) => {
+    const normalized = String(rawPath || "").trim().replace(/^\.\/+/, "").replace(/^\/+/, "").toLowerCase();
+    if (normalized === "cx.png") return "/cx.png";
+    return "";
+  };
   const resolveFile = (rawName, typeHint = "") => {
     const target = normalizeFileName(rawName);
     if (!target) return null;
@@ -399,6 +404,10 @@ function buildPublishedHtml(project, requestedFileName = "", requestTitle = "") 
 
   let html = String(htmlFile.content || "");
   html = html.replace(/<link\b([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi, (full, before, href) => {
+    const builtInAsset = resolveBuiltInAsset(href);
+    if (builtInAsset) {
+      return full.replace(href, builtInAsset);
+    }
     const cssFile = resolveFile(href, "css");
     if (!cssFile) return full;
     return `<style data-published-source="${escapeHtmlAttribute(cssFile.name)}">\n${String(cssFile.content || "")}\n</style>`;
@@ -457,6 +466,24 @@ function buildPublishedHtml(project, requestedFileName = "", requestTitle = "") 
         },
       );
       return `onclick=${quote}${rewritten}${quote}`;
+    },
+  );
+
+  html = html.replace(
+    /<(img|video|audio|source)([^>]*)src=["']([^"']+)["']([^>]*)>/gi,
+    (full, tag, before, src, after) => {
+      if (
+        src.startsWith("data:") ||
+        src.startsWith("http://") ||
+        src.startsWith("https://") ||
+        src.startsWith("blob:") ||
+        src.startsWith("/")
+      ) {
+        return full;
+      }
+      const builtInAsset = resolveBuiltInAsset(src);
+      if (!builtInAsset) return full;
+      return `<${tag}${before} src="${builtInAsset}"${after}>`;
     },
   );
 
