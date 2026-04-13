@@ -58,12 +58,15 @@ const runDeveloperCommandBtn = document.getElementById("runDeveloperCommandBtn")
 const clearDeveloperConsoleBtn = document.getElementById("clearDeveloperConsoleBtn");
 const closeDeveloperConsoleBtn = document.getElementById("closeDeveloperConsoleBtn");
 const saveProjectBtn = document.getElementById("saveProjectBtn");
+const newProjectBtn = document.getElementById("newProjectBtn");
 const openSavedProjectsBtn = document.getElementById("openSavedProjectsBtn");
 const templatesBtn = document.getElementById("templatesBtn");
 const publishProjectBtn = document.getElementById("publishProjectBtn");
 const projectLibraryModal = document.getElementById("projectLibraryModal");
 const closeProjectLibraryBtn = document.getElementById("closeProjectLibraryBtn");
 const projectLibraryBody = document.getElementById("projectLibraryBody");
+const projectStatusBadge = document.getElementById("projectStatusBadge");
+const projectStatusMeta = document.getElementById("projectStatusMeta");
 const runPreviewBtn = document.getElementById("runPreviewBtn");
 const clearConsoleBtn = document.getElementById("clearConsoleBtn");
 const headerMoreMenu = document.getElementById("headerMoreMenu");
@@ -1013,6 +1016,7 @@ const SAVED_PROJECTS_KEY = "codxSavedProjects";
 const AUTOSAVE_PROJECT_KEY = "codxAutosaveProject";
 const AUTOSAVE_META_KEY = "codxAutosaveMeta";
 let autosaveTimer = null;
+let lastAutosaveAt = null;
 
 const starterTemplates = [
   {
@@ -2162,6 +2166,63 @@ function getDefaultHtmlStarter() {
 </html>`;
 }
 
+function getFreshProjectState() {
+  return {
+    files: [
+      {
+        name: "index.html",
+        type: "html",
+        content: getDefaultHtmlStarter(),
+        active: true,
+      },
+      {
+        name: "style.css",
+        type: "css",
+        content: "",
+        active: false,
+      },
+      {
+        name: "script.js",
+        type: "js",
+        content: "",
+        active: false,
+      },
+    ],
+    activeFileName: "index.html",
+    previewTarget: { mode: "html", fileName: "index.html" },
+  };
+}
+
+function formatProjectStatusTime(timestamp) {
+  if (!timestamp) return "";
+  try {
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch (_err) {
+    return "";
+  }
+}
+
+function updateProjectStatusUI() {
+  if (!projectStatusBadge || !projectStatusMeta) return;
+  projectStatusBadge.classList.remove("saved", "unsaved");
+  if (hasUnsavedChanges) {
+    projectStatusBadge.textContent = "Unsaved";
+    projectStatusBadge.classList.add("unsaved");
+    projectStatusMeta.textContent = lastAutosaveAt
+      ? `Autosaved ${formatProjectStatusTime(lastAutosaveAt)}`
+      : "Save to keep this version";
+    return;
+  }
+  projectStatusBadge.textContent = "Saved";
+  projectStatusBadge.classList.add("saved");
+  projectStatusMeta.textContent = lastAutosaveAt
+    ? `Autosaved ${formatProjectStatusTime(lastAutosaveAt)}`
+    : "Ready";
+}
+
 function updatePreviewTitle(text) {
   if (!previewTitleEl) return;
   const next = String(text || "").trim();
@@ -2313,6 +2374,8 @@ function applyProjectState(snapshot, sourceLabel = "project") {
   renderFileList();
   enforceCollabPermissionsUI();
   hasUnsavedChanges = false;
+  lastAutosaveAt = Date.now();
+  updateProjectStatusUI();
   scheduleProjectAutosave();
   if (autoRunCheckbox.checked) updatePreview();
   syncProjectWithSession();
@@ -2332,6 +2395,8 @@ function scheduleProjectAutosave() {
         savedAt: snapshot.savedAt,
       }),
     );
+    lastAutosaveAt = Date.now();
+    updateProjectStatusUI();
   }, 350);
 }
 
@@ -2350,12 +2415,12 @@ function setSavedProjects(projects) {
 function saveCurrentProjectToLibrary(projectName) {
   if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableSaveProject) {
     showNotification("The host disabled saving projects for participants.", "error");
-    return;
+    return false;
   }
   const trimmedName = String(projectName || "").trim();
   if (!trimmedName) {
     showNotification("Project name cannot be empty.", "error");
-    return;
+    return false;
   }
   const projects = getSavedProjects();
   const snapshot = serializeProjectState();
@@ -2378,14 +2443,51 @@ function saveCurrentProjectToLibrary(projectName) {
   }
   setSavedProjects(projects.slice(0, 24));
   hasUnsavedChanges = false;
+  lastAutosaveAt = Date.now();
+  updateProjectStatusUI();
   scheduleProjectAutosave();
   showNotification(`Saved project "${trimmedName}".`, "success");
+  return true;
 }
 
 function getSuggestedProjectName() {
   const htmlFile = projectFiles.find((file) => file.type === "html");
   const baseName = (htmlFile ? htmlFile.name : activeFile?.name || "codx-project").replace(/\.[^.]+$/, "");
   return baseName || "codx-project";
+}
+
+async function startFreshProject() {
+  applyProjectState(getFreshProjectState(), "new project");
+  clearConsole();
+  showNotification("Started a fresh HTML starter project.", "success");
+}
+
+async function handleNewProject() {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableNewFile) {
+    showNotification("The host disabled creating new files for participants.", "error");
+    return;
+  }
+  if (!hasUnsavedChanges) {
+    await startFreshProject();
+    return;
+  }
+  const confirmSave = await showAppConfirm(
+    "SAVE CURRENT PROJECT",
+    "You have unsaved changes. Save this project before starting a new one?",
+    "SAVE PROJECT",
+    "CANCEL",
+  );
+  if (!confirmSave?.ok) return;
+  const saveDialog = await showAppPrompt(
+    "SAVE PROJECT",
+    "Choose a name for this saved project:",
+    getSuggestedProjectName(),
+    "codx-project",
+  );
+  if (!saveDialog?.ok) return;
+  const saved = saveCurrentProjectToLibrary(saveDialog.value);
+  if (!saved) return;
+  await startFreshProject();
 }
 
 async function deleteSavedProject(projectId) {
@@ -3874,6 +3976,7 @@ function commitEditorMutation(editor) {
   if (!editor || !activeFile) return;
   hasUnsavedChanges = true;
   activeFile.content = editor.value;
+  updateProjectStatusUI();
   updateLineNumbers(editor);
   scheduleProjectAutosave();
   if (autoRunCheckbox.checked) debouncedUpdatePreview();
@@ -4083,6 +4186,7 @@ function initializeEditor() {
     }
     hasUnsavedChanges = true;
     activeFile.content = editor.value;
+    updateProjectStatusUI();
     updateLineNumbers(editor);
     if (autoRunCheckbox.checked) debouncedUpdatePreview();
     handleCodeChange({
@@ -8818,6 +8922,7 @@ window.addEventListener("load", () => {
   renderFileList();
   initializeEditor();
   tryRestoreAutosaveDraft();
+  updateProjectStatusUI();
   updatePreview();
 });
 
@@ -8830,6 +8935,9 @@ window.addEventListener("beforeunload", function (e) {
 });
 
 newFileBtn.addEventListener("click", createNewFile);
+if (newProjectBtn) {
+  newProjectBtn.addEventListener("click", handleNewProject);
+}
 if (saveProjectBtn) {
   saveProjectBtn.addEventListener("click", async () => {
     const dialog = await showAppPrompt(

@@ -1353,6 +1353,52 @@ iframe {
   border: 1px solid var(--border-color);
 }
 
+.file-toolbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.project-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.project-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.project-status-badge.saved {
+  background: rgba(63, 185, 80, 0.12);
+  border-color: rgba(63, 185, 80, 0.32);
+  color: var(--success-color);
+}
+
+.project-status-badge.unsaved {
+  background: rgba(210, 153, 34, 0.14);
+  border-color: rgba(210, 153, 34, 0.32);
+  color: var(--warning-color);
+}
+
+.project-status-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   body {
     height: 100dvh;
@@ -1441,6 +1487,18 @@ iframe {
 
   .file-toolbar {
     gap: 8px;
+  }
+
+  .file-toolbar-meta {
+    gap: 8px;
+  }
+
+  .project-status-wrap {
+    gap: 6px;
+  }
+
+  .project-status-meta {
+    display: none;
   }
 
   #newFileBtn {

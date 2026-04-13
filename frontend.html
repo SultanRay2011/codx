@@ -160,6 +160,15 @@
           <div class="header-more-section">
             <div class="header-more-section-title">Project Tools</div>
             <button
+              id="newProjectBtn"
+              class="run-button header-more-action"
+              aria-label="Start a new project"
+              type="button"
+            >
+              <i class="fa-solid fa-file-circle-plus"></i>
+              <strong>NEW</strong>
+            </button>
+            <button
               id="saveProjectBtn"
               class="run-button header-more-action"
               aria-label="Save project"
@@ -242,7 +251,13 @@
               border-bottom: 1px solid var(--border-color);
             "
           >
-            <strong style="color: var(--text-primary)">Files</strong>
+            <div class="file-toolbar-meta">
+              <strong style="color: var(--text-primary)">Files</strong>
+              <div class="project-status-wrap">
+                <span id="projectStatusBadge" class="project-status-badge">Saved</span>
+                <span id="projectStatusMeta" class="project-status-meta">Ready</span>
+              </div>
+            </div>
             <button
               id="newFileBtn"
               class="run-button"
