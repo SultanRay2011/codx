@@ -5645,6 +5645,25 @@ function handleHtmlEnterIndentation(e, editor) {
   const currentLine = textBefore.substring(lineStart);
   const currentIndentMatch = currentLine.match(/^(\s*)/);
   const currentIndent = currentIndentMatch ? currentIndentMatch[1] : "";
+  const openTagMatch = textBefore.match(/<([a-zA-Z][\w-]*)(?:\s[^<>]*)?>$/);
+
+  if (openTagMatch) {
+    const tagName = openTagMatch[1].toLowerCase();
+    const closingTagPattern = new RegExp(`^</${tagName}\\s*>`, "i");
+    if (!selfClosingTags.includes(tagName) && closingTagPattern.test(textAfter)) {
+      const nextIndent = currentIndent + INDENT_UNIT;
+      e.preventDefault();
+      applyEditorMutation(
+        editor,
+        pos,
+        editor.selectionEnd,
+        "\n" + nextIndent + "\n" + currentIndent,
+        pos + 1 + nextIndent.length,
+        pos + 1 + nextIndent.length,
+      );
+      return true;
+    }
+  }
 
   e.preventDefault();
   applyEditorMutation(
