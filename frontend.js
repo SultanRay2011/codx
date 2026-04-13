@@ -162,7 +162,7 @@ if (developerConsoleInput) {
 const settingsPreviewSampleCode = `function helloWorld() {
   console.log("Hello, World!");
 }`;
-const INDENT_UNIT = "   ";
+const INDENT_UNIT = "    ";
 let isZenMode = false;
 const editorTextarea = document.getElementById("activeEditor");
 const editorWrapperEl = editorTextarea
@@ -9663,7 +9663,7 @@ const tutorialSteps = [
     icon: "fa-solid fa-code",
     title: "Code Editor",
     description:
-      "Write your code here. Features include auto-closing tags and brackets, HTML/CSS/JS suggestions, inline style suggestions, syntax highlighting in style/script blocks, 3-space tab indentation, and error highlighting.",
+      "Write your code here. Features include auto-closing tags and brackets, HTML/CSS/JS suggestions, inline style suggestions, syntax highlighting in style/script blocks, 4-space tab indentation, and error highlighting.",
     position: "right",
   },
   {

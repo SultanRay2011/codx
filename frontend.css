@@ -269,6 +269,10 @@ body.zen-mode .line-numbers {
 
 body.zen-mode #zenExitBtn {
   display: inline-flex !important;
+  position: fixed !important;
+  top: max(12px, env(safe-area-inset-top, 0px) + 12px) !important;
+  right: max(12px, env(safe-area-inset-right, 0px) + 12px) !important;
+  z-index: 5000 !important;
 }
 
 .editors {
@@ -532,7 +536,7 @@ body.zen-mode #zenExitBtn {
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "calt" 0;
   white-space: pre;
-  tab-size: 2;
+  tab-size: 4;
 }
 
 #errorHighlightLayer {
@@ -1529,6 +1533,13 @@ iframe {
     min-width: min(190px, 90vw);
     max-width: min(260px, 90vw);
   }
+
+  body.zen-mode #zenExitBtn {
+    top: max(10px, env(safe-area-inset-top, 0px) + 10px) !important;
+    right: max(10px, env(safe-area-inset-right, 0px) + 10px) !important;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
 }
 
 textarea:focus,
@@ -2160,7 +2171,7 @@ header #headerMoreBtn:hover {
 
 textarea {
   caret-color: var(--accent-color);
-  tab-size: 2;
+  tab-size: 4;
 }
 
 iframe {
