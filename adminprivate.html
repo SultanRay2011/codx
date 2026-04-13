@@ -292,57 +292,67 @@
       .page-shell {
         position: relative;
         z-index: 1;
-        max-width: 1400px;
+        max-width: 1480px;
         margin: 0 auto;
-        padding: 34px 22px 56px;
+        padding: 30px 18px 52px;
       }
 
       .admin-layout {
         display: grid;
-        grid-template-columns: 290px minmax(0, 1fr);
-        gap: 24px;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 30px;
         align-items: start;
       }
 
       .admin-sidebar {
         position: sticky;
-        top: 108px;
+        top: 98px;
         display: grid;
-        gap: 18px;
+        gap: 12px;
       }
 
       .sidebar-card {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        box-shadow: var(--shadow);
-        padding: 22px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid rgba(20, 41, 27, 0.08);
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(24, 46, 31, 0.08);
+        padding: 14px;
+        backdrop-filter: blur(8px);
       }
 
       .sidebar-title {
-        font-size: 0.88rem;
+        font-size: 0.74rem;
         font-weight: 800;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: var(--muted);
-        margin-bottom: 14px;
+        margin-bottom: 10px;
       }
 
       .sidebar-nav {
         display: grid;
-        gap: 10px;
+        gap: 6px;
       }
 
       .sidebar-link {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 9px;
         text-decoration: none;
-        padding: 12px 14px;
-        border-radius: 16px;
-        background: rgba(76, 175, 80, 0.08);
+        padding: 10px 11px;
+        border-radius: 12px;
+        background: rgba(76, 175, 80, 0.06);
         color: #223027;
+        font-size: 0.92rem;
         font-weight: 700;
+        border: 1px solid transparent;
+        transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+      }
+
+      .sidebar-link:hover {
+        background: rgba(76, 175, 80, 0.1);
+        border-color: rgba(76, 175, 80, 0.16);
+        transform: translateX(2px);
       }
 
       .sidebar-link.active {
@@ -352,13 +362,13 @@
 
       .sidebar-copy {
         display: grid;
-        gap: 12px;
+        gap: 8px;
       }
 
       .sidebar-copy p {
         color: var(--muted);
-        font-size: 0.92rem;
-        line-height: 1.6;
+        font-size: 0.86rem;
+        line-height: 1.55;
       }
 
       .sidebar-main {
@@ -367,9 +377,9 @@
 
       .hero {
         display: grid;
-        grid-template-columns: minmax(0, 1.25fr) minmax(290px, 0.95fr);
-        gap: 24px;
-        margin-bottom: 24px;
+        grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.82fr);
+        gap: 22px;
+        margin-bottom: 22px;
       }
 
       .hero-panel,
@@ -381,12 +391,12 @@
       .tool-card {
         background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: 28px;
-        box-shadow: var(--shadow);
+        border-radius: 22px;
+        box-shadow: 0 16px 34px rgba(24, 46, 31, 0.09);
       }
 
       .hero-panel {
-        padding: 34px;
+        padding: 30px;
         position: relative;
         overflow: hidden;
       }
@@ -417,7 +427,7 @@
       .hero h1 {
         font-size: clamp(2.2rem, 4vw, 3.7rem);
         line-height: 1.02;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
         max-width: 12ch;
       }
 
@@ -432,7 +442,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 12px;
-        margin-top: 22px;
+        margin-top: 18px;
       }
 
       .action-btn {
@@ -463,9 +473,9 @@
       }
 
       .side-panel {
-        padding: 28px;
+        padding: 24px;
         display: grid;
-        gap: 16px;
+        gap: 12px;
         align-content: start;
       }
 
@@ -506,7 +516,7 @@
       .queue-list,
       .tool-list {
         display: grid;
-        gap: 12px;
+        gap: 9px;
       }
 
       .health-item,
@@ -517,10 +527,10 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 14px 16px;
-        border-radius: 18px;
-        background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(255, 255, 255, 0.98));
-        border: 1px solid rgba(76, 175, 80, 0.14);
+        padding: 11px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(76, 175, 80, 0.1);
       }
 
       .item-copy {
@@ -529,36 +539,37 @@
       }
 
       .item-copy strong {
-        font-size: 0.98rem;
+        font-size: 0.86rem;
       }
 
       .item-copy span {
         color: var(--muted);
-        font-size: 0.92rem;
+        font-size: 0.78rem;
       }
 
       .item-value {
         font-weight: 800;
         color: var(--green-dark);
         white-space: nowrap;
+        font-size: 0.86rem;
       }
 
       .overview-grid,
       .main-grid,
       .lower-grid {
         display: grid;
-        gap: 24px;
+        gap: 22px;
       }
 
       .overview-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        margin-bottom: 24px;
+        margin-bottom: 22px;
       }
 
       .stat-card {
-        padding: 22px;
+        padding: 20px;
         display: grid;
-        gap: 14px;
+        gap: 12px;
       }
 
       .stat-top {
@@ -597,14 +608,14 @@
 
       .main-grid {
         grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-        margin-bottom: 24px;
+        margin-bottom: 22px;
       }
 
       .section-card,
       .queue-card,
       .log-card,
       .tool-card {
-        padding: 26px;
+        padding: 22px;
       }
 
       .section-header {
