@@ -2291,6 +2291,14 @@ function extractHtmlFavicon(htmlText) {
   return faviconMatch ? String(faviconMatch[1] || "").trim() : "";
 }
 
+function resolveBuiltInAssetPath(assetPath) {
+  const normalizedPath = String(assetPath || "").trim();
+  if (!normalizedPath) return "";
+  const cleanPath = normalizedPath.replace(/^\.\/+/, "").replace(/^\/+/, "").toLowerCase();
+  if (cleanPath === "cx.png") return "/cx.png";
+  return "";
+}
+
 function resolvePreviewAssetPath(assetPath) {
   const normalizedPath = String(assetPath || "").trim();
   if (!normalizedPath) return "";
@@ -2301,6 +2309,8 @@ function resolvePreviewAssetPath(assetPath) {
   ) {
     return normalizedPath;
   }
+  const builtInAssetPath = resolveBuiltInAssetPath(normalizedPath);
+  if (builtInAssetPath) return builtInAssetPath;
   const cleanPath = normalizedPath.replace(/^\.\/+/, "").toLowerCase();
   const fileName = cleanPath.split("/").pop();
   const mediaFile = projectFiles.find((file) => {
@@ -3813,6 +3823,11 @@ ${jsFile.content}
       ) {
         // Keep external URLs and data URLs as-is
         return match;
+      }
+
+      const builtInAssetPath = resolveBuiltInAssetPath(src);
+      if (builtInAssetPath) {
+        return `<${tag}${before} src="${builtInAssetPath}"${after}>`;
       }
 
       // Try to find the media file in projectFiles
@@ -6660,6 +6675,20 @@ function pushCollabPermissionsUpdate(partial) {
       if (!res?.ok) {
         showNotification((res && res.error) || "Failed to update permissions", "error");
       }
+    },
+  );
+
+  html = html.replace(
+    /<link\b([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi,
+    (match, before, href, after) => {
+      const relMatch = match.match(/\brel=["']([^"']+)["']/i);
+      const relValue = String(relMatch?.[1] || "").toLowerCase();
+      if (!/(^|\s)(icon|shortcut icon|apple-touch-icon)(\s|$)/i.test(relValue)) {
+        return match;
+      }
+      const builtInAssetPath = resolveBuiltInAssetPath(href);
+      if (!builtInAssetPath) return match;
+      return `<link${before}href="${builtInAssetPath}"${after}>`;
     },
   );
 }
