@@ -3179,6 +3179,7 @@ function loadSettings() {
   } else {
     resetToDefaultSettings();
   }
+  applyGoogleFontImport(extractGoogleFontsCssUrl(editorFontEmbedInput.value));
   updateFontControlsState();
   updatePreviewBox();
   applySettingsToEditors();
@@ -3224,24 +3225,32 @@ function getGoogleFontFamilyName(cssUrl) {
 }
 
 function applyGoogleFontImport(cssUrl) {
-  let styleEl = document.getElementById("editorGoogleFontImport");
+  let linkEl = document.getElementById("editorGoogleFontImport");
   if (!cssUrl) {
-    if (styleEl) styleEl.remove();
+    if (linkEl) linkEl.remove();
     return;
   }
 
-  if (!styleEl) {
-    styleEl = document.createElement("style");
-    styleEl.id = "editorGoogleFontImport";
-    document.head.appendChild(styleEl);
+  if (linkEl) {
+    const existingHref = String(linkEl.getAttribute("href") || "").trim();
+    if (existingHref === cssUrl) return;
+    linkEl.remove();
   }
-  styleEl.textContent = `@import url("${cssUrl}");`;
+
+  linkEl = document.createElement("link");
+  linkEl.id = "editorGoogleFontImport";
+  linkEl.rel = "stylesheet";
+  linkEl.href = cssUrl;
+  linkEl.onload = () => {
+    updatePreviewBox();
+    applySettingsToEditors();
+  };
+  document.head.appendChild(linkEl);
 }
 
 function getEffectiveEditorFontFamily() {
   const cssUrl = extractGoogleFontsCssUrl(editorFontEmbedInput.value);
   if (cssUrl) {
-    applyGoogleFontImport(cssUrl);
     const familyName = getGoogleFontFamilyName(cssUrl);
     if (familyName) {
       return `'${familyName.replace(/'/g, "\\'")}', 'JetBrains Mono', 'Consolas', monospace`;
@@ -3262,8 +3271,12 @@ function updatePreviewBox() {
   settingsPreview.style.backgroundColor = editorBgColorInput.value;
   settingsPreview.style.fontSize = editorTextSizeInput.value + "px";
   settingsPreview.style.fontFamily = getEffectiveEditorFontFamily();
+  settingsPreview.style.lineHeight = "1.5";
   settingsPreviewCode.style.fontSize = editorTextSizeInput.value + "px";
   settingsPreviewCode.style.fontFamily = getEffectiveEditorFontFamily();
+  settingsPreviewCode.style.lineHeight = "1.5";
+  settingsPreviewCode.style.letterSpacing = "normal";
+  settingsPreviewCode.style.tabSize = "4";
   settingsPreviewCode.innerHTML = highlightJs(settingsPreviewSampleCode);
 }
 
@@ -3309,6 +3322,8 @@ editorTextSizeInput.addEventListener("input", (e) => {
 
 editorFontFamilySelect.addEventListener("change", updatePreviewBox);
 editorFontEmbedInput.addEventListener("input", () => {
+  const cssUrl = extractGoogleFontsCssUrl(editorFontEmbedInput.value);
+  applyGoogleFontImport(cssUrl);
   updateFontControlsState();
   updatePreviewBox();
 });
@@ -3334,9 +3349,7 @@ applySettingsBtn.addEventListener("click", () => {
   }
 
   applyGoogleFontImport(cssUrl);
-  if (cssUrl) {
-    editorFontEmbedInput.value = cssUrl;
-  }
+  editorFontEmbedInput.value = cssUrl || "";
   updateFontControlsState();
 
   const settings = {
