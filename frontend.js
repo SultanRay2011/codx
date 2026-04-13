@@ -1003,6 +1003,7 @@ const defaultCollabPermissions = {
 let collabPermissions = { ...defaultCollabPermissions };
 let collabHostName = "";
 let collabModalView = "idle";
+let activeGroupFeatureManager = { selectedName: "" };
 let followedParticipantName = "";
 let collabPendingJoins = [];
 let collabShareLink = "";
@@ -2413,7 +2414,11 @@ function setSavedProjects(projects) {
 }
 
 function saveCurrentProjectToLibrary(projectName) {
-  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableSaveProject) {
+  if (
+    activeSessionId &&
+    isReadOnlyParticipant() &&
+    (collabPermissions.disableSaveProject || isParticipantFeatureDisabled("saveProject"))
+  ) {
     showNotification("The host disabled saving projects for participants.", "error");
     return false;
   }
@@ -2508,7 +2513,11 @@ async function deleteSavedProject(projectId) {
 }
 
 async function publishCurrentProject() {
-  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disablePublishShare) {
+  if (
+    activeSessionId &&
+    isReadOnlyParticipant() &&
+    (collabPermissions.disablePublishShare || isParticipantFeatureDisabled("publishShare"))
+  ) {
     showNotification("The host disabled publish/share for participants.", "error");
     return;
   }
@@ -2563,11 +2572,17 @@ async function publishCurrentProject() {
 function renderProjectLibrary(mode = "saved") {
   if (!projectLibraryModal || !projectLibraryBody) return;
   if (activeSessionId && isReadOnlyParticipant()) {
-    if (mode === "saved" && collabPermissions.disableOpenSavedProjects) {
+    if (
+      mode === "saved" &&
+      (collabPermissions.disableOpenSavedProjects || isParticipantFeatureDisabled("openSaved"))
+    ) {
       showNotification("The host disabled opening saved projects for participants.", "error");
       return;
     }
-    if (mode === "templates" && collabPermissions.disableTemplates) {
+    if (
+      mode === "templates" &&
+      (collabPermissions.disableTemplates || isParticipantFeatureDisabled("templates"))
+    ) {
       showNotification("The host disabled starter templates for participants.", "error");
       return;
     }
@@ -3467,7 +3482,11 @@ function runPreflightDiagnostics() {
 }
 
 function updatePreview() {
-  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableRunCode) {
+  if (
+    activeSessionId &&
+    isReadOnlyParticipant() &&
+    (collabPermissions.disableRunCode || isParticipantFeatureDisabled("runCode"))
+  ) {
     showNotification("The host disabled running code for participants.", "error");
     return;
   }
@@ -5823,7 +5842,11 @@ document.addEventListener("keydown", (e) => {
   }
   if (mod && key === "enter") {
     e.preventDefault();
-    if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableRunCode) {
+    if (
+      activeSessionId &&
+      isReadOnlyParticipant() &&
+      (collabPermissions.disableRunCode || isParticipantFeatureDisabled("runCode"))
+    ) {
       showNotification("The host disabled running code for participants.", "error");
       return;
     }
@@ -6123,6 +6146,15 @@ function getParticipantByName(name) {
   return collabParticipants.find((p) => String(p.name || "").trim().toLowerCase() === safeName) || null;
 }
 
+function getParticipantDisabledFeatures(name = myInfo.name) {
+  const participant = getParticipantByName(name);
+  return Array.isArray(participant?.disabledFeatures) ? participant.disabledFeatures : [];
+}
+
+function isParticipantFeatureDisabled(featureKey, name = myInfo.name) {
+  return getParticipantDisabledFeatures(name).includes(String(featureKey || "").trim());
+}
+
 function getCurrentHostName() {
   const hostParticipant = collabParticipants.find((p) => p.role === "host");
   if (hostParticipant?.name) return hostParticipant.name;
@@ -6320,15 +6352,28 @@ function enforceCollabPermissionsUI() {
   }
 
   const participantRestricted = isReadOnlyParticipant();
+  const lockPersonalChat = participantRestricted && isParticipantFeatureDisabled("chat");
   const lockNewFile = participantRestricted && collabPermissions.disableNewFile;
   const lockExport = participantRestricted && collabPermissions.disableExportZip;
   const lockImport = participantRestricted && collabPermissions.disableImportZip;
-  const lockSaveProject = participantRestricted && collabPermissions.disableSaveProject;
-  const lockOpenSaved = participantRestricted && collabPermissions.disableOpenSavedProjects;
-  const lockTemplates = participantRestricted && collabPermissions.disableTemplates;
-  const lockPublishShare = participantRestricted && collabPermissions.disablePublishShare;
-  const lockRun = participantRestricted && collabPermissions.disableRunCode;
-  const lockConsole = participantRestricted && collabPermissions.disableConsoleAccess;
+  const lockSaveProject =
+    participantRestricted &&
+    (collabPermissions.disableSaveProject || isParticipantFeatureDisabled("saveProject"));
+  const lockOpenSaved =
+    participantRestricted &&
+    (collabPermissions.disableOpenSavedProjects || isParticipantFeatureDisabled("openSaved"));
+  const lockTemplates =
+    participantRestricted &&
+    (collabPermissions.disableTemplates || isParticipantFeatureDisabled("templates"));
+  const lockPublishShare =
+    participantRestricted &&
+    (collabPermissions.disablePublishShare || isParticipantFeatureDisabled("publishShare"));
+  const lockRun =
+    participantRestricted &&
+    (collabPermissions.disableRunCode || isParticipantFeatureDisabled("runCode"));
+  const lockConsole =
+    participantRestricted &&
+    (collabPermissions.disableConsoleAccess || isParticipantFeatureDisabled("consoleAccess"));
   const globalReadOnly = activeSessionId && (collabPermissions.readOnlyAll || collabPermissions.pauseCollab);
   const lockEditor = globalReadOnly || !canCurrentUserEditFile(activeFile ? activeFile.name : "");
   const me = getMyParticipant();
@@ -6376,6 +6421,22 @@ function enforceCollabPermissionsUI() {
   if (clearConsoleBtn) {
     clearConsoleBtn.disabled = lockConsole;
     clearConsoleBtn.title = lockConsole ? "The host disabled console access for participants." : "";
+  }
+  if (collabModalView === "session-details" || collabModalView === "group-controls") {
+    const chatInput = document.getElementById("collabChatInput");
+    const chatSendBtn = document.getElementById("collabChatSendBtn");
+    if (chatInput) {
+      chatInput.disabled = lockPersonalChat || Boolean(collabPermissions.disableAllChat);
+      chatInput.placeholder =
+        lockPersonalChat
+          ? "Chat was disabled for you by the host..."
+          : collabPermissions.disableAllChat
+          ? "Chat is disabled by the host..."
+          : "Type a message...";
+    }
+    if (chatSendBtn) {
+      chatSendBtn.disabled = lockPersonalChat || Boolean(collabPermissions.disableAllChat);
+    }
   }
   const editor = document.getElementById("activeEditor");
   if (editor) {
@@ -6696,13 +6757,7 @@ function showGroupControls(sessionId) {
       <div class="collab-action-grid">
       ${hostView ? `<button id="groupLockRoomBtn" class="run-button"><strong>${collabPermissions.roomLocked ? "UNLOCK ROOM" : "LOCK ROOM"}</strong></button>` : ""}
       ${hostView ? `<button id="groupReadOnlyBtn" class="run-button"><strong>${collabPermissions.readOnlyAll ? "DISABLE READ-ONLY" : "READ-ONLY FOR ALL"}</strong></button>` : ""}
-      ${hostView ? `<button id="groupDisableChatBtn" class="run-button"><strong>${collabPermissions.disableAllChat ? "ENABLE CHAT" : "DISABLE CHAT FOR ALL"}</strong></button>` : ""}
-      ${hostView ? `<button id="groupDisableSaveBtn" class="run-button"><strong>${collabPermissions.disableSaveProject ? "ENABLE SAVE PROJECT" : "DISABLE SAVE PROJECT"}</strong></button>` : ""}
-      ${hostView ? `<button id="groupDisableOpenSavedBtn" class="run-button"><strong>${collabPermissions.disableOpenSavedProjects ? "ENABLE OPEN SAVED" : "DISABLE OPEN SAVED"}</strong></button>` : ""}
-      ${hostView ? `<button id="groupDisableTemplatesBtn" class="run-button"><strong>${collabPermissions.disableTemplates ? "ENABLE TEMPLATES" : "DISABLE TEMPLATES"}</strong></button>` : ""}
-      ${hostView ? `<button id="groupDisablePublishBtn" class="run-button"><strong>${collabPermissions.disablePublishShare ? "ENABLE PUBLISH" : "DISABLE PUBLISH / SHARE"}</strong></button>` : ""}
-      ${hostView ? `<button id="groupDisableRunBtn" class="run-button"><strong>${collabPermissions.disableRunCode ? "ENABLE RUN" : "DISABLE RUN FOR PARTICIPANTS"}</strong></button>` : ""}
-      ${hostView ? `<button id="groupDisableConsoleBtn" class="run-button"><strong>${collabPermissions.disableConsoleAccess ? "ENABLE CONSOLE" : "DISABLE CONSOLE FOR PARTICIPANTS"}</strong></button>` : ""}
+      ${hostView ? `<button id="groupManageFeatureAccessBtn" class="run-button"><strong>MANAGE FEATURE ACCESS</strong></button>` : ""}
       <button id="groupBringToFileBtn" class="run-button"><strong>BRING EVERYONE TO FILE</strong></button>
       <button id="groupPinFileBtn" class="run-button"><strong>${collabPermissions.pinnedFile ? "CHANGE PINNED FILE" : "PIN TEAM FILE"}</strong></button>
       <button id="groupClearChatBtn" class="run-button"><strong>CLEAR GROUP CHAT</strong></button>
@@ -6736,45 +6791,7 @@ function showGroupControls(sessionId) {
   bind("groupReadOnlyBtn", () =>
     updateGroupPermission({ readOnlyAll: !collabPermissions.readOnlyAll }, collabPermissions.readOnlyAll ? "Read-only disabled." : "Room set to read-only."),
   );
-  bind("groupDisableChatBtn", () =>
-    updateGroupPermission({ disableAllChat: !collabPermissions.disableAllChat }, collabPermissions.disableAllChat ? "Chat enabled." : "Chat disabled for the group."),
-  );
-  bind("groupDisableSaveBtn", () =>
-    updateGroupPermission(
-      { disableSaveProject: !collabPermissions.disableSaveProject },
-      collabPermissions.disableSaveProject ? "Save Project enabled for participants." : "Save Project disabled for participants.",
-    ),
-  );
-  bind("groupDisableOpenSavedBtn", () =>
-    updateGroupPermission(
-      { disableOpenSavedProjects: !collabPermissions.disableOpenSavedProjects },
-      collabPermissions.disableOpenSavedProjects ? "Open Saved enabled for participants." : "Open Saved disabled for participants.",
-    ),
-  );
-  bind("groupDisableTemplatesBtn", () =>
-    updateGroupPermission(
-      { disableTemplates: !collabPermissions.disableTemplates },
-      collabPermissions.disableTemplates ? "Templates enabled for participants." : "Templates disabled for participants.",
-    ),
-  );
-  bind("groupDisablePublishBtn", () =>
-    updateGroupPermission(
-      { disablePublishShare: !collabPermissions.disablePublishShare },
-      collabPermissions.disablePublishShare ? "Publish / Share enabled for participants." : "Publish / Share disabled for participants.",
-    ),
-  );
-  bind("groupDisableRunBtn", () =>
-    updateGroupPermission(
-      { disableRunCode: !collabPermissions.disableRunCode },
-      collabPermissions.disableRunCode ? "Run access enabled for participants." : "Run access disabled for participants.",
-    ),
-  );
-  bind("groupDisableConsoleBtn", () =>
-    updateGroupPermission(
-      { disableConsoleAccess: !collabPermissions.disableConsoleAccess },
-      collabPermissions.disableConsoleAccess ? "Console access enabled for participants." : "Console access disabled for participants.",
-    ),
-  );
+  bind("groupManageFeatureAccessBtn", () => showGroupFeatureAccessManager());
   bind("groupBringToFileBtn", bringEveryoneToFile);
   bind("groupPinFileBtn", async () => {
     const result = await promptForExistingFile("Pin which file for the team? Leave blank to clear.", collabPermissions.pinnedFile || (activeFile ? activeFile.name : ""));
@@ -6982,6 +6999,193 @@ function updateParticipantAllowedFiles(targetName, allowedFiles, reset = false) 
       }
     },
   );
+}
+
+const groupFeatureControlConfig = [
+  { key: "chat", buttonId: "groupDisableChatBtn", label: "DISABLE CHAT" },
+  { key: "saveProject", buttonId: "groupDisableSaveBtn", label: "DISABLE SAVE PROJECT" },
+  { key: "openSaved", buttonId: "groupDisableOpenSavedBtn", label: "DISABLE OPEN SAVED" },
+  { key: "templates", buttonId: "groupDisableTemplatesBtn", label: "DISABLE TEMPLATES" },
+  { key: "publishShare", buttonId: "groupDisablePublishBtn", label: "DISABLE PUBLISH / SHARE" },
+  { key: "runCode", buttonId: "groupDisableRunBtn", label: "DISABLE RUN" },
+  { key: "consoleAccess", buttonId: "groupDisableConsoleBtn", label: "DISABLE CONSOLE" },
+];
+
+function getFeatureControlLabel(featureKey) {
+  return (
+    groupFeatureControlConfig.find((entry) => entry.key === featureKey)?.label ||
+    String(featureKey || "").trim()
+  );
+}
+
+function updateParticipantDisabledFeatures(targetName, disabledFeatures, options = {}) {
+  const { silent = false } = options;
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return Promise.resolve(false);
+  const participant = getParticipantByName(targetName);
+  if (!canModerateParticipant(participant)) {
+    if (!silent) {
+      showNotification("You do not have permission to change this feature access.", "error");
+    }
+    return Promise.resolve(false);
+  }
+  return new Promise((resolve) => {
+    collabSocket.emit(
+      "collab:set-participant-feature-access",
+      {
+        sessionId: activeSessionId,
+        targetName,
+        disabledFeatures,
+      },
+      (res) => {
+        if (!res?.ok) {
+          if (!silent) {
+            showNotification((res && res.error) || "Failed to update feature access.", "error");
+          }
+          resolve(false);
+        } else {
+          if (!silent) {
+            showNotification(`${targetName}'s feature access updated.`, "success");
+            showGroupControls(activeSessionId);
+          }
+          resolve(true);
+        }
+      },
+    );
+  });
+}
+
+function updateGroupFeatureAccess(featureKey, selectedNames, featureLabel) {
+  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    collabSocket.emit(
+      "collab:set-group-feature-access",
+      {
+        sessionId: activeSessionId,
+        featureKey,
+        selectedNames: Array.from(selectedNames || []),
+      },
+      (res) => {
+        if (!res?.ok) {
+          showNotification((res && res.error) || "Failed to update feature access.", "error");
+          resolve(false);
+          return;
+        }
+        showNotification(`${featureLabel} updated for selected participants.`, "success");
+        resolve(true);
+      },
+    );
+  });
+}
+
+function showGroupFeatureAccessManager(selectedName = "") {
+  if (!canUseCoHostTools()) return;
+  const participants = collabParticipants.filter((participant) => canModerateParticipant(participant));
+  const fallbackName = participants[0]?.name || "";
+  const resolvedName = participants.some((participant) => participant.name === selectedName)
+    ? selectedName
+    : activeGroupFeatureManager.selectedName || fallbackName;
+  activeGroupFeatureManager = { selectedName: resolvedName };
+  const activeParticipant = participants.find((participant) => participant.name === resolvedName) || null;
+  const activeDisabled = Array.isArray(activeParticipant?.disabledFeatures)
+    ? activeParticipant.disabledFeatures
+    : [];
+
+  const participantOptions = participants.length
+    ? participants
+        .map(
+          (participant) => `
+            <label class="file-access-option">
+              <span class="file-access-check">
+                <input type="radio" name="groupFeatureParticipant" value="${escapeHtml(participant.name)}" ${participant.name === resolvedName ? "checked" : ""}>
+                <span class="file-access-box" aria-hidden="true"></span>
+              </span>
+              <span class="file-access-name">${escapeHtml(participant.name)}</span>
+            </label>
+          `,
+        )
+        .join("")
+    : `<div style="color:var(--text-muted);">No participants available.</div>`;
+
+  const featureOptions = groupFeatureControlConfig
+    .map(
+      (entry) => `
+        <label class="file-access-option">
+          <span class="file-access-check">
+            <input type="checkbox" name="groupFeatureToggle" value="${escapeHtml(entry.key)}" ${activeDisabled.includes(entry.key) ? "checked" : ""}>
+            <span class="file-access-box" aria-hidden="true"></span>
+          </span>
+          <span class="file-access-name">${escapeHtml(entry.label)}</span>
+        </label>
+      `,
+    )
+    .join("");
+
+  collabModalView = "group-feature-access";
+  setCollabCloseButtonVisible(true);
+  modalTitle.innerHTML = "<strong>MANAGE FEATURE ACCESS</strong>";
+  modalBody.innerHTML = `
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">How It Works</h4>
+      <p class="collab-section-note">Select one participant, then tick the features you want to disable for that person.</p>
+    </div>
+    <div class="collab-meta-grid" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);">
+      <div class="collab-section-card" style="margin:0;">
+        <h4 class="collab-section-title">Participants</h4>
+        <div id="groupFeatureParticipantList" class="participant-file-access-list" style="text-align:left;max-height:260px;overflow:auto;">
+          ${participantOptions}
+        </div>
+      </div>
+      <div class="collab-section-card" style="margin:0;">
+        <h4 class="collab-section-title">Disabled Features${activeParticipant ? ` for ${escapeHtml(activeParticipant.name)}` : ""}</h4>
+        <div id="groupFeatureToggleList" class="participant-file-access-list" style="text-align:left;max-height:260px;overflow:auto;">
+          ${featureOptions}
+        </div>
+      </div>
+    </div>
+  `;
+  setModalActions(`
+    <button id="groupFeatureAccessSaveBtn" class="run-button"><strong>SAVE</strong></button>
+    <button id="groupFeatureAccessBackBtn" class="run-button"><strong>BACK</strong></button>
+  `);
+  collabModal.style.display = "flex";
+
+  const participantInputs = Array.from(
+    document.querySelectorAll("#groupFeatureParticipantList input[name='groupFeatureParticipant']"),
+  );
+  const featureInputs = Array.from(
+    document.querySelectorAll("#groupFeatureToggleList input[name='groupFeatureToggle']"),
+  );
+  const saveBtn = document.getElementById("groupFeatureAccessSaveBtn");
+  const backBtn = document.getElementById("groupFeatureAccessBackBtn");
+
+  participantInputs.forEach((input) => {
+    input.onchange = () => {
+      activeGroupFeatureManager.selectedName = input.value;
+      showGroupFeatureAccessManager(input.value);
+    };
+  });
+
+  if (saveBtn) {
+    saveBtn.onclick = async () => {
+      if (!activeParticipant) {
+        showNotification("Select a participant first.", "error");
+        return;
+      }
+      const nextDisabled = featureInputs
+        .filter((input) => input.checked)
+        .map((input) => input.value);
+      const ok = await updateParticipantDisabledFeatures(activeParticipant.name, nextDisabled, {
+        silent: true,
+      });
+      if (ok) {
+        showNotification(`Feature access updated for ${activeParticipant.name}.`, "success");
+        showGroupFeatureAccessManager(activeParticipant.name);
+      }
+    };
+  }
+  if (backBtn) {
+    backBtn.onclick = () => showGroupControls(activeSessionId);
+  }
 }
 
 function formatParticipantJoinedAt(ts) {
@@ -7231,6 +7435,10 @@ function bindCollabChatControls() {
     const text = (inputEl.value || "").trim();
     if (!text) return;
     if (!collabSocket || !activeSessionId) return;
+    if (isReadOnlyParticipant() && isParticipantFeatureDisabled("chat")) {
+      showNotification("The host disabled chat for your account.", "error");
+      return;
+    }
     const payload = {
       sessionId: activeSessionId,
       mode: collabChatMode,
@@ -7349,6 +7557,23 @@ function showParticipantActions(targetName) {
   const participant = getParticipantByName(safeName);
   if (!participant || !canModerateParticipant(participant)) return;
   const hostView = isHost();
+  const disabledFeatures = Array.isArray(participant.disabledFeatures)
+    ? participant.disabledFeatures
+    : [];
+  const disabledFeatureChips = disabledFeatures.length
+    ? disabledFeatures
+        .map((featureKey) => `<span class="collab-pill">${escapeHtml(getFeatureControlLabel(featureKey))}</span>`)
+        .join("")
+    : `<span class="collab-section-note">No disabled features for this participant.</span>`;
+  const participantFeatureButtons = groupFeatureControlConfig
+    .map(
+      (entry) => `
+        <button id="participantFeatureToggle-${escapeHtml(entry.key)}" class="run-button">
+          <strong>${disabledFeatures.includes(entry.key) ? `ENABLE ${entry.label.replace(/^DISABLE\s+/, "")}` : entry.label}</strong>
+        </button>
+      `,
+    )
+    .join("");
 
   collabModalView = "participant-actions";
   setCollabCloseButtonVisible(true);
@@ -7373,6 +7598,15 @@ function showParticipantActions(targetName) {
           <span class="collab-meta-label">Current File</span>
           <span class="collab-meta-value">${escapeHtml(participant.currentFile || "None")}</span>
         </div>
+      </div>
+    </div>
+    <div class="collab-section-card">
+      <h4 class="collab-section-title">Disabled Features</h4>
+      <div class="collab-pill-row" style="margin-bottom:12px;">
+        ${disabledFeatureChips}
+      </div>
+      <div class="collab-action-grid">
+        ${participantFeatureButtons}
       </div>
     </div>
     <div class="collab-section-card">
@@ -7444,6 +7678,28 @@ function showParticipantActions(targetName) {
   const copyRoleBtn = document.getElementById("participantCopyRoleBtn");
   const kickBtn = document.getElementById("participantKickBtn");
   const doneBtn = document.getElementById("participantDoneBtn");
+  groupFeatureControlConfig.forEach((entry) => {
+    const btn = document.getElementById(`participantFeatureToggle-${entry.key}`);
+    if (!btn) return;
+    btn.onclick = async () => {
+      const current = Array.isArray(participant.disabledFeatures)
+        ? participant.disabledFeatures.filter((item) => item !== entry.key)
+        : [];
+      if (!disabledFeatures.includes(entry.key)) {
+        current.push(entry.key);
+      }
+      const ok = await updateParticipantDisabledFeatures(safeName, current, { silent: true });
+      if (ok) {
+        showNotification(
+          disabledFeatures.includes(entry.key)
+            ? `${getFeatureControlLabel(entry.key).replace(/^DISABLE\s+/, "")} enabled for ${safeName}.`
+            : `${getFeatureControlLabel(entry.key)} applied to ${safeName}.`,
+          "success",
+        );
+        showParticipantActions(safeName);
+      }
+    };
+  });
   if (hostView && roleBtn) {
     roleBtn.onclick = () => setCoHost(safeName, participant.role !== "co-host");
   }
@@ -7656,8 +7912,12 @@ function ensureCollabSocket() {
     renderRemoteCursors();
     enforceCollabPermissionsUI();
     syncFollowedParticipantView();
-    if (collabModal.style.display === "flex" && activeSessionId && collabModalView === "session") {
-      showSessionDetails(activeSessionId);
+    if (collabModal.style.display === "flex" && activeSessionId) {
+      if (collabModalView === "session") {
+        showSessionDetails(activeSessionId);
+      } else if (collabModalView === "group-feature-access") {
+        showGroupFeatureAccessManager(activeGroupFeatureManager.selectedName);
+      }
     }
   });
 
@@ -7684,6 +7944,8 @@ function ensureCollabSocket() {
         showSessionDetails(activeSessionId);
       } else if (collabModalView === "group-controls" && isHost()) {
         showGroupControls(activeSessionId);
+      } else if (collabModalView === "group-feature-access") {
+        showGroupFeatureAccessManager(activeGroupFeatureManager.selectedName);
       }
     }
   });

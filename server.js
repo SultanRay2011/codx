@@ -614,7 +614,24 @@ function sanitizeParticipant(p) {
     currentFile: p.currentFile || null,
     joinedAt: p.joinedAt || Date.now(),
     allowedFiles: Array.isArray(p.allowedFiles) ? [...p.allowedFiles] : null,
+    disabledFeatures: Array.isArray(p.disabledFeatures) ? [...p.disabledFeatures] : [],
   };
+}
+
+function normalizeDisabledFeatures(features) {
+  const allowed = new Set([
+    "chat",
+    "saveProject",
+    "openSaved",
+    "templates",
+    "publishShare",
+    "runCode",
+    "consoleAccess",
+  ]);
+  if (!Array.isArray(features)) return [];
+  return [...new Set(features
+    .map((item) => String(item || "").trim())
+    .filter((item) => allowed.has(item)))];
 }
 
 function normalizeName(value) {
@@ -802,6 +819,7 @@ function finalizeApprovedJoin(sessionId, socketId, name, theme) {
     currentFile: session.activeFileName || null,
     joinedAt: Date.now(),
     allowedFiles: null,
+    disabledFeatures: [],
   });
   const socketRef = io.sockets.sockets.get(socketId);
   if (socketRef) socketRef.join(sessionId);
@@ -857,6 +875,7 @@ io.on("connection", (socket) => {
         currentFile: activeFileName || null,
         joinedAt: Date.now(),
         allowedFiles: null,
+        disabledFeatures: [],
       }];
       sessions.set(sessionId, {
         files,
@@ -952,6 +971,7 @@ io.on("connection", (socket) => {
         currentFile: session.activeFileName || null,
         joinedAt: Date.now(),
         allowedFiles: null,
+        disabledFeatures: [],
       });
       socket.join(sessionId);
       socketMeta.set(socket.id, { sessionId, name, theme });
@@ -1024,6 +1044,7 @@ io.on("connection", (socket) => {
           currentFile: session.activeFileName || null,
           joinedAt: Date.now(),
           allowedFiles: null,
+          disabledFeatures: [],
         };
         session.participants.push(participant);
       }
@@ -1111,6 +1132,10 @@ io.on("connection", (socket) => {
           ack?.({ ok: false, error: "The host muted your chat access." });
           return;
         }
+        if (Array.isArray(member.disabledFeatures) && member.disabledFeatures.includes("chat")) {
+          ack?.({ ok: false, error: "The host disabled chat for your account." });
+          return;
+        }
         session.chat.group.push(message);
         if (session.chat.group.length > 300) session.chat.group.shift();
         io.to(sessionId).emit("collab:chat:group", message);
@@ -1128,6 +1153,10 @@ io.on("connection", (socket) => {
       }
       if (member.mutedChat) {
         ack?.({ ok: false, error: "The host muted your chat access." });
+        return;
+      }
+      if (Array.isArray(member.disabledFeatures) && member.disabledFeatures.includes("chat")) {
+        ack?.({ ok: false, error: "The host disabled chat for your account." });
         return;
       }
 
@@ -1369,6 +1398,90 @@ io.on("connection", (socket) => {
       ack?.({ ok: true });
     } catch {
       ack?.({ ok: false, error: "Failed to update file access." });
+    }
+  });
+
+  socket.on("collab:set-participant-feature-access", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      const targetName = normalizeName(payload?.targetName);
+      const target = session.participants.find((p) => normalizeName(p.name) === targetName);
+      if (!target) {
+        ack?.({ ok: false, error: "Participant not found." });
+        return;
+      }
+      const actor = canModerateTarget(session, socket.id, target);
+      if (!actor) {
+        ack?.({ ok: false, error: "You do not have permission to change this feature access." });
+        return;
+      }
+
+      target.disabledFeatures = normalizeDisabledFeatures(payload?.disabledFeatures);
+      logAdminEvent(
+        "Participant feature access updated",
+        `${target.name}'s feature access was updated in session ${sessionId}.`,
+        sessionId,
+      );
+      emitParticipants(sessionId);
+      ack?.({ ok: true, disabledFeatures: target.disabledFeatures });
+    } catch {
+      ack?.({ ok: false, error: "Failed to update feature access." });
+    }
+  });
+
+  socket.on("collab:set-group-feature-access", (payload, ack) => {
+    try {
+      const sessionId = normalizeSessionId(payload?.sessionId);
+      const session = sessions.get(sessionId);
+      if (!session) {
+        ack?.({ ok: false, error: "Session not found." });
+        return;
+      }
+      const actor = canUseLimitedRoomTools(session, socket.id);
+      if (!actor) {
+        ack?.({ ok: false, error: "Only host or co-host can update these settings." });
+        return;
+      }
+
+      const featureKey = normalizeDisabledFeatures([payload?.featureKey])[0];
+      if (!featureKey) {
+        ack?.({ ok: false, error: "Invalid feature key." });
+        return;
+      }
+
+      const selectedNames = new Set(
+        (Array.isArray(payload?.selectedNames) ? payload.selectedNames : [])
+          .map((name) => normalizeName(name))
+          .filter(Boolean),
+      );
+
+      let updatedCount = 0;
+      session.participants.forEach((participant) => {
+        if (!canModerateTarget(session, socket.id, participant)) return;
+        const current = Array.isArray(participant.disabledFeatures)
+          ? participant.disabledFeatures.filter((item) => item !== featureKey)
+          : [];
+        if (selectedNames.has(normalizeName(participant.name))) {
+          current.push(featureKey);
+        }
+        participant.disabledFeatures = normalizeDisabledFeatures(current);
+        updatedCount += 1;
+      });
+
+      logAdminEvent(
+        "Group feature access updated",
+        `${actor.name} updated ${featureKey} access for ${updatedCount} participant(s) in session ${sessionId}.`,
+        sessionId,
+      );
+      emitParticipants(sessionId);
+      ack?.({ ok: true });
+    } catch {
+      ack?.({ ok: false, error: "Failed to update group feature access." });
     }
   });
 
