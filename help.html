@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Complete help guide for CodX Editor. Learn what every major feature does, from editing, saved projects, autosave, templates, and publishing to collaboration, roles, admin tools, shortcuts, and developer tools."
+      content="Complete help guide for CodX Editor. Learn what every major feature does, from editing, saved projects, autosave, templates, and publishing to collaboration, roles, shortcuts, and developer tools."
     />
     <meta name="theme-color" content="#4CAF50" />
     <link rel="icon" type="image/png" href="cx.png" />
@@ -523,7 +523,7 @@
           <p class="lead">
             This page explains the major features across the website and editor, including file tools,
             saved projects, autosave, starter templates, publishing, live preview, debugging, shortcuts,
-            collaboration roles, room controls, admin protection, and hidden developer tools.
+            collaboration roles, room controls, and hidden developer tools.
           </p>
           <div class="hero-pills">
             <span class="pill"><i class="fa-solid fa-code"></i> Editor features</span>
@@ -716,6 +716,9 @@
                   <li>Paste a Google Fonts embed URL or snippet.</li>
                   <li>CodX uses <code>@import</code> to load the font.</li>
                   <li>When a Google Fonts embed is active, the normal font dropdown is disabled.</li>
+                  <li>Pasting a new Google Fonts link now replaces the previous one properly instead of sticking to the old font.</li>
+                  <li>Your applied Google Fonts choice now stays active after refresh.</li>
+                  <li>The settings preview updates while you paste so you can see the font change before applying.</li>
                   <li>This feature needs internet access to fetch the font.</li>
                 </ul>
               </article>
@@ -791,6 +794,7 @@
                 <ul>
                   <li>Group chat and private chat are built into the collab modal.</li>
                   <li>Messages show the sender color they picked.</li>
+                  <li>If someone sends you a private message, CodX shows a notification with the sender name in bold.</li>
                   <li>Group chat can be cleared by moderators with permission.</li>
                 </ul>
               </article>
@@ -807,7 +811,22 @@
                 <ul>
                   <li>Invalid collab links go to the 404 page.</li>
                   <li>Kicked users see a notice modal and are reset to a fresh state.</li>
+                  <li>Banned users cannot rejoin that same collaboration session from the same device until unbanned.</li>
                   <li>If host leaves and a co-host exists, co-host is promoted first.</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section-card" id="assets">
+            <h2>Built-In Assets</h2>
+            <div class="feature-grid">
+              <article class="feature-item">
+                <h3><i class="fa-solid fa-image"></i> Built-In Logo Asset</h3>
+                <ul>
+                  <li><code>cx.png</code> is built into CodX Editor.</li>
+                  <li>You can use it directly in your code without importing or downloading it first.</li>
+                  <li>This works in the editor preview and in published project pages.</li>
                 </ul>
               </article>
             </div>
@@ -914,15 +933,12 @@
           <section class="section-card" id="developer-tools">
             <h2>Hidden Developer Tools</h2>
             <p class="section-copy">
-              CodX includes hidden internal tools for testing and a protected admin area for room oversight.
+              CodX includes hidden internal tools for testing and quick inspection of the current editor state.
             </p>
             <ul class="simple-list">
               <li><strong>Shortcut:</strong> press <kbd>Ctrl/Cmd</kbd> + <kbd>C</kbd>, then <kbd>X</kbd>.</li>
               <li><strong>Purpose:</strong> internal testing and quick inspection of files, participants, permissions, errors, and preview state.</li>
               <li><strong>Commands:</strong> <code>help</code>, <code>state</code>, <code>files</code>, <code>participants</code>, <code>permissions</code>, <code>errors</code>, <code>preview</code>, <code>clear</code>, <code>close</code>.</li>
-              <li><strong>Admin panel:</strong> <code>adminprivate.html</code> is protected by a backend PIN check before admin data and actions are allowed.</li>
-              <li><strong>Admin session safety:</strong> if the admin session expires, the page relocks and asks for the PIN again.</li>
-              <li><strong>Admin abilities:</strong> the admin page can monitor live sessions, spectate rooms, view preview output, and run room-level moderation actions.</li>
             </ul>
           </section>
         </div>
