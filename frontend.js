@@ -1021,6 +1021,8 @@ const AUTOSAVE_META_KEY = "codxAutosaveMeta";
 const DEVICE_ID_KEY = "codxDeviceId";
 let autosaveTimer = null;
 let lastAutosaveAt = null;
+let sessionSyncTimeout = null;
+let lastEditorInputType = "";
 
 const starterTemplates = [
   {
@@ -2821,7 +2823,14 @@ function clearConsole() {
 
 function debouncedUpdatePreview() {
   clearTimeout(autoRunTimeout);
-  autoRunTimeout = setTimeout(updatePreview, 0);
+  autoRunTimeout = setTimeout(updatePreview, 90);
+}
+
+function scheduleSessionUpdate() {
+  clearTimeout(sessionSyncTimeout);
+  sessionSyncTimeout = setTimeout(() => {
+    emitSessionUpdate();
+  }, 120);
 }
 
 function renderFileList() {
@@ -4237,6 +4246,10 @@ function initializeEditor() {
   syncSyntaxLayerStyle(editor);
   renderSyntaxHighlight(editor);
 
+  editor.addEventListener("beforeinput", (e) => {
+    lastEditorInputType = String(e.inputType || "");
+  });
+
   // MODIFIED: Combined input listener
   editor.addEventListener("input", (e) => {
     if (!canCurrentUserEditFile(activeFile ? activeFile.name : "")) {
@@ -4244,6 +4257,8 @@ function initializeEditor() {
       editor.value = activeFile.content;
       return;
     }
+    const isHistoryRestore =
+      lastEditorInputType === "historyUndo" || lastEditorInputType === "historyRedo";
     hasUnsavedChanges = true;
     activeFile.content = editor.value;
     updateProjectStatusUI();
@@ -4252,10 +4267,15 @@ function initializeEditor() {
     handleCodeChange({
       target: { id: activeFile.type + "Code", value: editor.value },
     });
-    announceTyping(activeFile.type + "Code");
+    if (isHistoryRestore) {
+      hideSuggestions();
+    } else {
+      announceTyping(activeFile.type + "Code");
 
-    // ADDED: Handle suggestions
-    handleSuggestions(e);
+      // ADDED: Handle suggestions
+      handleSuggestions(e);
+    }
+    lastEditorInputType = "";
   });
 
   // MODIFIED: Replaced Tab logic with comprehensive keydown handler
@@ -9150,12 +9170,12 @@ function promptJoinTheme(name, sid) {
 
 function handleCodeChange() {
   if (isApplyingRemoteState) return;
-  emitSessionUpdate();
+  scheduleSessionUpdate();
 }
 
 function syncProjectWithSession() {
   if (isApplyingRemoteState) return;
-  emitSessionUpdate();
+  scheduleSessionUpdate();
 }
 
 function startSyncing() {
