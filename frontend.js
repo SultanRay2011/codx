@@ -5616,6 +5616,28 @@ function handleAutoCloseAndIndent(e, editor) {
   return false; // Not handled
 }
 
+function handleHtmlEnterIndentation(e, editor) {
+  if (e.key !== "Enter" || activeFile.type !== "html") return false;
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  const textAfter = editor.value.substring(editor.selectionEnd);
+  const lineStart = textBefore.lastIndexOf("\n") + 1;
+  const currentLine = textBefore.substring(lineStart);
+  const currentIndentMatch = currentLine.match(/^(\s*)/);
+  const currentIndent = currentIndentMatch ? currentIndentMatch[1] : "";
+
+  e.preventDefault();
+  applyEditorMutation(
+    editor,
+    pos,
+    editor.selectionEnd,
+    "\n" + currentIndent,
+    pos + 1 + currentIndent.length,
+    pos + 1 + currentIndent.length,
+  );
+  return true;
+}
+
 // PART 6.6 - TAG AUTO-CLOSING & EDITOR KEYDOWN
 
 /**
@@ -5765,6 +5787,9 @@ function handleEditorKeyDown(e) {
   if (activeFile.type === "html" && e.key === "Enter") {
     if (expandCxStartShortcut(editor)) {
       e.preventDefault();
+      return;
+    }
+    if (handleHtmlEnterIndentation(e, editor)) {
       return;
     }
   }
