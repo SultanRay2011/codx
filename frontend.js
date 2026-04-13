@@ -2746,12 +2746,26 @@ function tryRestoreAutosaveDraft() {
 }
 
 function showNotification(message, type = "info") {
+  return showNotificationMarkup(
+    `<div class="codx-notification-message">${escapeHtml(String(message || ""))}</div>`,
+    type,
+  );
+}
+
+function showNotificationHtml(messageHtml, type = "info") {
+  return showNotificationMarkup(
+    `<div class="codx-notification-message">${messageHtml || ""}</div>`,
+    type,
+  );
+}
+
+function showNotificationMarkup(messageMarkup, type = "info") {
   if (
     activeSessionId &&
     collabPermissions.quietMode &&
     type !== "error" &&
     type !== "warn" &&
-    !String(message || "").toLowerCase().includes("session")
+    !String(messageMarkup || "").toLowerCase().includes("session")
   ) {
     return;
   }
@@ -2789,7 +2803,7 @@ function showNotification(message, type = "info") {
     </div>
     <div class="codx-notification-body">
       <div class="codx-notification-label">${label}</div>
-      <div class="codx-notification-message">${escapeHtml(String(message || ""))}</div>
+      ${messageMarkup}
     </div>
   `;
   document.body.appendChild(notification);
@@ -8240,6 +8254,16 @@ function ensureCollabSocket() {
     renderCollabChatMessages();
     if (message.name) {
       addTimelineEntry(`${message.name} sent a private message.`, "chat");
+    }
+    if (
+      message.to === myInfo.name &&
+      message.from &&
+      message.from !== myInfo.name
+    ) {
+      showNotificationHtml(
+        `<strong>${escapeHtml(message.from)}</strong> has sent a message to you privately.`,
+        "info",
+      );
     }
   });
 
