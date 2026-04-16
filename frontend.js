@@ -179,7 +179,6 @@ if (!errorHighlightLayer && editorWrapperEl) {
   );
 }
 let activeInlineHtmlCorrection = null;
-let suppressInlineHtmlCorrectionRefresh = false;
 
 // ADDED: Tag suggestion elements
 const suggestionPopup = document.getElementById("suggestionPopup");
@@ -1962,188 +1961,17 @@ function getLineNumberFromIndex(text, index) {
     .split("\n").length;
 }
 
-function resolveLikelyHtmlTagName(primaryTag, secondaryTag = "") {
-  const primary = String(primaryTag || "").trim().toLowerCase();
-  const secondary = String(secondaryTag || "").trim().toLowerCase();
-  if (primary && knownHtmlTags.has(primary)) return primary;
-  if (secondary && knownHtmlTags.has(secondary)) return secondary;
-
-  const primarySuggestion = findClosestSuggestion(primary, Array.from(knownHtmlTags), 4);
-  const secondarySuggestion = findClosestSuggestion(secondary, Array.from(knownHtmlTags), 4);
-  if (primarySuggestion && secondarySuggestion) {
-    return primarySuggestion === secondarySuggestion
-      ? primarySuggestion
-      : primarySuggestion;
-  }
-  return primarySuggestion || secondarySuggestion || "";
-}
-
-function getHtmlCorrectionForLine(lineText) {
-  const line = String(lineText || "");
-  if (!line.includes("<") || !line.includes(">")) return null;
-
-  const closedTagMatch = line.match(
-    /^(\s*)<([a-zA-Z][\w-]*)([^>]*)>([\s\S]*?)<\/([a-zA-Z][\w-]*)>\s*$/i,
-  );
-  if (closedTagMatch) {
-    const [, indent, openTag, attrs, inner, closeTag] = closedTagMatch;
-    const correctedTag = resolveLikelyHtmlTagName(openTag, closeTag);
-    if (correctedTag) {
-      const correctedLine = `${indent}<${correctedTag}${attrs}>${inner}</${correctedTag}>`;
-      if (correctedLine !== line) {
-        return correctedLine;
-      }
-    }
-  }
-
-  const missingSlashMatch = line.match(
-    /^(\s*)<([a-zA-Z][\w-]*)([^>]*)>([\s\S]*?)<([a-zA-Z][\w-]*)>\s*$/i,
-  );
-  if (missingSlashMatch) {
-    const [, indent, openTag, attrs, inner, closeLikeTag] = missingSlashMatch;
-    const correctedTag = resolveLikelyHtmlTagName(openTag, closeLikeTag);
-    if (correctedTag) {
-      const correctedLine = `${indent}<${correctedTag}${attrs}>${inner}</${correctedTag}>`;
-      if (correctedLine !== line) {
-        return correctedLine;
-      }
-    }
-  }
-
-  return null;
-}
-
-function getCssCorrectionForLine(lineText) {
-  const line = String(lineText || "");
-  const propertyMatch = line.match(/^(\s*)([-\w]+)(\s*:\s*)([^;]*)(;?)(\s*)$/);
-  if (!propertyMatch) return null;
-  const [, indent, propertyName, colonSpacing, value, semicolon, trailing] = propertyMatch;
-  if (propertyName.startsWith("--") || knownCssProperties.has(propertyName)) return null;
-  const suggestion = findClosestSuggestion(propertyName, cssPropertySuggestions, 4);
-  if (!suggestion || suggestion === propertyName) return null;
-  return `${indent}${suggestion}${colonSpacing}${value}${semicolon}${trailing}`;
-}
-
-function getJsCorrectionForLine(lineText) {
-  const line = String(lineText || "");
-  const declarationMatch = line.match(/\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/);
-  const declaredName = declarationMatch ? declarationMatch[1] : "";
-  const identifierRegex = /\b([A-Za-z_$][\w$]*)\b/g;
-  let match;
-  while ((match = identifierRegex.exec(line)) !== null) {
-    const token = match[1];
-    if (!token || token === declaredName) continue;
-    const suggestion = findClosestSuggestion(token, commonJavaScriptIdentifiers, 4);
-    if (!suggestion || suggestion === token) continue;
-    const start = match.index;
-    const end = start + token.length;
-    return line.slice(0, start) + suggestion + line.slice(end);
-  }
-  return null;
-}
-
-function getSuggestedCorrectionForCurrentFile(lineText) {
-  if (!activeFile) return null;
-  if (activeFile.type === "html") return getHtmlCorrectionForLine(lineText);
-  if (activeFile.type === "css") return getCssCorrectionForLine(lineText);
-  if (activeFile.type === "js") return getJsCorrectionForLine(lineText);
-  return null;
-}
-
-function stripInlineHtmlCorrectionDisplay(text) {
-  if (
-    !activeInlineHtmlCorrection ||
-    typeof activeInlineHtmlCorrection.displayStart !== "number" ||
-    typeof activeInlineHtmlCorrection.displayEnd !== "number"
-  ) {
-    return String(text || "");
-  }
-  const safeText = String(text || "");
-  const start = Math.max(0, Math.min(activeInlineHtmlCorrection.displayStart, safeText.length));
-  const end = Math.max(start, Math.min(activeInlineHtmlCorrection.displayEnd, safeText.length));
-  return safeText.slice(0, start) + safeText.slice(end);
-}
-
-function clearInlineHtmlCorrectionDisplay(editor, options = {}) {
-  const { keepSelection = true } = options;
-  if (!editor || !activeInlineHtmlCorrection) return false;
-  const currentSelectionStart = editor.selectionStart;
-  const currentSelectionEnd = editor.selectionEnd;
-  const cleanValue = stripInlineHtmlCorrectionDisplay(editor.value);
-  const displayStart = activeInlineHtmlCorrection.displayStart;
-  const removedLength = Math.max(0, activeInlineHtmlCorrection.displayEnd - activeInlineHtmlCorrection.displayStart);
-  editor.value = cleanValue;
-  if (keepSelection) {
-    const adjust = (value) => {
-      if (value <= displayStart) return value;
-      if (value >= displayStart + removedLength) return value - removedLength;
-      return displayStart;
-    };
-    editor.selectionStart = adjust(currentSelectionStart);
-    editor.selectionEnd = adjust(currentSelectionEnd);
-  }
+function clearInlineHtmlCorrectionDisplay() {
   activeInlineHtmlCorrection = null;
-  return true;
+  return false;
 }
 
-function syncInlineHtmlCorrectionDisplay(editor = document.getElementById("activeEditor")) {
-  if (!editor || suppressInlineHtmlCorrectionRefresh) return;
-  if (!activeFile || !["html", "css", "js"].includes(activeFile.type)) {
-    clearInlineHtmlCorrectionDisplay(editor);
-    return;
-  }
-
-  if (activeInlineHtmlCorrection) {
-    clearInlineHtmlCorrectionDisplay(editor);
-  } else if (editor.value !== (activeFile.content || "")) {
-    editor.value = activeFile.content || "";
-  }
-
-  if (editor.selectionStart !== editor.selectionEnd) {
-    updateLineNumbers(editor);
-    return;
-  }
-
-  const content = editor.value || "";
-  const caret = editor.selectionStart;
-  const { start, end } = getLineRangeFromIndex(content, caret);
-  const lineText = content.slice(start, end);
-  const replacement = getSuggestedCorrectionForCurrentFile(lineText);
-  if (!replacement) {
-    updateLineNumbers(editor);
-    return;
-  }
-
-  const displayLine = `-> ${replacement}`;
-  const insertion = `\n${displayLine}`;
-  const nextValue = content.slice(0, end) + insertion + content.slice(end);
-  editor.value = nextValue;
-  editor.selectionStart = caret;
-  editor.selectionEnd = caret;
-
-  activeInlineHtmlCorrection = {
-    start,
-    end,
-    line: getLineNumberFromIndex(content, start),
-    previewLine: getLineNumberFromIndex(content, start) + 1,
-    replacement,
-    displayLine,
-    displayStart: end,
-    displayEnd: end + insertion.length,
-  };
-
-  updateLineNumbers(editor);
+function syncInlineHtmlCorrectionDisplay() {
+  activeInlineHtmlCorrection = null;
 }
 
-function acceptInlineHtmlCorrection(editor = document.getElementById("activeEditor")) {
-  if (!editor || !activeInlineHtmlCorrection || !activeFile) return false;
-  const { start, end, replacement } = activeInlineHtmlCorrection;
-  suppressInlineHtmlCorrectionRefresh = true;
-  clearInlineHtmlCorrectionDisplay(editor, { keepSelection: false });
-  applyEditorMutation(editor, start, end, replacement, start + replacement.length, start + replacement.length);
-  suppressInlineHtmlCorrectionRefresh = false;
-  syncInlineHtmlCorrectionDisplay(editor);
-  return true;
+function acceptInlineHtmlCorrection() {
+  return false;
 }
 
 function getLineAndColumnFromIndex(text, index) {
@@ -3800,17 +3628,6 @@ showConsoleCheckbox.addEventListener("change", () => {
 // PART 5 - PREVIEW & LINE NUMBERS
 function getErrorHint(message) {
   const msg = String(message || "").toLowerCase();
-  const notDefinedMatch = String(message || "").match(/([A-Za-z_$][\w$]*) is not defined/i);
-  if (notDefinedMatch) {
-    const suggestedIdentifier = findClosestSuggestion(
-      notDefinedMatch[1],
-      commonJavaScriptIdentifiers,
-      4,
-    );
-    if (suggestedIdentifier) {
-      return `Did you mean "${suggestedIdentifier}"?`;
-    }
-  }
   if (msg.includes("unexpected token"))
     return "Check for missing commas, brackets, or quotes near this line.";
   if (msg.includes("missing )"))
@@ -3826,86 +3643,6 @@ function getErrorHint(message) {
   if (msg.includes("unterminated string"))
     return "Close your string with matching quotes.";
   return "Review syntax near the reported line.";
-}
-
-const knownCssProperties = new Set(cssPropertySuggestions);
-const commonJavaScriptIdentifiers = [
-  "console",
-  "document",
-  "window",
-  "fetch",
-  "setTimeout",
-  "setInterval",
-  "clearTimeout",
-  "clearInterval",
-  "requestAnimationFrame",
-  "localStorage",
-  "sessionStorage",
-  "JSON",
-  "Math",
-  "Array",
-  "Object",
-  "Number",
-  "String",
-  "Boolean",
-  "Promise",
-  "Date",
-  "RegExp",
-  "navigator",
-  "location",
-  "history",
-  "addEventListener",
-  "querySelector",
-  "querySelectorAll",
-  "getElementById",
-  "classList",
-];
-
-function levenshteinDistance(a, b) {
-  const left = String(a || "").toLowerCase();
-  const right = String(b || "").toLowerCase();
-  if (left === right) return 0;
-  if (!left.length) return right.length;
-  if (!right.length) return left.length;
-
-  const matrix = Array.from({ length: left.length + 1 }, () =>
-    new Array(right.length + 1).fill(0),
-  );
-
-  for (let i = 0; i <= left.length; i++) matrix[i][0] = i;
-  for (let j = 0; j <= right.length; j++) matrix[0][j] = j;
-
-  for (let i = 1; i <= left.length; i++) {
-    for (let j = 1; j <= right.length; j++) {
-      const cost = left[i - 1] === right[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost,
-      );
-    }
-  }
-
-  return matrix[left.length][right.length];
-}
-
-function findClosestSuggestion(term, candidates, maxDistance = 3) {
-  const normalizedTerm = String(term || "").trim().toLowerCase();
-  if (!normalizedTerm) return "";
-  let best = "";
-  let bestDistance = Infinity;
-
-  for (const candidate of candidates || []) {
-    const current = String(candidate || "").trim();
-    if (!current) continue;
-    const distance = levenshteinDistance(normalizedTerm, current.toLowerCase());
-    if (distance < bestDistance) {
-      best = current;
-      bestDistance = distance;
-    }
-  }
-
-  return bestDistance <= maxDistance ? best : "";
 }
 
 function applyDiagnosticEntriesToFileErrors(entries) {
@@ -3961,21 +3698,6 @@ function runPreflightDiagnostics(targetEntries = null) {
     .filter((f) => f.type === "css")
     .forEach((file) => {
       const text = file.content || "";
-      text.split("\n").forEach((lineText, index) => {
-        const trimmedLine = lineText.trim();
-        if (!trimmedLine || trimmedLine.startsWith("@")) return;
-        const propertyMatch = lineText.match(/^\s*([-\w]+)\s*:/);
-        if (!propertyMatch) return;
-        const propertyName = propertyMatch[1];
-        if (propertyName.startsWith("--") || knownCssProperties.has(propertyName)) return;
-        const suggestion = findClosestSuggestion(propertyName, cssPropertySuggestions, 4);
-        emitDiagnostic(
-          "error",
-          suggestion
-            ? `[${file.name}] CSS issue at line ${index + 1}: unknown property "${propertyName}". Fix: Did you mean "${suggestion}"?`
-            : `[${file.name}] CSS issue at line ${index + 1}: unknown property "${propertyName}". Fix: Check the property spelling.`,
-        );
-      });
       const normalizedText = text.replace(
         /\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g,
         (match) => " ".repeat(match.length),
@@ -4074,12 +3796,9 @@ function runPreflightDiagnostics(targetEntries = null) {
         const isCustomElement = tag.includes("-");
 
         if (!isCustomElement && !knownHtmlTags.has(tag)) {
-          const suggestion = findClosestSuggestion(tag, Array.from(knownHtmlTags), 4);
           emitDiagnostic(
             "error",
-            suggestion
-              ? `[${htmlFile.name}] HTML issue at line ${line}:${col}: unknown tag <${tag}>. Fix: Did you mean <${suggestion}>?`
-              : `[${htmlFile.name}] HTML issue at line ${line}:${col}: unknown tag <${tag}>. Fix: Check for a misspelled HTML tag.`,
+            `[${htmlFile.name}] HTML issue at line ${line}:${col}: unknown tag <${tag}>. Fix: Check for a misspelled HTML tag.`,
           );
           continue;
         }
@@ -4435,86 +4154,8 @@ ${jsFile.content}
             }
           }
 
-          const COMMON_JS_IDENTIFIERS = [
-            'console',
-            'document',
-            'window',
-            'fetch',
-            'setTimeout',
-            'setInterval',
-            'clearTimeout',
-            'clearInterval',
-            'requestAnimationFrame',
-            'localStorage',
-            'sessionStorage',
-            'JSON',
-            'Math',
-            'Array',
-            'Object',
-            'Number',
-            'String',
-            'Boolean',
-            'Promise',
-            'Date',
-            'RegExp',
-            'navigator',
-            'location',
-            'history',
-            'addEventListener',
-            'querySelector',
-            'querySelectorAll',
-            'getElementById',
-            'classList'
-          ];
-
-          function levenshteinDistance(a, b) {
-            const left = String(a || '').toLowerCase();
-            const right = String(b || '').toLowerCase();
-            if (left === right) return 0;
-            if (!left.length) return right.length;
-            if (!right.length) return left.length;
-            const matrix = Array.from({ length: left.length + 1 }, () =>
-              new Array(right.length + 1).fill(0)
-            );
-            for (let i = 0; i <= left.length; i++) matrix[i][0] = i;
-            for (let j = 0; j <= right.length; j++) matrix[0][j] = j;
-            for (let i = 1; i <= left.length; i++) {
-              for (let j = 1; j <= right.length; j++) {
-                const cost = left[i - 1] === right[j - 1] ? 0 : 1;
-                matrix[i][j] = Math.min(
-                  matrix[i - 1][j] + 1,
-                  matrix[i][j - 1] + 1,
-                  matrix[i - 1][j - 1] + cost
-                );
-              }
-            }
-            return matrix[left.length][right.length];
-          }
-
-          function findClosestSuggestion(term, candidates, maxDistance) {
-            const normalizedTerm = String(term || '').trim().toLowerCase();
-            if (!normalizedTerm) return '';
-            let best = '';
-            let bestDistance = Infinity;
-            for (const candidate of candidates || []) {
-              const current = String(candidate || '').trim();
-              if (!current) continue;
-              const distance = levenshteinDistance(normalizedTerm, current.toLowerCase());
-              if (distance < bestDistance) {
-                best = current;
-                bestDistance = distance;
-              }
-            }
-            return bestDistance <= Number(maxDistance || 3) ? best : '';
-          }
-
           function suggestFix(message) {
             const msg = String(message || '').toLowerCase();
-            const notDefinedMatch = String(message || '').match(/([A-Za-z_$][\\w$]*) is not defined/i);
-            if (notDefinedMatch) {
-              const suggestion = findClosestSuggestion(notDefinedMatch[1], COMMON_JS_IDENTIFIERS, 4);
-              if (suggestion) return 'Did you mean "' + suggestion + '"?';
-            }
             if (msg.includes('unexpected token')) return 'Check missing commas, quotes, or brackets.';
             if (msg.includes('is not defined')) return 'Declare the variable/function before use.';
             if (msg.includes('cannot read properties of')) return 'Guard against null/undefined values.';
