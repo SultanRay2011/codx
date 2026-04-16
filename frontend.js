@@ -1499,7 +1499,6 @@ function resetTransientCollabUiState() {
   currentTypingIndicator = null;
   remoteCursorState = {};
   remoteTypingState = {};
-  activeParticipantActionName = "";
   followedParticipantName = "";
   lastAnnouncementText = "";
   if (announcementPopup) {
@@ -1878,8 +1877,6 @@ function extractErrorLocationFromConsoleMessage(message) {
   const text = String(message || "");
   const fileName = extractFileNameFromConsoleMessage(text);
   if (!fileName) return null;
-  const fixMatch = text.match(/\bFix:\s*(.+)$/i);
-  const fix = fixMatch ? fixMatch[1].trim() : "";
 
   const lineColMatch =
     text.match(/\bline\s+(\d+)\s*[: ,]\s*(?:col\s*)?(\d+)\b/i) ||
@@ -1889,7 +1886,6 @@ function extractErrorLocationFromConsoleMessage(message) {
       fileName,
       line: Number(lineColMatch[1]),
       col: Number(lineColMatch[2]),
-      fix,
     };
   }
 
@@ -1899,7 +1895,6 @@ function extractErrorLocationFromConsoleMessage(message) {
       fileName,
       line: Number(compactMatch[1]),
       col: Number(compactMatch[2]),
-      fix,
     };
   }
 
@@ -1909,7 +1904,6 @@ function extractErrorLocationFromConsoleMessage(message) {
       fileName,
       line: Number(nearLineMatch[1]),
       col: 1,
-      fix,
     };
   }
 
@@ -1919,7 +1913,6 @@ function extractErrorLocationFromConsoleMessage(message) {
       fileName,
       line: Number(atLineMatch[1]),
       col: 1,
-      fix,
     };
   }
 
@@ -1927,7 +1920,6 @@ function extractErrorLocationFromConsoleMessage(message) {
     fileName,
     line: 1,
     col: 1,
-    fix,
   };
 }
 
@@ -2688,9 +2680,7 @@ function setSavedProjects(projects) {
 
 function saveCurrentProjectToLibrary(projectName) {
   if (
-    activeSessionId &&
-    isReadOnlyParticipant() &&
-    (collabPermissions.disableSaveProject || isParticipantFeatureDisabled("saveProject"))
+    activeSessionId && !isHost() && collabPermissions.disableSaveProject
   ) {
     showNotification("The host disabled saving projects for participants.", "error");
     return false;
@@ -2787,9 +2777,7 @@ async function deleteSavedProject(projectId) {
 
 async function publishCurrentProject() {
   if (
-    activeSessionId &&
-    isReadOnlyParticipant() &&
-    (collabPermissions.disablePublishShare || isParticipantFeatureDisabled("publishShare"))
+    activeSessionId && !isHost() && collabPermissions.disablePublishShare
   ) {
     showNotification("The host disabled publish/share for participants.", "error");
     return;
@@ -2847,14 +2835,14 @@ function renderProjectLibrary(mode = "saved") {
   if (activeSessionId && isReadOnlyParticipant()) {
     if (
       mode === "saved" &&
-      (collabPermissions.disableOpenSavedProjects || isParticipantFeatureDisabled("openSaved"))
+      collabPermissions.disableOpenSavedProjects
     ) {
       showNotification("The host disabled opening saved projects for participants.", "error");
       return;
     }
     if (
       mode === "templates" &&
-      (collabPermissions.disableTemplates || isParticipantFeatureDisabled("templates"))
+      collabPermissions.disableTemplates
     ) {
       showNotification("The host disabled starter templates for participants.", "error");
       return;
@@ -3628,25 +3616,6 @@ showConsoleCheckbox.addEventListener("change", () => {
 });
 
 // PART 5 - PREVIEW & LINE NUMBERS
-function getErrorHint(message) {
-  const msg = String(message || "").toLowerCase();
-  if (msg.includes("unexpected token"))
-    return "Check for missing commas, brackets, or quotes near this line.";
-  if (msg.includes("missing )"))
-    return "A closing parenthesis ')' is likely missing.";
-  if (msg.includes("missing ]"))
-    return "A closing bracket ']' is likely missing.";
-  if (msg.includes("missing }"))
-    return "A closing brace '}' is likely missing.";
-  if (msg.includes("is not defined"))
-    return "Declare the variable/function before using it.";
-  if (msg.includes("cannot read properties of"))
-    return "Check if the value is null/undefined before property access.";
-  if (msg.includes("unterminated string"))
-    return "Close your string with matching quotes.";
-  return "Review syntax near the reported line.";
-}
-
 function applyDiagnosticEntriesToFileErrors(entries) {
   const next = {};
   const locations = {};
@@ -3840,9 +3809,7 @@ function refreshDiagnosticsState() {
 
 function updatePreview() {
   if (
-    activeSessionId &&
-    isReadOnlyParticipant() &&
-    (collabPermissions.disableRunCode || isParticipantFeatureDisabled("runCode"))
+    activeSessionId && !isHost() && collabPermissions.disableRunCode
   ) {
     showNotification("The host disabled running code for participants.", "error");
     return;
@@ -4320,12 +4287,7 @@ ${jsFile.content}
 function appendConsoleMessage(type, message) {
   const line = document.createElement("div");
   line.className = type;
-  if (type === "error" && String(message || "").includes("Fix:")) {
-    const parts = String(message).split("Fix:");
-    line.innerHTML = `${escapeHtml(parts[0].trim())} <span class="error-fix">Fix: ${escapeHtml(parts.slice(1).join("Fix:").trim())}</span>`;
-  } else {
-    line.textContent = message;
-  }
+  line.textContent = message;
   consoleOutput.appendChild(line);
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
   if (type === "error") {
@@ -4340,12 +4302,7 @@ function renderDiagnosticConsoleEntries(entries) {
     if (!entry) return;
     const line = document.createElement("div");
     line.className = `${entry.type || "info"} codx-diagnostic-line`;
-    if (entry.type === "error" && String(entry.message || "").includes("Fix:")) {
-      const parts = String(entry.message).split("Fix:");
-      line.innerHTML = `${escapeHtml(parts[0].trim())} <span class="error-fix">Fix: ${escapeHtml(parts.slice(1).join("Fix:").trim())}</span>`;
-    } else {
-      line.textContent = entry.message || "";
-    }
+    line.textContent = entry.message || "";
     consoleOutput.appendChild(line);
   });
   if (entries && entries.length) {
@@ -6331,9 +6288,7 @@ document.addEventListener("keydown", (e) => {
   if (mod && key === "enter") {
     e.preventDefault();
     if (
-      activeSessionId &&
-      isReadOnlyParticipant() &&
-      (collabPermissions.disableRunCode || isParticipantFeatureDisabled("runCode"))
+      activeSessionId && !isHost() && collabPermissions.disableRunCode
     ) {
       showNotification("The host disabled running code for participants.", "error");
       return;
@@ -6634,13 +6589,8 @@ function getParticipantByName(name) {
   return collabParticipants.find((p) => String(p.name || "").trim().toLowerCase() === safeName) || null;
 }
 
-function getParticipantDisabledFeatures(name = myInfo.name) {
-  const participant = getParticipantByName(name);
-  return Array.isArray(participant?.disabledFeatures) ? participant.disabledFeatures : [];
-}
-
-function isParticipantFeatureDisabled(featureKey, name = myInfo.name) {
-  return false;
+function isGroupFeatureRestrictedUser() {
+  return Boolean(activeSessionId) && !isHost();
 }
 
 function getCurrentHostName() {
@@ -6839,29 +6789,17 @@ function enforceCollabPermissionsUI() {
     return;
   }
 
-  const participantRestricted = isReadOnlyParticipant();
-  const lockPersonalChat = participantRestricted && isParticipantFeatureDisabled("chat");
+  const participantRestricted = isGroupFeatureRestrictedUser();
+  const lockPersonalChat = participantRestricted && collabPermissions.disableAllChat;
   const lockNewFile = participantRestricted && collabPermissions.disableNewFile;
   const lockExport = participantRestricted && collabPermissions.disableExportZip;
   const lockImport = participantRestricted && collabPermissions.disableImportZip;
-  const lockSaveProject =
-    participantRestricted &&
-    (collabPermissions.disableSaveProject || isParticipantFeatureDisabled("saveProject"));
-  const lockOpenSaved =
-    participantRestricted &&
-    (collabPermissions.disableOpenSavedProjects || isParticipantFeatureDisabled("openSaved"));
-  const lockTemplates =
-    participantRestricted &&
-    (collabPermissions.disableTemplates || isParticipantFeatureDisabled("templates"));
-  const lockPublishShare =
-    participantRestricted &&
-    (collabPermissions.disablePublishShare || isParticipantFeatureDisabled("publishShare"));
-  const lockRun =
-    participantRestricted &&
-    (collabPermissions.disableRunCode || isParticipantFeatureDisabled("runCode"));
-  const lockConsole =
-    participantRestricted &&
-    (collabPermissions.disableConsoleAccess || isParticipantFeatureDisabled("consoleAccess"));
+  const lockSaveProject = participantRestricted && collabPermissions.disableSaveProject;
+  const lockOpenSaved = participantRestricted && collabPermissions.disableOpenSavedProjects;
+  const lockTemplates = participantRestricted && collabPermissions.disableTemplates;
+  const lockPublishShare = participantRestricted && collabPermissions.disablePublishShare;
+  const lockRun = participantRestricted && collabPermissions.disableRunCode;
+  const lockConsole = participantRestricted && collabPermissions.disableConsoleAccess;
   const globalReadOnly = activeSessionId && (collabPermissions.readOnlyAll || collabPermissions.pauseCollab);
   const lockEditor = globalReadOnly || !canCurrentUserEditFile(activeFile ? activeFile.name : "");
   const me = getMyParticipant();
@@ -7048,7 +6986,7 @@ function pushCollabPermissionsUpdate(partial) {
 }
 
 function updateGroupPermission(partial, successMessage) {
-  if (!collabSocket || !activeSessionId || !canUseCoHostTools()) return;
+  if (!collabSocket || !activeSessionId || !isHost()) return;
   const next = normalizeCollabPermissions({
     ...collabPermissions,
     ...(partial || {}),
@@ -7553,6 +7491,23 @@ function updateParticipantAllowedFiles(targetName, allowedFiles, reset = false) 
   );
 }
 
+const groupFeatureControlConfig = [
+  { key: "chat", buttonId: "groupDisableChatBtn", label: "DISABLE CHAT" },
+  { key: "saveProject", buttonId: "groupDisableSaveBtn", label: "DISABLE SAVE PROJECT" },
+  { key: "openSaved", buttonId: "groupDisableOpenSavedBtn", label: "DISABLE OPEN SAVED" },
+  { key: "templates", buttonId: "groupDisableTemplatesBtn", label: "DISABLE TEMPLATES" },
+  { key: "publishShare", buttonId: "groupDisablePublishBtn", label: "DISABLE PUBLISH / SHARE" },
+  { key: "runCode", buttonId: "groupDisableRunBtn", label: "DISABLE RUN" },
+  { key: "consoleAccess", buttonId: "groupDisableConsoleBtn", label: "DISABLE CONSOLE" },
+];
+
+function getFeatureControlLabel(featureKey) {
+  return (
+    groupFeatureControlConfig.find((entry) => entry.key === featureKey)?.label ||
+    String(featureKey || "").trim()
+  );
+}
+
 function formatParticipantJoinedAt(ts) {
   if (!ts) return "Unknown";
   try {
@@ -7656,6 +7611,7 @@ function followParticipant(targetName) {
   }
   followedParticipantName = participant.name;
   switchFile(participant.currentFile);
+  setTimeout(() => syncFollowedParticipantCursor(), 0);
   showNotification(`Following ${participant.name} to ${participant.currentFile}`, "success");
 }
 
@@ -7670,6 +7626,55 @@ function syncFollowedParticipantView() {
   if (!participant.currentFile) return;
   if (!activeFile || activeFile.name !== participant.currentFile) {
     switchFile(participant.currentFile);
+    setTimeout(() => syncFollowedParticipantCursor(), 0);
+    return;
+  }
+  syncFollowedParticipantCursor();
+}
+
+function syncFollowedParticipantCursor(cursorOverride = null) {
+  if (!followedParticipantName) return;
+  const participant = getParticipantByName(followedParticipantName);
+  if (!participant || !participant.currentFile || !activeFile) return;
+  if (activeFile.name !== participant.currentFile) return;
+
+  const cursor =
+    cursorOverride && cursorOverride.name === followedParticipantName
+      ? cursorOverride
+      : remoteCursorState[followedParticipantName];
+  if (!cursor || cursor.fileName !== activeFile.name) return;
+
+  const editor = document.getElementById("activeEditor");
+  if (!editor) return;
+
+  const style = window.getComputedStyle(editor);
+  const padLeft = parseFloat(style.paddingLeft) || 0;
+  const padRight = parseFloat(style.paddingRight) || 0;
+  const padTop = parseFloat(style.paddingTop) || 0;
+  const padBottom = parseFloat(style.paddingBottom) || 0;
+  const viewportWidth = Math.max(1, editor.clientWidth - padLeft - padRight);
+  const viewportHeight = Math.max(1, editor.clientHeight - padTop - padBottom);
+  const totalWidth = Math.max(1, (editor.scrollWidth || viewportWidth) - padLeft - padRight);
+  const totalHeight = Math.max(1, (editor.scrollHeight || viewportHeight) - padTop - padBottom);
+
+  const cursorX = Math.max(0, Math.min(totalWidth, Number(cursor.x || 0) * totalWidth));
+  const cursorY = Math.max(0, Math.min(totalHeight, Number(cursor.y || 0) * totalHeight));
+  const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
+  const maxScrollTop = Math.max(0, editor.scrollHeight - editor.clientHeight);
+  const targetScrollLeft = Math.max(
+    0,
+    Math.min(maxScrollLeft, Math.round(cursorX - viewportWidth * 0.5)),
+  );
+  const targetScrollTop = Math.max(
+    0,
+    Math.min(maxScrollTop, Math.round(cursorY - viewportHeight * 0.5)),
+  );
+
+  if (Math.abs(editor.scrollLeft - targetScrollLeft) > 4) {
+    editor.scrollLeft = targetScrollLeft;
+  }
+  if (Math.abs(editor.scrollTop - targetScrollTop) > 4) {
+    editor.scrollTop = targetScrollTop;
   }
 }
 
@@ -7800,8 +7805,8 @@ function bindCollabChatControls() {
     const text = (inputEl.value || "").trim();
     if (!text) return;
     if (!collabSocket || !activeSessionId) return;
-    if (isReadOnlyParticipant() && isParticipantFeatureDisabled("chat")) {
-      showNotification("The host disabled chat for your account.", "error");
+    if (!isHost() && collabPermissions.disableAllChat) {
+      showNotification("The host disabled chat for the group.", "error");
       return;
     }
     const payload = {
@@ -7992,22 +7997,35 @@ function showParticipantActions(targetName) {
   if (!safeName) return;
   const participant = getParticipantByName(safeName);
   if (!participant || !canModerateParticipant(participant)) return;
-  activeParticipantActionName = safeName;
   const hostView = isHost();
-  const groupDisabledFeatures = [
-    collabPermissions.disableAllChat ? "DISABLE CHAT" : "",
-    collabPermissions.disableSaveProject ? "DISABLE SAVE PROJECT" : "",
-    collabPermissions.disableOpenSavedProjects ? "DISABLE OPEN SAVED" : "",
-    collabPermissions.disableTemplates ? "DISABLE TEMPLATES" : "",
-    collabPermissions.disablePublishShare ? "DISABLE PUBLISH / SHARE" : "",
-    collabPermissions.disableRunCode ? "DISABLE RUN" : "",
-    collabPermissions.disableConsoleAccess ? "DISABLE CONSOLE" : "",
-  ].filter(Boolean);
-  const groupDisabledFeatureChips = groupDisabledFeatures.length
-    ? groupDisabledFeatures
-        .map((label) => `<span class="collab-pill">${escapeHtml(label)}</span>`)
+  activeParticipantActionName = safeName;
+  const disabledFeatures = groupFeatureControlConfig
+    .filter((entry) => {
+      switch (entry.key) {
+        case "chat":
+          return collabPermissions.disableAllChat;
+        case "saveProject":
+          return collabPermissions.disableSaveProject;
+        case "openSaved":
+          return collabPermissions.disableOpenSavedProjects;
+        case "templates":
+          return collabPermissions.disableTemplates;
+        case "publishShare":
+          return collabPermissions.disablePublishShare;
+        case "runCode":
+          return collabPermissions.disableRunCode;
+        case "consoleAccess":
+          return collabPermissions.disableConsoleAccess;
+        default:
+          return false;
+      }
+    })
+    .map((entry) => entry.key);
+  const disabledFeatureChips = disabledFeatures.length
+    ? disabledFeatures
+        .map((featureKey) => `<span class="collab-pill">${escapeHtml(getFeatureControlLabel(featureKey))}</span>`)
         .join("")
-    : `<span class="collab-section-note">No group-wide disabled features right now.</span>`;
+    : `<span class="collab-section-note">No group-disabled features right now.</span>`;
 
   collabModalView = "participant-actions";
   setCollabCloseButtonVisible(true);
@@ -8036,8 +8054,8 @@ function showParticipantActions(targetName) {
     </div>
     <div class="collab-section-card">
       <h4 class="collab-section-title">Group Disabled Features</h4>
-      <div class="collab-pill-row" style="margin-bottom:12px;">
-        ${groupDisabledFeatureChips}
+      <div class="collab-pill-row">
+        ${disabledFeatureChips}
       </div>
     </div>
     <div class="collab-section-card">
@@ -8113,6 +8131,7 @@ function showParticipantActions(targetName) {
   const kickBtn = document.getElementById("participantKickBtn");
   const banBtn = document.getElementById("participantBanBtn");
   const doneBtn = document.getElementById("participantDoneBtn");
+
   if (hostView && roleBtn) {
     roleBtn.onclick = () => setCoHost(safeName, participant.role !== "co-host");
   }
@@ -8342,13 +8361,8 @@ function ensureCollabSocket() {
     if (collabModal.style.display === "flex" && activeSessionId) {
       if (collabModalView === "session") {
         showSessionDetails(activeSessionId);
-      } else if (collabModalView === "group-controls" && canUseCoHostTools()) {
-        showGroupControls(activeSessionId);
-      } else if (collabModalView === "participant-actions") {
-        const currentParticipant = getParticipantByName(activeParticipantActionName);
-        if (currentParticipant && canModerateParticipant(currentParticipant)) {
-          showParticipantActions(activeParticipantActionName);
-        }
+      } else if (collabModalView === "participant-actions" && activeParticipantActionName) {
+        showParticipantActions(activeParticipantActionName);
       }
     }
   });
@@ -8375,13 +8389,10 @@ function ensureCollabSocket() {
     if (collabModal.style.display === "flex" && activeSessionId) {
       if (collabModalView === "session") {
         showSessionDetails(activeSessionId);
-      } else if (collabModalView === "group-controls" && canUseCoHostTools()) {
+      } else if (collabModalView === "group-controls" && isHost()) {
         showGroupControls(activeSessionId);
-      } else if (collabModalView === "participant-actions") {
-        const currentParticipant = getParticipantByName(activeParticipantActionName);
-        if (currentParticipant && canModerateParticipant(currentParticipant)) {
-          showParticipantActions(activeParticipantActionName);
-        }
+      } else if (collabModalView === "participant-actions" && activeParticipantActionName) {
+        showParticipantActions(activeParticipantActionName);
       }
     }
   });
@@ -8438,6 +8449,10 @@ function ensureCollabSocket() {
     }
     remoteCursorState[cursor.name] = cursor;
     renderRemoteCursors();
+    if (followedParticipantName && cursor.name === followedParticipantName) {
+      syncFollowedParticipantView();
+      syncFollowedParticipantCursor(cursor);
+    }
   });
 
   collabSocket.on("collab:chat:group", (message) => {
@@ -10378,5 +10393,11 @@ console.log("Esc: Exits Zen Mode and closes supported overlays.");
 console.log("Type cxstart in an empty HTML file and press Enter to insert the starter.");
 console.log("Ctrl/Cmd + C, then X: Opens hidden developer tools.");
 console.log("CodX Editor loaded with file linking and tag suggestions!");
+
+
+
+
+
+
 
 

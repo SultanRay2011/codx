@@ -1232,6 +1232,7 @@ io.on("connection", (socket) => {
         ack?.({ ok: false, error: "The host muted your chat access." });
         return;
       }
+
       const toName = String(payload?.toName || "").trim();
       const target = session.participants.find(
         (p) => normalizeName(p.name) === normalizeName(toName),
@@ -1471,6 +1472,14 @@ io.on("connection", (socket) => {
     } catch {
       ack?.({ ok: false, error: "Failed to update file access." });
     }
+  });
+
+  socket.on("collab:set-participant-feature-access", (_payload, ack) => {
+    ack?.({ ok: false, error: "Feature access is controlled from room-wide group settings only." });
+  });
+
+  socket.on("collab:set-group-feature-access", (_payload, ack) => {
+    ack?.({ ok: false, error: "Feature access is controlled from room-wide group settings only." });
   });
 
   socket.on("collab:set-permissions", (payload, ack) => {
@@ -1961,3 +1970,7 @@ setInterval(() => {
     }
   });
 }, 1000);
+
+
+
+
