@@ -5990,24 +5990,26 @@ function selectCssSuggestion(value) {
   if (!currentSuggestionContext) return;
 
   const { mode, replaceStart, replaceEnd } = currentSuggestionContext;
+  let finalReplaceEnd = replaceEnd;
   let insertedText = value;
   let cursorOffset = value.length;
 
   if (mode === "css-property") {
     const afterSlice = editor.value.substring(replaceEnd);
-    if (!/^\s*:/.test(afterSlice)) {
-      insertedText = `${value}: ;`;
-      cursorOffset = value.length + 2;
+    const suffixMatch = afterSlice.match(/^\s*:\s*;?/);
+    if (suffixMatch) {
+      finalReplaceEnd += suffixMatch[0].length;
     }
+    insertedText = `${value}: ;`;
+    cursorOffset = value.length + 2;
   } else if (mode === "css-inline-property") {
     const afterSlice = editor.value.substring(replaceEnd);
-    if (/^\s*:/.test(afterSlice)) {
-      insertedText = value;
-      cursorOffset = insertedText.length;
-    } else {
-      insertedText = `${value}: ;`;
-      cursorOffset = value.length + 2;
+    const suffixMatch = afterSlice.match(/^\s*:\s*;?/);
+    if (suffixMatch) {
+      finalReplaceEnd += suffixMatch[0].length;
     }
+    insertedText = `${value}: ;`;
+    cursorOffset = value.length + 2;
   } else if (mode === "css-inline-value") {
     const afterSlice = editor.value.substring(replaceEnd);
     if (/^\s*;/.test(afterSlice)) {
@@ -6038,7 +6040,7 @@ function selectCssSuggestion(value) {
   applyEditorMutation(
     editor,
     replaceStart,
-    replaceEnd,
+    finalReplaceEnd,
     insertedText,
     caretPos,
     caretPos,
