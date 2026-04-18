@@ -1223,6 +1223,7 @@ const editableTextExtensions = ["html", "css", "js", "env"];
 const SAVED_PROJECTS_KEY = "codxSavedProjects";
 const AUTOSAVE_PROJECT_KEY = "codxAutosaveProject";
 const AUTOSAVE_META_KEY = "codxAutosaveMeta";
+const AUTOSAVE_RESTORE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const DEVICE_ID_KEY = "codxDeviceId";
 let autosaveTimer = null;
 let lastAutosaveAt = null;
@@ -2993,16 +2994,47 @@ function initializeEditorPresence() {
   if (editorPresenceSocket.connected) announcePresence();
 }
 
-function tryRestoreAutosaveDraft() {
+async function tryRestoreAutosaveDraft() {
+  if (extractSessionIdFromUrl()) return false;
   const raw = safeLocalStorage("get", AUTOSAVE_PROJECT_KEY);
-  if (!raw) return;
+  if (!raw) return false;
   try {
     const snapshot = JSON.parse(raw);
-    if (Array.isArray(snapshot?.files) && snapshot.files.length) {
-      applyProjectState(snapshot, "autosave");
-      showNotification("Restored autosaved project draft.", "info");
+    const savedAt = Number(snapshot?.savedAt || 0);
+    if (!Array.isArray(snapshot?.files) || !snapshot.files.length) return false;
+    if (savedAt && Date.now() - savedAt > AUTOSAVE_RESTORE_MAX_AGE_MS) {
+      safeLocalStorage("remove", AUTOSAVE_PROJECT_KEY);
+      safeLocalStorage("remove", AUTOSAVE_META_KEY);
+      return false;
     }
-  } catch (_err) {}
+
+    const currentSnapshot = serializeProjectState();
+    const sameAsCurrent = JSON.stringify(snapshot?.files || []) === JSON.stringify(currentSnapshot.files || []);
+    if (sameAsCurrent) return false;
+
+    const savedLabel = savedAt
+      ? new Date(savedAt).toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "a recent session";
+
+    const dialog = await showAppConfirm(
+      "RESTORE AUTOSAVED DRAFT",
+      `Restore the autosaved draft from ${savedLabel}?`,
+      "RESTORE",
+      "SKIP",
+    );
+    if (!dialog?.ok) return false;
+
+    applyProjectState(snapshot, "autosave");
+    showNotification("Restored autosaved project draft.", "info");
+    return true;
+  } catch (_err) {
+    return false;
+  }
 }
 
 function showNotification(message, type = "info") {
@@ -9829,16 +9861,10 @@ function resetCollabUrlToFreshState() {
 
 function checkForSession() {
   const hash = extractSessionIdFromUrl();
-  if (!hash) return;
-
-  // On refresh, do not continue prior collaboration flow.
-  if (isReloadNavigation()) {
-    resetCollabUrlToFreshState();
-    return;
-  }
-
-  if (!ensureCollabSocket()) return;
+  if (!hash) return false;
+  if (!ensureCollabSocket()) return false;
   renderJoinNameStep(hash);
+  return true;
 }
 
 function promptJoinTheme(name, sid) {
@@ -10162,12 +10188,16 @@ window.addEventListener("resize", () => {
 // PART 15 - APPLICATION INITIALIZATION
 window.addEventListener("load", () => {
   initializeEditorPresence();
+  const sessionFlowStarted = checkForSession();
   loadSettings();
   renderFileList();
   initializeEditor();
-  tryRestoreAutosaveDraft();
-  updateProjectStatusUI();
-  updatePreview();
+  Promise.resolve()
+    .then(() => (sessionFlowStarted ? false : tryRestoreAutosaveDraft()))
+    .then(() => {
+      updateProjectStatusUI();
+      updatePreview();
+    });
 });
 
 window.addEventListener("beforeunload", function (e) {
@@ -10430,19 +10460,19 @@ const tutorialSteps = [
     position: "bottom-left",
   },
   {
-    target: "#fontPickerBtn",
-    icon: "fa-solid fa-font",
-    title: "Font Picker",
+    target: "#helpPageBtn",
+    icon: "fa-solid fa-circle-question",
+    title: "Help Page",
     description:
-      "Browse and copy font-family CSS code. The picker includes more distinctive fonts and a search box.",
+      "Open the help page for editor guidance, collaboration explanations, and current feature notes.",
     position: "bottom-left",
   },
   {
-    target: "#zenModeBtn",
-    icon: "fa-solid fa-laptop-code",
-    title: "Zen Mode",
+    target: "#headerMoreBtn",
+    icon: "fa-solid fa-ellipsis",
+    title: "More Tools",
     description:
-      "Hide the surrounding interface and focus only on typing. You can leave Zen Mode with the EXIT ZEN button or Esc.",
+      "Open the More menu for project tools like New, Save Project, Open Saved, Templates, Publish / Share, Fonts, and Zen Mode.",
     position: "bottom-left",
   },
   {
@@ -10476,35 +10506,11 @@ const tutorialSteps = [
     position: "top-left",
   },
   {
-    target: "#saveProjectBtn",
-    icon: "fa-solid fa-floppy-disk",
-    title: "Save Project",
+    target: "#undoEditorBtn",
+    icon: "fa-solid fa-rotate-left",
+    title: "Undo / Redo",
     description:
-      "Save the current project in your browser. Using the same project name again updates the saved version, and autosave also keeps your latest local work recoverable.",
-    position: "top-left",
-  },
-  {
-    target: "#openSavedProjectsBtn",
-    icon: "fa-solid fa-folder-open",
-    title: "Open Saved",
-    description:
-      "Open your saved project library, restore earlier work, or delete saved projects with confirmation.",
-    position: "top-left",
-  },
-  {
-    target: "#templatesBtn",
-    icon: "fa-solid fa-layer-group",
-    title: "Starter Templates",
-    description:
-      "Load built-in starter templates from the template library, including ready-made layouts like landing page, portfolio, and contact form setups.",
-    position: "top-left",
-  },
-  {
-    target: "#publishProjectBtn",
-    icon: "fa-solid fa-share-nodes",
-    title: "Publish / Share",
-    description:
-      "Publish the current project and generate a shareable link for the rendered result.",
+      "Undo and redo editor changes from the toolbar. These now use CodX's own history tracking instead of relying on fragile browser textarea history.",
     position: "top-left",
   },
   {
@@ -10644,6 +10650,7 @@ const closeTutorialBtn = document.getElementById("closeTutorialBtn");
 
 // Check if tutorial has been completed
 function checkTutorialStatus() {
+  if (isReloadNavigation() || extractSessionIdFromUrl()) return;
   const completed = safeLocalStorage("get", "tutorialCompleted");
   if (!completed) {
     // Wait a moment for the page to fully load, then start tutorial
