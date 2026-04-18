@@ -72,6 +72,8 @@ const clearConsoleBtn = document.getElementById("clearConsoleBtn");
 const headerMoreMenu = document.getElementById("headerMoreMenu");
 const headerMoreBtn = document.getElementById("headerMoreBtn");
 const headerMorePanel = document.getElementById("headerMorePanel");
+const undoEditorBtn = document.getElementById("undoEditorBtn");
+const redoEditorBtn = document.getElementById("redoEditorBtn");
 
 function getModalDoneBtn() {
   return document.getElementById("modalDoneBtn");
@@ -179,6 +181,10 @@ if (!errorHighlightLayer && editorWrapperEl) {
   );
 }
 let activeInlineHtmlCorrection = null;
+const MAX_EDITOR_HISTORY_ENTRIES = 150;
+const fileEditHistory = new Map();
+let pendingHistorySnapshot = null;
+let isRestoringEditorHistory = false;
 
 // ADDED: Tag suggestion elements
 const suggestionPopup = document.getElementById("suggestionPopup");
@@ -2659,6 +2665,7 @@ function applyProjectState(snapshot, sourceLabel = "project") {
     editor.value = activeFile.content;
     updateLineNumbers(editor);
     syncScroll(editor);
+    resetAllEditorHistory(editor);
   }
   renderFileList();
   enforceCollabPermissionsUI();
@@ -3225,6 +3232,7 @@ function switchFile(fileName) {
       updateLineNumbers(editor);
       syncScroll(editor);
       syncInlineHtmlCorrectionDisplay(editor);
+      syncEditorHistoryState(editor);
       // Hide suggestions when switching files
       hideSuggestions();
     }
@@ -4620,8 +4628,176 @@ function commitEditorMutation(editor) {
   });
 }
 
+function cloneEditorSnapshot(snapshot) {
+  return snapshot
+    ? {
+        content: String(snapshot.content || ""),
+        selectionStart: Number(snapshot.selectionStart || 0),
+        selectionEnd: Number(snapshot.selectionEnd || 0),
+      }
+    : null;
+}
+
+function createEditorSnapshot(editor) {
+  return {
+    content: String(editor?.value || ""),
+    selectionStart: Number(editor?.selectionStart || 0),
+    selectionEnd: Number(editor?.selectionEnd || 0),
+  };
+}
+
+function editorSnapshotsMatch(a, b) {
+  return (
+    !!a &&
+    !!b &&
+    a.content === b.content &&
+    Number(a.selectionStart || 0) === Number(b.selectionStart || 0) &&
+    Number(a.selectionEnd || 0) === Number(b.selectionEnd || 0)
+  );
+}
+
+function getFileHistoryRecord(fileName, fallbackSnapshot = null) {
+  const key = String(fileName || "").trim();
+  if (!key) return null;
+  if (!fileEditHistory.has(key)) {
+    fileEditHistory.set(key, {
+      undoStack: [],
+      redoStack: [],
+      current: cloneEditorSnapshot(fallbackSnapshot) || {
+        content: "",
+        selectionStart: 0,
+        selectionEnd: 0,
+      },
+    });
+  }
+  return fileEditHistory.get(key);
+}
+
+function trimHistoryStack(stack) {
+  while (stack.length > MAX_EDITOR_HISTORY_ENTRIES) {
+    stack.shift();
+  }
+}
+
+function updateEditorHistoryButtons() {
+  const history = activeFile ? getFileHistoryRecord(activeFile.name) : null;
+  if (undoEditorBtn) undoEditorBtn.disabled = !history || history.undoStack.length === 0;
+  if (redoEditorBtn) redoEditorBtn.disabled = !history || history.redoStack.length === 0;
+}
+
+function syncEditorHistoryState(editor, options = {}) {
+  if (!editor || !activeFile) {
+    updateEditorHistoryButtons();
+    return;
+  }
+  const { clearStacks = false } = options;
+  const snapshot = createEditorSnapshot(editor);
+  const history = getFileHistoryRecord(activeFile.name, snapshot);
+  history.current = cloneEditorSnapshot(snapshot);
+  if (clearStacks) {
+    history.undoStack = [];
+    history.redoStack = [];
+  }
+  updateEditorHistoryButtons();
+}
+
+function resetAllEditorHistory(editor = document.getElementById("activeEditor")) {
+  fileEditHistory.clear();
+  pendingHistorySnapshot = null;
+  syncEditorHistoryState(editor, { clearStacks: true });
+}
+
+function beginEditorHistoryCapture(editor) {
+  if (isRestoringEditorHistory || !editor || !activeFile) return;
+  pendingHistorySnapshot = createEditorSnapshot(editor);
+}
+
+function finalizeEditorHistoryCapture(editor) {
+  if (isRestoringEditorHistory || !editor || !activeFile) {
+    pendingHistorySnapshot = null;
+    updateEditorHistoryButtons();
+    return;
+  }
+  const before = cloneEditorSnapshot(pendingHistorySnapshot);
+  pendingHistorySnapshot = null;
+  const after = createEditorSnapshot(editor);
+  const history = getFileHistoryRecord(activeFile.name, after);
+  if (!before || editorSnapshotsMatch(before, after)) {
+    history.current = cloneEditorSnapshot(after);
+    updateEditorHistoryButtons();
+    return;
+  }
+  const baseline = editorSnapshotsMatch(history.current, before) ? history.current : before;
+  if (
+    !history.undoStack.length ||
+    !editorSnapshotsMatch(history.undoStack[history.undoStack.length - 1], baseline)
+  ) {
+    history.undoStack.push(cloneEditorSnapshot(baseline));
+    trimHistoryStack(history.undoStack);
+  }
+  history.redoStack = [];
+  history.current = cloneEditorSnapshot(after);
+  updateEditorHistoryButtons();
+}
+
+function restoreEditorHistorySnapshot(editor, snapshot) {
+  if (!editor || !snapshot || !activeFile) return;
+  isRestoringEditorHistory = true;
+  try {
+    editor.value = String(snapshot.content || "");
+    editor.selectionStart = Math.min(Number(snapshot.selectionStart || 0), editor.value.length);
+    editor.selectionEnd = Math.min(
+      Number(snapshot.selectionEnd ?? editor.selectionStart),
+      editor.value.length,
+    );
+    hideSuggestions();
+    clearInlineHtmlCorrectionDisplay(editor);
+    commitEditorMutation(editor);
+    syncInlineHtmlCorrectionDisplay(editor);
+  } finally {
+    isRestoringEditorHistory = false;
+  }
+}
+
+function undoEditorHistory(editor = document.getElementById("activeEditor")) {
+  if (!editor || !activeFile) return false;
+  const currentSnapshot = createEditorSnapshot(editor);
+  const history = getFileHistoryRecord(activeFile.name, currentSnapshot);
+  history.current = cloneEditorSnapshot(currentSnapshot);
+  const previous = history.undoStack.pop();
+  if (!previous) {
+    updateEditorHistoryButtons();
+    return false;
+  }
+  history.redoStack.push(cloneEditorSnapshot(currentSnapshot));
+  trimHistoryStack(history.redoStack);
+  history.current = cloneEditorSnapshot(previous);
+  restoreEditorHistorySnapshot(editor, previous);
+  updateEditorHistoryButtons();
+  return true;
+}
+
+function redoEditorHistory(editor = document.getElementById("activeEditor")) {
+  if (!editor || !activeFile) return false;
+  const currentSnapshot = createEditorSnapshot(editor);
+  const history = getFileHistoryRecord(activeFile.name, currentSnapshot);
+  history.current = cloneEditorSnapshot(currentSnapshot);
+  const next = history.redoStack.pop();
+  if (!next) {
+    updateEditorHistoryButtons();
+    return false;
+  }
+  history.undoStack.push(cloneEditorSnapshot(currentSnapshot));
+  trimHistoryStack(history.undoStack);
+  history.current = cloneEditorSnapshot(next);
+  restoreEditorHistorySnapshot(editor, next);
+  updateEditorHistoryButtons();
+  return true;
+}
+
 function applyEditorMutation(editor, start, end, replacement, selectionStart, selectionEnd) {
   if (!editor) return;
+  beginEditorHistoryCapture(editor);
   const rangeStart = typeof start === "number" ? start : editor.selectionStart;
   const rangeEnd = typeof end === "number" ? end : editor.selectionEnd;
   if (typeof editor.setRangeText === "function") {
@@ -4639,6 +4815,7 @@ function applyEditorMutation(editor, start, end, replacement, selectionStart, se
   editor.selectionEnd =
     typeof selectionEnd === "number" ? selectionEnd : editor.selectionStart;
   commitEditorMutation(editor);
+  finalizeEditorHistoryCapture(editor);
 }
 
 // Sync scroll
@@ -4813,9 +4990,13 @@ function initializeEditor() {
   syncSyntaxLayerStyle(editor);
   renderSyntaxHighlight(editor);
   syncInlineHtmlCorrectionDisplay(editor);
+  syncEditorHistoryState(editor, { clearStacks: true });
 
   editor.addEventListener("beforeinput", (e) => {
     lastEditorInputType = String(e.inputType || "");
+    if (lastEditorInputType !== "historyUndo" && lastEditorInputType !== "historyRedo") {
+      beginEditorHistoryCapture(editor);
+    }
   });
 
   // MODIFIED: Combined input listener
@@ -4845,6 +5026,7 @@ function initializeEditor() {
     }
     syncInlineHtmlCorrectionDisplay(editor);
     lastEditorInputType = "";
+    finalizeEditorHistoryCapture(editor);
   });
 
   // MODIFIED: Replaced Tab logic with comprehensive keydown handler
@@ -4873,6 +5055,19 @@ function initializeEditor() {
       }
     }, 0);
   });
+
+  if (undoEditorBtn) {
+    undoEditorBtn.addEventListener("click", () => {
+      undoEditorHistory(editor);
+      editor.focus();
+    });
+  }
+  if (redoEditorBtn) {
+    redoEditorBtn.addEventListener("click", () => {
+      redoEditorHistory(editor);
+      editor.focus();
+    });
+  }
 }
 
 // PART 6.5 - TAG SUGGESTIONS
@@ -6355,6 +6550,25 @@ function expandCxStartShortcut(editor) {
  */
 function handleEditorKeyDown(e) {
   const editor = e.target;
+  const mod = e.ctrlKey || e.metaKey;
+  const normalizedKey = String(e.key || "").toLowerCase();
+
+  if (mod && !e.altKey) {
+    if (normalizedKey === "z") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        redoEditorHistory(editor);
+      } else {
+        undoEditorHistory(editor);
+      }
+      return;
+    }
+    if (normalizedKey === "y") {
+      e.preventDefault();
+      redoEditorHistory(editor);
+      return;
+    }
+  }
 
   if (
     e.key === "Tab" &&
@@ -6774,6 +6988,7 @@ function handleZipImport(event) {
         const editor = document.getElementById("activeEditor");
         editor.value = activeFile.content;
         updateLineNumbers(editor);
+        resetAllEditorHistory(editor);
         renderFileList();
         scheduleProjectAutosave();
         if (autoRunCheckbox.checked) updatePreview();
@@ -8876,6 +9091,7 @@ function applyRemoteSessionState(files, activeFileName, preferRemoteActive = fal
     ed.value = activeFile.content;
     ed.selectionStart = ed.selectionEnd = Math.min(currentPos, ed.value.length);
     updateLineNumbers(ed);
+    resetAllEditorHistory(ed);
     renderFileList();
     enforceCollabPermissionsUI();
     renderRemoteCursors();
