@@ -10694,6 +10694,14 @@ function showTutorialStep(stepIndex) {
     tutorialSteps.length
   }`;
 
+  if (typeof targetElement.scrollIntoView === "function") {
+    targetElement.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+      behavior: "smooth",
+    });
+  }
+
   // Update buttons
   tutorialPrevBtn.disabled = stepIndex === 0;
   tutorialPrevBtn.style.opacity = stepIndex === 0 ? "0.5" : "1";
@@ -10711,6 +10719,86 @@ function showTutorialStep(stepIndex) {
   return true;
 }
 
+function getTutorialCardPlacement(targetRect, cardRect, position) {
+  const margin = 15;
+  const viewportPadding = 15;
+  const placements = {
+    bottom: {
+      left: targetRect.left + targetRect.width / 2 - cardRect.width / 2,
+      top: targetRect.bottom + margin,
+    },
+    "bottom-left": {
+      left: targetRect.left,
+      top: targetRect.bottom + margin,
+    },
+    "bottom-right": {
+      left: targetRect.right - cardRect.width,
+      top: targetRect.bottom + margin,
+    },
+    top: {
+      left: targetRect.left + targetRect.width / 2 - cardRect.width / 2,
+      top: targetRect.top - cardRect.height - margin,
+    },
+    "top-left": {
+      left: targetRect.left,
+      top: targetRect.top - cardRect.height - margin,
+    },
+    "top-right": {
+      left: targetRect.right - cardRect.width,
+      top: targetRect.top - cardRect.height - margin,
+    },
+    right: {
+      left: targetRect.right + margin,
+      top: targetRect.top + targetRect.height / 2 - cardRect.height / 2,
+    },
+    left: {
+      left: targetRect.left - cardRect.width - margin,
+      top: targetRect.top + targetRect.height / 2 - cardRect.height / 2,
+    },
+  };
+
+  const fallbackOrder = {
+    bottom: ["bottom", "bottom-left", "bottom-right", "top", "right", "left"],
+    "bottom-left": ["bottom-left", "bottom", "bottom-right", "top-left", "right", "left"],
+    "bottom-right": ["bottom-right", "bottom", "bottom-left", "top-right", "left", "right"],
+    top: ["top", "top-left", "top-right", "bottom", "right", "left"],
+    "top-left": ["top-left", "top", "top-right", "bottom-left", "right", "left"],
+    "top-right": ["top-right", "top", "top-left", "bottom-right", "left", "right"],
+    right: ["right", "bottom-right", "top-right", "left", "bottom", "top"],
+    left: ["left", "bottom-left", "top-left", "right", "bottom", "top"],
+  };
+
+  const preferred = fallbackOrder[position] || fallbackOrder["bottom-left"];
+  const fitsViewport = (placement) => {
+    if (!placement) return false;
+    return (
+      placement.left >= viewportPadding &&
+      placement.top >= viewportPadding &&
+      placement.left + cardRect.width <= window.innerWidth - viewportPadding &&
+      placement.top + cardRect.height <= window.innerHeight - viewportPadding
+    );
+  };
+
+  for (const candidate of preferred) {
+    const placement = placements[candidate];
+    if (fitsViewport(placement)) {
+      return placement;
+    }
+  }
+
+  const fallback = placements[preferred[0]] || placements["bottom-left"];
+  return {
+    left: Math.min(
+      Math.max(viewportPadding, fallback.left),
+      Math.max(viewportPadding, window.innerWidth - cardRect.width - viewportPadding),
+    ),
+    top: Math.min(
+      Math.max(viewportPadding, fallback.top),
+      Math.max(viewportPadding, window.innerHeight - cardRect.height - viewportPadding),
+    ),
+  };
+}
+
 // Position tutorial card and highlight
 function positionTutorialElements(target, position) {
   const rect = target.getBoundingClientRect();
@@ -10722,102 +10810,11 @@ function positionTutorialElements(target, position) {
   tutorialHighlight.style.width = rect.width + 10 + "px";
   tutorialHighlight.style.height = rect.height + 10 + "px";
 
-  // Position card based on position parameter
-  let cardLeft, cardTop;
-  const margin = 15;
-
-  switch (position) {
-    case "bottom":
-      // Center card below target
-      cardLeft = rect.left + rect.width / 2 - cardRect.width / 2;
-      cardTop = rect.bottom + margin;
-      break;
-
-    case "bottom-left":
-      // Align card's left edge with target's left edge, below it
-      cardLeft = rect.left;
-      cardTop = rect.bottom + margin;
-      break;
-
-    case "bottom-right":
-      // Align card's right edge with target's right edge, below it
-      cardLeft = rect.right - cardRect.width;
-      cardTop = rect.bottom + margin;
-      break;
-
-    case "top":
-      // Center card above target
-      cardLeft = rect.left + rect.width / 2 - cardRect.width / 2;
-      cardTop = rect.top - cardRect.height - margin;
-      break;
-
-    case "top-left":
-      // Align card's left edge with target's left edge, above it
-      cardLeft = rect.left;
-      cardTop = rect.top - cardRect.height - margin;
-      break;
-
-    case "top-right":
-      // Align card's right edge with target's right edge, above it
-      cardLeft = rect.right - cardRect.width;
-      cardTop = rect.top - cardRect.height - margin;
-      break;
-
-    case "right":
-      // Position card to the right, vertically centered
-      cardLeft = rect.right + margin;
-      cardTop = rect.top + rect.height / 2 - cardRect.height / 2;
-      break;
-
-    case "left":
-      // Position card to the left, vertically centered
-      cardLeft = rect.left - cardRect.width - margin;
-      cardTop = rect.top + rect.height / 2 - cardRect.height / 2;
-      break;
-
-    default:
-      // Default to bottom-left
-      cardLeft = rect.left;
-      cardTop = rect.bottom + margin;
-  }
-
-  // Viewport bounds checking with padding
-  const viewportPadding = 15;
-  const maxLeft = window.innerWidth - cardRect.width - viewportPadding;
-  const maxTop = window.innerHeight - cardRect.height - viewportPadding;
-
-  // Horizontal bounds
-  if (cardLeft < viewportPadding) {
-    cardLeft = viewportPadding;
-  } else if (cardLeft > maxLeft) {
-    cardLeft = maxLeft;
-  }
-
-  // Vertical bounds with smart repositioning
-  if (cardTop < viewportPadding) {
-    // If card would be above viewport, try positioning below target
-    const belowPosition = rect.bottom + margin;
-    if (
-      belowPosition + cardRect.height <
-      window.innerHeight - viewportPadding
-    ) {
-      cardTop = belowPosition;
-    } else {
-      cardTop = viewportPadding;
-    }
-  } else if (cardTop > maxTop) {
-    // If card would be below viewport, try positioning above target
-    const abovePosition = rect.top - cardRect.height - margin;
-    if (abovePosition > viewportPadding) {
-      cardTop = abovePosition;
-    } else {
-      cardTop = maxTop;
-    }
-  }
+  const placement = getTutorialCardPlacement(rect, cardRect, position);
 
   // Apply positions
-  tutorialCard.style.left = cardLeft + "px";
-  tutorialCard.style.top = cardTop + "px";
+  tutorialCard.style.left = placement.left + "px";
+  tutorialCard.style.top = placement.top + "px";
 }
 
 // Tutorial navigation
