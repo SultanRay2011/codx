@@ -7079,7 +7079,6 @@ function updateFullscreenButtonState() {
 // PART 12 - COLLABORATION FEATURES (SOCKET.IO BACKEND)
 closeModalBtn.addEventListener("click", closeModal);
 collabBtn.addEventListener("click", startCollaboration);
-window.addEventListener("load", checkForSession);
 
 function extractSessionIdFromUrl() {
   const pathMatch = window.location.pathname.match(
@@ -10383,24 +10382,30 @@ function fallbackCopy(text, fontName) {
   document.body.removeChild(textarea);
 }
 
-fontPickerBtn.addEventListener("click", () => {
-  renderFonts();
-  if (fontSearchInput) {
-    fontSearchInput.value = "";
-    fontSearchInput.focus();
-  }
-  fontPickerModal.style.display = "flex";
-});
+if (fontPickerBtn && fontPickerModal) {
+  fontPickerBtn.addEventListener("click", () => {
+    renderFonts();
+    if (fontSearchInput) {
+      fontSearchInput.value = "";
+      fontSearchInput.focus();
+    }
+    fontPickerModal.style.display = "flex";
+  });
+}
 
-closeFontPickerBtn.addEventListener("click", () => {
-  fontPickerModal.style.display = "none";
-});
-
-fontPickerModal.addEventListener("click", (e) => {
-  if (e.target === fontPickerModal) {
+if (closeFontPickerBtn && fontPickerModal) {
+  closeFontPickerBtn.addEventListener("click", () => {
     fontPickerModal.style.display = "none";
-  }
-});
+  });
+}
+
+if (fontPickerModal) {
+  fontPickerModal.addEventListener("click", (e) => {
+    if (e.target === fontPickerModal) {
+      fontPickerModal.style.display = "none";
+    }
+  });
+}
 
 if (fontSearchInput) {
   fontSearchInput.addEventListener("input", (e) => {
@@ -10663,19 +10668,22 @@ function startTutorial() {
   tutorialActive = true;
   currentStep = 0;
   tutorialModal.style.display = "block";
-  showTutorialStep(currentStep);
+  if (!showTutorialStep(currentStep)) {
+    tutorialActive = false;
+    tutorialModal.style.display = "none";
+  }
 }
 
 // Show specific tutorial step
 function showTutorialStep(stepIndex) {
-  if (stepIndex < 0 || stepIndex >= tutorialSteps.length) return;
+  if (stepIndex < 0 || stepIndex >= tutorialSteps.length) return false;
 
   const step = tutorialSteps[stepIndex];
   const targetElement = document.querySelector(step.target);
 
   if (!targetElement) {
     console.warn(`Tutorial target not found: ${step.target}`);
-    return;
+    return false;
   }
 
   // Update content
@@ -10700,6 +10708,7 @@ function showTutorialStep(stepIndex) {
 
   // Position highlight and card
   positionTutorialElements(targetElement, step.position);
+  return true;
 }
 
 // Position tutorial card and highlight
@@ -10815,7 +10824,9 @@ function positionTutorialElements(target, position) {
 tutorialNextBtn.addEventListener("click", () => {
   if (currentStep < tutorialSteps.length - 1) {
     currentStep++;
-    showTutorialStep(currentStep);
+    if (!showTutorialStep(currentStep)) {
+      completeTutorial();
+    }
   } else {
     completeTutorial();
   }
@@ -10824,7 +10835,9 @@ tutorialNextBtn.addEventListener("click", () => {
 tutorialPrevBtn.addEventListener("click", () => {
   if (currentStep > 0) {
     currentStep--;
-    showTutorialStep(currentStep);
+    if (!showTutorialStep(currentStep)) {
+      completeTutorial();
+    }
   }
 });
 
@@ -10852,7 +10865,9 @@ function completeTutorial() {
 // Handle window resize during tutorial
 window.addEventListener("resize", () => {
   if (tutorialActive && currentStep < tutorialSteps.length) {
-    showTutorialStep(currentStep);
+    if (!showTutorialStep(currentStep)) {
+      completeTutorial();
+    }
   }
 });
 
@@ -10885,16 +10900,6 @@ window.addEventListener("load", () => {
   // Give the page a moment to fully render
   setTimeout(checkTutorialStatus, 800);
 });
-
-console.log("Tutorial system loaded!");
-console.log("Ctrl/Cmd + S: Exports the project as a ZIP.");
-console.log("Ctrl/Cmd + Enter: Manually triggers an update of the preview pane.");
-console.log("Ctrl/Cmd + Q: Creates a new file in the project.");
-console.log("Ctrl/Cmd + Shift + C: Opens the console panel.");
-console.log("Esc: Exits Zen Mode and closes supported overlays.");
-console.log("Type cxstart in an empty HTML file and press Enter to insert the starter.");
-console.log("Ctrl/Cmd + C, then X: Opens hidden developer tools.");
-console.log("CodX Editor loaded with file linking and tag suggestions!");
 
 
 
