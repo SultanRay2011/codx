@@ -309,6 +309,187 @@
         text-decoration: underline;
       }
 
+      .contact-form {
+        display: grid;
+        gap: 18px;
+      }
+
+      .contact-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .form-group {
+        display: grid;
+        gap: 8px;
+      }
+
+      .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+
+      .form-label {
+        color: #2e7d32;
+        font-size: 0.95em;
+        font-weight: 700;
+      }
+
+      .form-input,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        border: 1px solid rgba(76, 175, 80, 0.25);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        color: #333;
+        font: inherit;
+        padding: 14px 16px;
+        transition:
+          border-color 0.25s ease,
+          box-shadow 0.25s ease,
+          transform 0.25s ease;
+      }
+
+      .form-input:focus,
+      .form-select:focus,
+      .form-textarea:focus {
+        outline: none;
+        border-color: #4caf50;
+        box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.15);
+        transform: translateY(-1px);
+      }
+
+      .form-textarea {
+        min-height: 150px;
+        resize: vertical;
+      }
+
+      .form-input.has-error,
+      .form-select.has-error,
+      .form-textarea.has-error {
+        border-color: #d32f2f;
+        box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.12);
+      }
+
+      .form-error {
+        color: #d32f2f;
+        font-size: 0.88em;
+        font-weight: 600;
+        line-height: 1.5;
+        min-height: 1.3em;
+      }
+
+      .form-meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .char-count {
+        color: #666;
+        font-size: 0.88em;
+        font-weight: 600;
+      }
+
+      .form-note {
+        color: #666;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .contact-submit {
+        justify-self: start;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4caf50, #43a047);
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        padding: 14px 22px;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(76, 175, 80, 0.22);
+        transition:
+          transform 0.25s ease,
+          box-shadow 0.25s ease,
+          background 0.25s ease;
+      }
+
+      .contact-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(76, 175, 80, 0.28);
+        background: linear-gradient(135deg, #43a047, #388e3c);
+      }
+
+      .contact-success {
+        display: none;
+        text-align: center;
+        padding: 28px 18px 10px;
+        animation: fadeInUp 0.5s ease;
+      }
+
+      .contact-success.visible {
+        display: block;
+      }
+
+      .success-checkmark {
+        width: 88px;
+        height: 88px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4caf50, #43a047);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 12px 28px rgba(76, 175, 80, 0.25);
+        animation: successPop 0.55s ease;
+      }
+
+      .success-checkmark i {
+        color: #fff;
+        font-size: 2.2em;
+        animation: checkFade 0.35s ease 0.2s both;
+      }
+
+      .contact-success h4 {
+        color: #2e7d32;
+        font-size: 1.35em;
+        margin-bottom: 10px;
+      }
+
+      .contact-success p {
+        color: #555;
+        line-height: 1.6;
+        font-size: 1em;
+      }
+
+      @keyframes successPop {
+        0% {
+          transform: scale(0.7);
+          opacity: 0;
+        }
+        70% {
+          transform: scale(1.06);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes checkFade {
+        from {
+          opacity: 0;
+          transform: scale(0.7);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
       .icon {
         font-size: 1.5em;
       }
@@ -489,6 +670,10 @@
         .contact-card h3 {
           font-size: 1.2em;
         }
+
+        .contact-form-grid {
+          grid-template-columns: 1fr;
+        }
       }
 
       /* Mobile Styles */
@@ -553,6 +738,17 @@
 
         .contact-card a {
           font-size: 0.95em;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+          padding: 12px 14px;
+        }
+
+        .contact-submit {
+          width: 100%;
+          justify-self: stretch;
         }
 
         .icon {
@@ -683,25 +879,65 @@
           <div class="contact-card">
             <h3><span class="icon"><i class="fa-solid fa-envelope"></i></span> Email</h3>
             <p>For general inquiries, support, or feedback:</p>
-            <a href="mailto:contact@codxeditor.com">contact@codxeditor.com</a>
+            <a href="mailto:support@codxeditor.com">support@codxeditor.com</a>
           </div>
 
           <div class="contact-card">
-            <h3><span class="icon"><i class="fa-solid fa-comments"></i></span> Community</h3>
-            <p>Join our community to connect with other developers:</p>
-            <a href="#" target="_blank">GitHub Discussions</a>
-          </div>
-
-          <div class="contact-card">
-            <h3><span class="icon"><i class="fa-solid fa-bug"></i></span> Bug Reports</h3>
-            <p>Found a bug? Report it on our GitHub repository:</p>
-            <a href="#" target="_blank">Report an Issue</a>
-          </div>
-
-          <div class="contact-card">
-            <h3><span class="icon"><i class="fa-solid fa-lightbulb"></i></span> Feature Requests</h3>
-            <p>Have an idea for a new feature? We're listening:</p>
-            <a href="mailto:contact@codxeditor.com">Submit a Feature Request</a>
+            <h3><span class="icon"><i class="fa-solid fa-paper-plane"></i></span> Contact Form</h3>
+            <p>Send a message directly from here for support, feedback, bug reports, or feature requests.</p>
+            <form
+              id="contactForm"
+              class="contact-form"
+              action="mailto:support@codxeditor.com"
+              method="post"
+              enctype="text/plain"
+              novalidate
+            >
+              <div class="contact-form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="contactName">Name</label>
+                  <input class="form-input" id="contactName" name="Name" type="text" placeholder="Your full name" required />
+                  <div class="form-error" id="contactNameError" aria-live="polite"></div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="contactEmail">Your Email</label>
+                  <input class="form-input" id="contactEmail" name="Email" type="email" placeholder="you@example.com" required />
+                  <div class="form-error" id="contactEmailError" aria-live="polite"></div>
+                </div>
+                <div class="form-group full-width">
+                  <label class="form-label" for="contactTopic">Topic</label>
+                  <select class="form-select" id="contactTopic" name="Topic">
+                    <option value="" selected disabled>What's The Topic About?</option>
+                    <option value="General Question">General Question</option>
+                    <option value="Support">Support</option>
+                    <option value="Bug Report">Bug Report</option>
+                    <option value="Feature Request">Feature Request</option>
+                    <option value="Feedback">Feedback</option>
+                  </select>
+                  <div class="form-error" id="contactTopicError" aria-live="polite"></div>
+                </div>
+                <div class="form-group full-width">
+                  <label class="form-label" for="contactMessage">Message</label>
+                  <textarea class="form-textarea" id="contactMessage" name="Message" placeholder="Tell us what you need help with or what you would like to share." maxlength="1000" required></textarea>
+                  <div class="form-meta-row">
+                    <div class="form-error" id="contactMessageError" aria-live="polite"></div>
+                    <div class="char-count" id="contactMessageCount">0 / 1000</div>
+                  </div>
+                </div>
+              </div>
+              <p class="form-note">
+                When you submit, your filled-in details will be prepared and sent to us for review, so we can respond to your question, feedback, support request, bug report, or feature suggestion more efficiently. If you need any more info, contact us on
+                <a href="mailto:support@codxeditor.com">support@codxeditor.com</a>.
+              </p>
+              <button class="contact-submit" type="submit">Send Message</button>
+            </form>
+            <div class="contact-success" id="contactSuccess">
+              <div class="success-checkmark" aria-hidden="true">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <h4>Form Submitted</h4>
+              <p>You have successfully submitted this form.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -755,6 +991,13 @@
       const menuToggle = document.querySelector(".menu-toggle");
       const navButtons = document.querySelector(".nav-buttons");
       const navLinks = document.querySelectorAll(".nav-btn");
+      const contactForm = document.getElementById("contactForm");
+      const contactName = document.getElementById("contactName");
+      const contactEmail = document.getElementById("contactEmail");
+      const contactTopic = document.getElementById("contactTopic");
+      const contactMessage = document.getElementById("contactMessage");
+      const contactMessageCount = document.getElementById("contactMessageCount");
+      const contactSuccess = document.getElementById("contactSuccess");
 
       menuToggle.addEventListener("click", () => {
         menuToggle.classList.toggle("active");
@@ -775,6 +1018,108 @@
           navButtons.classList.remove("active");
         }
       });
+
+      function setFieldError(field, errorId, message) {
+        const errorEl = document.getElementById(errorId);
+        if (!field || !errorEl) return false;
+        errorEl.textContent = message || "";
+        field.classList.toggle("has-error", Boolean(message));
+        return !message;
+      }
+
+      function validateName() {
+        const value = String(contactName.value || "").trim();
+        if (!value) {
+          return setFieldError(contactName, "contactNameError", "Please enter your full name.");
+        }
+        return setFieldError(contactName, "contactNameError", "");
+      }
+
+      function validateEmail() {
+        const value = String(contactEmail.value || "").trim();
+        if (!value) {
+          return setFieldError(contactEmail, "contactEmailError", "Please enter your email address.");
+        }
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(value)) {
+          return setFieldError(contactEmail, "contactEmailError", "Please enter a valid email address.");
+        }
+        return setFieldError(contactEmail, "contactEmailError", "");
+      }
+
+      function validateTopic() {
+        const value = String(contactTopic.value || "").trim();
+        if (!value) {
+          return setFieldError(contactTopic, "contactTopicError", "Please choose a topic.");
+        }
+        return setFieldError(contactTopic, "contactTopicError", "");
+      }
+
+      function updateMessageCount() {
+        if (!contactMessage || !contactMessageCount) return;
+        contactMessageCount.textContent = `${contactMessage.value.length} / 1000`;
+      }
+
+      function validateMessage() {
+        const value = String(contactMessage.value || "").trim();
+        if (!value) {
+          return setFieldError(contactMessage, "contactMessageError", "Please fill out your message.");
+        }
+        return setFieldError(contactMessage, "contactMessageError", "");
+      }
+
+      if (contactName) {
+        contactName.addEventListener("input", validateName);
+        contactName.addEventListener("blur", validateName);
+      }
+
+      if (contactEmail) {
+        contactEmail.addEventListener("input", validateEmail);
+        contactEmail.addEventListener("blur", validateEmail);
+      }
+
+      if (contactTopic) {
+        contactTopic.addEventListener("change", validateTopic);
+        contactTopic.addEventListener("blur", validateTopic);
+      }
+
+      if (contactMessage) {
+        updateMessageCount();
+        contactMessage.addEventListener("input", () => {
+          updateMessageCount();
+          validateMessage();
+        });
+        contactMessage.addEventListener("blur", validateMessage);
+      }
+
+      if (contactForm) {
+        contactForm.addEventListener("submit", (event) => {
+          const currentScrollY = window.scrollY;
+          const isNameValid = validateName();
+          const isEmailValid = validateEmail();
+          const isTopicValid = validateTopic();
+          const isMessageValid = validateMessage();
+
+          if (!isNameValid || !isEmailValid || !isTopicValid || !isMessageValid) {
+            event.preventDefault();
+            const firstInvalid = document.querySelector(".has-error");
+            if (firstInvalid && typeof firstInvalid.focus === "function") {
+              firstInvalid.focus({ preventScroll: true });
+            }
+            window.scrollTo({ top: currentScrollY, behavior: "auto" });
+            return;
+          }
+
+          event.preventDefault();
+          contactForm.style.display = "none";
+          if (contactSuccess) {
+            contactSuccess.classList.add("visible");
+          }
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: currentScrollY, behavior: "auto" });
+          });
+        });
+      }
     </script>
   </body>
 </html>
