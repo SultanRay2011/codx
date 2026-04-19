@@ -1,4 +1,4 @@
-ï»¿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -1088,6 +1088,8 @@
         }
       }
     </style>
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2215422685538558"
+     crossorigin="anonymous"></script>
   </head>
   <body>
     <div class="admin-pin-overlay" id="adminPinOverlay" role="dialog" aria-modal="true" aria-labelledby="adminPinTitle">
@@ -1608,7 +1610,7 @@
           spectateCodeView.textContent = "";
           return;
         }
-        spectateFileMeta.textContent = `${file.name} â€¢ ${String(file.type || "file").toUpperCase()} â€¢ ${String(file.content || "").length} characters`;
+        spectateFileMeta.textContent = `${file.name} • ${String(file.type || "file").toUpperCase()} • ${String(file.content || "").length} characters`;
         spectateCodeView.textContent = String(file.content || "");
       }
 
@@ -1619,7 +1621,7 @@
         spectateHost.textContent = session.hostName || "--";
         spectateParticipantCount.textContent = `${session.participantCount || 0}`;
         spectateActiveFile.textContent = session.activeFileName || "No active file";
-        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group â€¢ ${session.chat?.privateThreadCount || 0} private`;
+        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group • ${session.chat?.privateThreadCount || 0} private`;
 
         spectateParticipants.innerHTML = (session.participants || []).map((participant) => {
           const tags = [];
@@ -1731,7 +1733,7 @@
           spectateCodeView.textContent = "";
           return;
         }
-        spectateFileMeta.textContent = `${file.name} â€¢ ${String(file.type || "file").toUpperCase()} â€¢ ${String(file.content || "").length} characters`;
+        spectateFileMeta.textContent = `${file.name} • ${String(file.type || "file").toUpperCase()} • ${String(file.content || "").length} characters`;
         spectateCodeView.textContent = String(file.content || "");
       }
 
@@ -1742,7 +1744,7 @@
         spectateHost.textContent = session.hostName || "--";
         spectateParticipantCount.textContent = `${session.participantCount || 0}`;
         spectateActiveFile.textContent = session.activeFileName || "No active file";
-        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group â€¢ ${session.chat?.privateThreadCount || 0} private`;
+        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group • ${session.chat?.privateThreadCount || 0} private`;
         renderSpectatePreview(session);
 
         spectateParticipants.innerHTML = (session.participants || []).map((participant) => {
