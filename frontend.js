@@ -10504,6 +10504,22 @@ const tutorialSteps = [
     position: "right",
   },
   {
+    target: "#undoEditorBtn",
+    icon: "fa-solid fa-rotate-left",
+    title: "Undo",
+    description:
+      "Undo your most recent editor change from the toolbar. This uses CodX's own history tracking instead of relying on fragile browser textarea history.",
+    position: "top-left",
+  },
+  {
+    target: "#redoEditorBtn",
+    icon: "fa-solid fa-rotate-right",
+    title: "Redo",
+    description:
+      "Redo the last undone editor change from the toolbar.",
+    position: "top-left",
+  },
+  {
     target: "#runPreviewBtn",
     icon: "fa-solid fa-play",
     title: "Run Button",
@@ -10511,15 +10527,7 @@ const tutorialSteps = [
     position: "top-left",
   },
   {
-    target: "#undoEditorBtn",
-    icon: "fa-solid fa-rotate-left",
-    title: "Undo / Redo",
-    description:
-      "Undo and redo editor changes from the toolbar. These now use CodX's own history tracking instead of relying on fragile browser textarea history.",
-    position: "top-left",
-  },
-  {
-    target: 'button[onclick="exportAsZip()"]',
+    target: 'button[aria-label="Export project as ZIP"]',
     icon: "fa-solid fa-file-zipper",
     title: "Export ZIP File",
     description:
@@ -10527,7 +10535,7 @@ const tutorialSteps = [
     position: "top-left",
   },
   {
-    target: 'button[onclick="importZip()"]',
+    target: 'button[aria-label="Import ZIP file"]',
     icon: "fa-solid fa-file-import",
     title: "Import ZIP File",
     description:
