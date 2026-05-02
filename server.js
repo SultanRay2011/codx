@@ -4,6 +4,8 @@ const path = require("path");
 const fs = require("fs");
 const { Server } = require("socket.io");
 
+loadEnvFile();
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -18,8 +20,8 @@ const adminActivity = [];
 const adminSessions = new Map();
 const publishedProjects = new Map();
 const PUBLISHED_PROJECTS_FILE = path.join(__dirname, "published-projects.json");
-const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || "administrator");
-const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "admin1579");
+const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || "").trim();
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "");
 const ADMIN_COOKIE = "codx_admin_session";
 const MODERN_SESSION_ID_RE = /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/;
 const LEGACY_SESSION_ID_RE = /^\d{10,}$/;
@@ -48,6 +50,37 @@ const DEFAULT_PERMISSIONS = {
   announcementBar: "",
   sessionEndsAt: null,
 };
+
+function loadEnvFile() {
+  const envPath = path.join(__dirname, ".env");
+  if (!fs.existsSync(envPath)) return;
+
+  try {
+    const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) return;
+
+      const separatorIndex = trimmed.indexOf("=");
+      if (separatorIndex === -1) return;
+
+      const key = trimmed.slice(0, separatorIndex).trim();
+      if (!key || process.env[key] !== undefined) return;
+
+      let value = trimmed.slice(separatorIndex + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+
+      process.env[key] = value;
+    });
+  } catch (error) {
+    console.warn("Failed to load .env file:", error);
+  }
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
