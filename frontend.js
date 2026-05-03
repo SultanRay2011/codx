@@ -10040,6 +10040,25 @@ function isStackedEditorLayout() {
   return window.getComputedStyle(editorContainer).flexDirection === "column";
 }
 
+function getAvailableSplitSpace(axis) {
+  if (!editorContainer) return 0;
+  const styles = window.getComputedStyle(editorContainer);
+  const gapValue = axis === "y"
+    ? styles.rowGap || styles.gap
+    : styles.columnGap || styles.gap;
+  const gap = Number.parseFloat(gapValue) || 0;
+
+  if (axis === "y") {
+    const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
+    const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
+    return Math.max(0, editorContainer.clientHeight - paddingTop - paddingBottom - gap);
+  }
+
+  const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+  const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+  return Math.max(0, editorContainer.clientWidth - paddingLeft - paddingRight - gap);
+}
+
 function resetEditorPreviewSplit() {
   if (isStackedEditorLayout()) {
     editorsPanel.style.width = "100%";
@@ -10069,6 +10088,9 @@ function startDragging(e) {
   dragAxis = isStackedEditorLayout() ? "y" : "x";
   document.body.style.cursor = dragAxis === "y" ? "row-resize" : "col-resize";
   document.body.style.userSelect = "none";
+  if (iframe) {
+    iframe.style.pointerEvents = "none";
+  }
 
   startPointerPos = e.type.includes("mouse")
     ? dragAxis === "y"
@@ -10083,9 +10105,7 @@ function startDragging(e) {
   startPreviewSize = dragAxis === "y" && previewPanel
     ? previewPanel.getBoundingClientRect().height
     : 0;
-  containerSize = dragAxis === "y"
-    ? editorContainer.getBoundingClientRect().height
-    : editorContainer.getBoundingClientRect().width;
+  containerSize = getAvailableSplitSpace(dragAxis);
 
   e.preventDefault();
 
@@ -10124,17 +10144,19 @@ function doDrag(e) {
     }
   } else {
     const minWidth = 200;
+    const minPreviewWidth = 100;
     const dividerSize = divider.getBoundingClientRect().width || 8;
-    const maxWidth = Math.max(minWidth, containerSize - dividerSize - 100);
+    const maxWidth = Math.max(minWidth, containerSize - dividerSize - minPreviewWidth);
     const newWidth = Math.max(minWidth, Math.min(startEditorSize + diff, maxWidth));
+    const newPreviewWidth = Math.max(minPreviewWidth, containerSize - dividerSize - newWidth);
 
     editorsPanel.style.width = `${newWidth}px`;
     editorsPanel.style.height = "";
     editorsPanel.style.flex = "none";
     if (previewPanel) {
       previewPanel.style.height = "";
-      previewPanel.style.width = "";
-      previewPanel.style.flex = "1";
+      previewPanel.style.width = `${newPreviewWidth}px`;
+      previewPanel.style.flex = "none";
     }
   }
 
@@ -10147,6 +10169,9 @@ function stopDragging() {
   divider.classList.remove("dragging");
   document.body.style.cursor = "";
   document.body.style.userSelect = "";
+  if (iframe) {
+    iframe.style.pointerEvents = "";
+  }
 
   document.removeEventListener("mousemove", doDrag);
   document.removeEventListener("touchmove", doDrag);

@@ -1109,7 +1109,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 .divider {
-  width: 8px;
+  width: 12px;
   background: var(--bg-secondary);
   cursor: col-resize;
   position: relative;
@@ -1125,8 +1125,8 @@ textarea::-webkit-scrollbar-thumb:hover {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 3px;
-  height: 32px;
+  width: 4px;
+  height: 40px;
   background: var(--border-color);
   border-radius: 2px;
   transform: translate(-50%, -50%);
@@ -1135,7 +1135,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 .divider:hover::before {
   background: var(--accent-color);
-  height: 48px;
+  height: 56px;
 }
 
 .divider.dragging {
@@ -1149,6 +1149,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 .preview {
   flex: 1;
+  min-width: 0;
   background: var(--preview-bg);
   overflow: hidden;
   display: flex;
@@ -1479,17 +1480,17 @@ iframe {
 
   .divider {
     width: 100%;
-    height: 6px;
+    height: 10px;
     cursor: row-resize;
   }
 
   .divider::before {
-    width: 32px;
-    height: 3px;
+    width: 40px;
+    height: 4px;
   }
 
   .divider:hover::before {
-    width: 48px;
+    width: 56px;
   }
 
   .preview {
