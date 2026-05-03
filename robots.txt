@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://codx-furo.onrender.com/sitemap.xml
