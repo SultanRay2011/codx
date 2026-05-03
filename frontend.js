@@ -6877,37 +6877,178 @@ window.addEventListener("resize", () => {
   });
 });
 
-editorContainer.addEventListener("drop", (e) => {
+function canImportProjectArchive() {
+  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableImportZip) {
+    showNotification("The host disabled ZIP import for participants.", "error");
+    return false;
+  }
+  return true;
+}
+
+function canCreateFilesFromDrop() {
   if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableNewFile) {
     showNotification("The host disabled creating new files for participants.", "error");
-    return;
+    return false;
   }
-  for (const file of e.dataTransfer.files) {
+  return true;
+}
+
+function loadImportedProjectFiles(importedFiles, successMessage) {
+  if (!Array.isArray(importedFiles) || importedFiles.length === 0) {
+    showNotification("No valid project files were found.", "error");
+    return false;
+  }
+
+  projectFiles = importedFiles.map((file, index) => ({
+    ...file,
+    active: index === 0,
+  }));
+  activeFile = projectFiles[0];
+  const editor = document.getElementById("activeEditor");
+  if (editor && activeFile) {
+    editor.value = activeFile.content;
+    updateLineNumbers(editor);
+    resetAllEditorHistory(editor);
+  }
+  renderFileList();
+  scheduleProjectAutosave();
+  if (autoRunCheckbox.checked) updatePreview();
+  syncProjectWithSession();
+  if (successMessage) showNotification(successMessage, "success");
+  return true;
+}
+
+function readDroppedTextFile(file, relativePath = file.name) {
+  return new Promise((resolve, reject) => {
+    const normalizedPath = String(relativePath || file.name || "")
+      .replace(/\\/g, "/")
+      .replace(/^\/+/, "");
+    const ext = normalizedPath.split(".").pop().toLowerCase();
+    if (!editableTextExtensions.includes(ext)) {
+      resolve(null);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const content = ev.target.result;
-      const ext = file.name.split(".").pop().toLowerCase();
-      if (editableTextExtensions.includes(ext)) {
-        if (projectFiles.some((f) => f.name.toLowerCase() === file.name.toLowerCase())) {
-          showNotification(`File ${file.name} already exists`, "error");
-          return;
-        }
-        const newFile = { name: file.name, type: ext, content, active: false };
-        projectFiles.push(newFile);
-        scheduleProjectAutosave();
-        if (projectFiles.length === 1) {
-          newFile.active = true;
-          activeFile = newFile;
-          document.getElementById("activeEditor").value = content;
-          updateLineNumbers();
-        }
-        renderFileList();
-        syncProjectWithSession();
-        showNotification(`Imported: ${file.name}`, "success");
-      }
+      resolve({
+        name: normalizedPath,
+        type: ext,
+        content: ev.target.result,
+        active: false,
+      });
     };
+    reader.onerror = () => reject(reader.error || new Error(`Failed to read ${normalizedPath}`));
     reader.readAsText(file);
+  });
+}
+
+function readDirectoryEntries(reader) {
+  return new Promise((resolve, reject) => {
+    const entries = [];
+
+    function pump() {
+      reader.readEntries(
+        (batch) => {
+          if (!batch.length) {
+            resolve(entries);
+            return;
+          }
+          entries.push(...batch);
+          pump();
+        },
+        reject,
+      );
+    }
+
+    pump();
+  });
+}
+
+async function collectDroppedEntryFiles(entry, currentPath = "") {
+  if (!entry) return [];
+
+  if (entry.isFile) {
+    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+    const imported = await readDroppedTextFile(file, `${currentPath}${file.name}`);
+    return imported ? [imported] : [];
   }
+
+  if (!entry.isDirectory) return [];
+  const nextPath = `${currentPath}${entry.name}/`;
+  const childEntries = await readDirectoryEntries(entry.createReader());
+  const nestedFiles = await Promise.all(
+    childEntries.map((child) => collectDroppedEntryFiles(child, nextPath)),
+  );
+  return nestedFiles.flat();
+}
+
+async function importProjectFromDroppedFolder(entries) {
+  const importedGroups = await Promise.all(entries.map((entry) => collectDroppedEntryFiles(entry)));
+  const importedFiles = importedGroups.flat().sort((a, b) => a.name.localeCompare(b.name));
+
+  if (!importedFiles.length) {
+    showNotification("No valid files found in dropped folder.", "error");
+    return false;
+  }
+
+  return loadImportedProjectFiles(
+    importedFiles,
+    `Folder imported! Files: ${importedFiles.map((file) => file.name).join(", ")}`,
+  );
+}
+
+async function addDroppedFilesToProject(files) {
+  if (!canCreateFilesFromDrop()) return;
+
+  let importedCount = 0;
+  for (const file of files) {
+    const imported = await readDroppedTextFile(file);
+    if (!imported) continue;
+    if (projectFiles.some((f) => String(f.name || "").toLowerCase() === imported.name.toLowerCase())) {
+      showNotification(`File ${imported.name} already exists`, "error");
+      continue;
+    }
+    projectFiles.push(imported);
+    scheduleProjectAutosave();
+    if (projectFiles.length === 1) {
+      imported.active = true;
+      activeFile = imported;
+      document.getElementById("activeEditor").value = imported.content;
+      updateLineNumbers();
+    }
+    importedCount += 1;
+    showNotification(`Imported: ${imported.name}`, "success");
+  }
+
+  if (importedCount > 0) {
+    renderFileList();
+    syncProjectWithSession();
+  }
+}
+
+editorContainer.addEventListener("drop", async (e) => {
+  const droppedFiles = Array.from(e.dataTransfer?.files || []);
+  const droppedItems = Array.from(e.dataTransfer?.items || []);
+  const droppedEntries = droppedItems
+    .map((item) => (typeof item.webkitGetAsEntry === "function" ? item.webkitGetAsEntry() : null))
+    .filter(Boolean);
+  const directoryEntries = droppedEntries.filter((entry) => entry.isDirectory);
+  const zipFile = droppedFiles.find((file) => /\.zip$/i.test(file.name || ""));
+
+  if (directoryEntries.length > 0) {
+    if (!canImportProjectArchive()) return;
+    await importProjectFromDroppedFolder(directoryEntries);
+    return;
+  }
+
+  if (zipFile) {
+    if (!canImportProjectArchive()) return;
+    await importProjectFromZipFile(zipFile);
+    return;
+  }
+
+  await addDroppedFilesToProject(droppedFiles);
 });
 
 document.getElementById("activeEditor").addEventListener("pointermove", announceCursorPosition);
@@ -6965,77 +7106,63 @@ async function exportAsZip() {
 }
 
 // PART 10 - ZIP IMPORT
-function importZip() {
-  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableImportZip) {
-    showNotification("The host disabled ZIP import for participants.", "error");
-    return;
+async function importProjectFromZipFile(file) {
+  if (!file || !/\.zip$/i.test(file.name || "")) {
+    showNotification("Please select a valid ZIP file", "error");
+    return false;
   }
+
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const importTasks = [];
+    const foundFiles = [];
+
+    zip.forEach((path, entry) => {
+      const normalizedPath = String(path || "").replace(/\\/g, "/");
+      const ext = normalizedPath.split(".").pop().toLowerCase();
+      if (editableTextExtensions.includes(ext) && !entry.dir) {
+        foundFiles.push(normalizedPath);
+        importTasks.push(
+          entry.async("string").then((content) => ({
+            name: normalizedPath,
+            type: ext,
+            content,
+            active: false,
+          })),
+        );
+      }
+    });
+
+    const importedFiles = await Promise.all(importTasks);
+    if (!importedFiles.length) {
+      showNotification("No valid files found in ZIP", "error");
+      return false;
+    }
+
+    return loadImportedProjectFiles(
+      importedFiles,
+      `Project imported! Files: ${foundFiles.join(", ")}`,
+    );
+  } catch (err) {
+    console.error("Import error:", err);
+    showNotification("Error reading ZIP file.", "error");
+    return false;
+  }
+}
+
+function importZip() {
+  if (!canImportProjectArchive()) return;
   document.getElementById("zipFileInput").click();
 }
 
-function handleZipImport(event) {
-  if (activeSessionId && isReadOnlyParticipant() && collabPermissions.disableImportZip) {
-    showNotification("The host disabled ZIP import for participants.", "error");
+async function handleZipImport(event) {
+  if (!canImportProjectArchive()) {
     event.target.value = "";
     return;
   }
   const file = event.target.files[0];
   if (!file) return;
-
-  if (!file.name.endsWith(".zip")) {
-    showNotification("Please select a valid ZIP file", "error");
-    return;
-  }
-
-  JSZip.loadAsync(file)
-    .then((zip) => {
-      const promises = [];
-      const importedFiles = [];
-      const foundFiles = [];
-
-      zip.forEach((path, entry) => {
-        const ext = path.split(".").pop().toLowerCase();
-        if (editableTextExtensions.includes(ext) && !entry.dir) {
-          foundFiles.push(path);
-          promises.push(
-            entry.async("string").then((content) => {
-              importedFiles.push({
-                name: path,
-                type: ext,
-                content,
-                active: false,
-              });
-            }),
-          );
-        }
-      });
-
-      Promise.all(promises).then(() => {
-        if (importedFiles.length === 0) {
-          showNotification("No valid files found in ZIP", "error");
-          return;
-        }
-        projectFiles = importedFiles;
-        projectFiles[0].active = true;
-        activeFile = projectFiles[0];
-        const editor = document.getElementById("activeEditor");
-        editor.value = activeFile.content;
-        updateLineNumbers(editor);
-        resetAllEditorHistory(editor);
-        renderFileList();
-        scheduleProjectAutosave();
-        if (autoRunCheckbox.checked) updatePreview();
-        syncProjectWithSession();
-        showNotification(
-          `Project imported! Files: ${foundFiles.join(", ")}`,
-          "success",
-        );
-      });
-    })
-    .catch((err) => {
-      console.error("Import error:", err);
-      showNotification("Error reading ZIP file.", "error");
-    });
+  await importProjectFromZipFile(file);
   event.target.value = "";
 }
 
