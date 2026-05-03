@@ -1253,17 +1253,49 @@ const starterTemplates = [
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main class="hero">
-      <p class="eyebrow">Launch Week Ready</p>
-      <h1>Build a cleaner story for your product.</h1>
-      <p class="lead">A simple landing page starter with a strong hero, proof points, and a clear call to action.</p>
-      <a class="cta" href="#features">Explore Features</a>
-    </main>
-    <section id="features" class="features">
-      <article><h2>Fast setup</h2><p>Start with structure instead of a blank screen.</p></article>
-      <article><h2>Responsive by default</h2><p>Designed to adapt across desktop, tablet, and mobile.</p></article>
-      <article><h2>Clean visual system</h2><p>Easy to restyle without untangling a heavy framework.</p></article>
-    </section>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand">Northstar Studio</div>
+        <nav>
+          <a href="#features">Features</a>
+          <a href="#results">Results</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </header>
+      <main class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Launch-ready template</p>
+          <h1>Build a cleaner, more credible story for your product.</h1>
+          <p class="lead">Use this starter for SaaS pages, service websites, or product launches. It comes with a stronger hero, a simple feature layout, and a clear conversion section that already feels polished.</p>
+          <div class="hero-actions">
+            <a class="cta" href="#contact">Book a Demo</a>
+            <a class="secondary-link" href="#features">See what is included</a>
+          </div>
+        </div>
+        <aside class="hero-panel">
+          <p class="panel-label">Quick snapshot</p>
+          <strong>Built for launches, product pages, and conversion-focused messaging.</strong>
+          <ul>
+            <li>Clear above-the-fold structure</li>
+            <li>Professional cards and spacing</li>
+            <li>Responsive layout from the start</li>
+          </ul>
+        </aside>
+      </main>
+      <section id="features" class="features">
+        <article><h2>Sharper messaging</h2><p>Swap in your offer, proof points, and CTA without rebuilding the page structure.</p></article>
+        <article><h2>Client-ready layout</h2><p>Start from a cleaner visual system that looks presentable in demos and quick handoffs.</p></article>
+        <article><h2>Faster iteration</h2><p>Refine copy, layout, and styling quickly inside CodX without relying on a framework.</p></article>
+      </section>
+      <section id="results" class="results">
+        <article><span>3 core sections</span><strong>Hero, features, and conversion block</strong></article>
+        <article><span>Responsive base</span><strong>Adapts cleanly across modern screen sizes</strong></article>
+      </section>
+      <section id="contact" class="contact-banner">
+        <h2>Ready to turn this into your own launch page?</h2>
+        <p>Replace the placeholder copy, adjust the palette, and connect your own call to action.</p>
+      </section>
+    </div>
     <script src="script.js"></script>
   </body>
 </html>`,
@@ -1272,74 +1304,198 @@ const starterTemplates = [
         name: "style.css",
         type: "css",
         content: `:root {
-  --bg: #f6fff7;
+  --bg: #f5f8fb;
   --surface: #ffffff;
-  --ink: #162019;
-  --muted: #58655d;
-  --accent: #2ea043;
+  --ink: #112031;
+  --muted: #5a6878;
+  --accent: #1f6feb;
+  --accent-dark: #174ea6;
 }
 
 * { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(46, 160, 67, 0.16), transparent 24%),
-    linear-gradient(135deg, var(--bg), #ffffff 60%);
+    radial-gradient(circle at top left, rgba(31, 111, 235, 0.18), transparent 22%),
+    radial-gradient(circle at right center, rgba(56, 189, 248, 0.12), transparent 18%),
+    linear-gradient(135deg, var(--bg), #ffffff 58%);
+}
+.page-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0 8px;
+}
+.brand {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+nav a {
+  color: var(--muted);
+  text-decoration: none;
 }
 .hero {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 96px 24px 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 360px);
+  gap: 24px;
+  align-items: stretch;
+  padding: 56px 0 24px;
 }
-.eyebrow {
+.hero-copy,
+.hero-panel,
+.features article,
+.results article,
+.contact-banner {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 22px 45px rgba(17, 32, 49, 0.08);
+}
+.hero-copy,
+.hero-panel {
+  border-radius: 28px;
+  padding: 34px;
+}
+.eyebrow,
+.panel-label {
   display: inline-block;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(46, 160, 67, 0.12);
+  background: rgba(31, 111, 235, 0.1);
   color: var(--accent);
   font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 h1 {
-  font-size: clamp(2.4rem, 7vw, 4.8rem);
-  line-height: 1;
+  font-size: clamp(2.4rem, 5vw, 4.6rem);
+  line-height: 0.98;
   max-width: 11ch;
-  margin: 20px 0 16px;
+  margin: 18px 0 16px;
 }
 .lead {
-  max-width: 56ch;
+  max-width: 60ch;
   line-height: 1.7;
   color: var(--muted);
 }
-.cta {
-  display: inline-block;
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
   margin-top: 24px;
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 14px 20px;
-  border-radius: 14px;
+  border-radius: 999px;
   text-decoration: none;
   background: var(--accent);
   color: white;
   font-weight: 700;
 }
+.cta:hover {
+  background: var(--accent-dark);
+}
+.secondary-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.hero-panel strong {
+  display: block;
+  margin: 16px 0 12px;
+  font-size: 1.2rem;
+  line-height: 1.45;
+}
+.hero-panel ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.8;
+}
 .features {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 24px 72px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
+  padding: 12px 0 0;
 }
 .features article {
-  background: var(--surface);
-  border: 1px solid rgba(22, 32, 25, 0.08);
   border-radius: 22px;
-  padding: 22px;
-  box-shadow: 0 18px 40px rgba(24, 46, 31, 0.08);
+  padding: 24px;
 }
 .features p {
   color: var(--muted);
   line-height: 1.65;
+}
+.results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding: 18px 0;
+}
+.results article {
+  border-radius: 22px;
+  padding: 22px 24px;
+}
+.results span {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+}
+.results strong {
+  font-size: 1.1rem;
+}
+.contact-banner {
+  border-radius: 28px;
+  padding: 28px 30px 34px;
+  margin: 8px 0 36px;
+}
+.contact-banner h2 {
+  margin-top: 0;
+}
+.contact-banner p {
+  color: var(--muted);
+  line-height: 1.65;
+}
+@media (max-width: 860px) {
+  .hero,
+  .results {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .page-shell {
+    padding: 18px;
+  }
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hero-copy,
+  .hero-panel {
+    padding: 24px;
+  }
 }`,
       },
       {
@@ -1379,13 +1535,28 @@ h1 {
       </nav>
     </header>
     <main class="intro">
-      <p class="eyebrow">Designer + Frontend Developer</p>
-      <h1>I design digital experiences with clarity and edge.</h1>
+      <div>
+        <p class="eyebrow">Designer + Frontend Developer</p>
+        <h1>I design digital experiences with clarity and edge.</h1>
+        <p class="lead">Use this portfolio starter for a stronger personal-brand presentation. It gives you a sharper introduction, featured work cards, and simple supporting sections you can adapt quickly.</p>
+      </div>
+      <aside class="summary-card">
+        <span>Available for select freelance projects</span>
+        <strong>Brand systems, product interfaces, and launch visuals.</strong>
+      </aside>
     </main>
     <section id="work" class="grid">
-      <article><h2>Brand site</h2><p>Marketing site with bold typography and high-contrast sections.</p></article>
-      <article><h2>Dashboard</h2><p>Internal tool UI focused on faster reporting and review flow.</p></article>
-      <article><h2>Prototype</h2><p>Interactive concept page built for investor storytelling.</p></article>
+      <article><h2>Brand site</h2><p>Marketing website with a stronger visual system and a clearer conversion path.</p></article>
+      <article><h2>Dashboard</h2><p>Internal tool UI focused on faster reporting, easier review, and cleaner states.</p></article>
+      <article><h2>Prototype</h2><p>Interactive concept page built to help teams pitch, validate, and refine direction.</p></article>
+    </section>
+    <section id="about" class="about">
+      <h2>About</h2>
+      <p>I help teams translate strategy into digital experiences that feel elegant, usable, and commercially sharp. Replace this paragraph with your own background, strengths, and approach.</p>
+    </section>
+    <section id="contact" class="contact-strip">
+      <h2>Let’s build something memorable.</h2>
+      <a href="mailto:alex@example.com">alex@example.com</a>
     </section>
   </body>
 </html>`,
@@ -1396,17 +1567,19 @@ h1 {
         content: `body {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  background: #fbf8f1;
+  background: linear-gradient(180deg, #fbf8f1, #f4efe5 100%);
   color: #1e1d19;
 }
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22px 28px;
+  gap: 16px;
+  padding: 24px 28px;
 }
 .topbar nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
 }
 .topbar a {
@@ -1414,7 +1587,11 @@ h1 {
   text-decoration: none;
 }
 .intro {
-  padding: 72px 28px 28px;
+  padding: 64px 28px 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(260px, 360px);
+  gap: 24px;
+  align-items: start;
 }
 .eyebrow {
   text-transform: uppercase;
@@ -1427,6 +1604,32 @@ h1 {
   line-height: 0.96;
   margin: 18px 0 0;
 }
+.lead {
+  max-width: 54ch;
+  margin-top: 18px;
+  color: #5d584f;
+  line-height: 1.75;
+}
+.summary-card {
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(30, 29, 25, 0.08);
+  box-shadow: 0 18px 40px rgba(30, 29, 25, 0.08);
+}
+.summary-card span {
+  display: block;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  color: #7a7367;
+}
+.summary-card strong {
+  display: block;
+  margin-top: 14px;
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1434,10 +1637,50 @@ h1 {
   padding: 28px;
 }
 .grid article {
-  background: white;
-  border-radius: 20px;
-  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  padding: 22px;
   border: 1px solid rgba(30, 29, 25, 0.08);
+  box-shadow: 0 18px 40px rgba(30, 29, 25, 0.06);
+}
+.about,
+.contact-strip {
+  margin: 0 28px 28px;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(30, 29, 25, 0.08);
+}
+.about p {
+  max-width: 62ch;
+  line-height: 1.75;
+  color: #5d584f;
+}
+.contact-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.contact-strip a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+@media (max-width: 820px) {
+  .intro {
+    grid-template-columns: 1fr;
+  }
+  .contact-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+@media (max-width: 640px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }`,
       },
       { name: "script.js", type: "js", content: `console.log("Portfolio template ready.");` },
@@ -1465,11 +1708,19 @@ h1 {
   </head>
   <body>
     <main class="shell">
+      <section class="intro">
+        <p class="eyebrow">Contact starter</p>
+        <h1>Start more professional conversations.</h1>
+        <p>Use this contact template for lead capture, service inquiries, or simple support pages. Replace the copy, connect your backend, and make it your own.</p>
+      </section>
       <form class="card">
-        <h1>Get in touch</h1>
-        <label>Name<input type="text" placeholder="Your name" /></label>
-        <label>Email<input type="email" placeholder="you@example.com" /></label>
-        <label>Message<textarea rows="6" placeholder="Write your message"></textarea></label>
+        <h2>Get in touch</h2>
+        <div class="field-grid">
+          <label>Name<input type="text" placeholder="Your name" /></label>
+          <label>Email<input type="email" placeholder="you@example.com" /></label>
+        </div>
+        <label>Company<input type="text" placeholder="Your company or team" /></label>
+        <label>Message<textarea rows="6" placeholder="Tell us a little about your project"></textarea></label>
         <button type="submit">Send Message</button>
       </form>
     </main>
@@ -1482,20 +1733,55 @@ h1 {
         content: `body {
   margin: 0;
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #effaf0, #ffffff 58%, #eef4ff);
+  background: linear-gradient(135deg, #eef6ff, #ffffff 56%, #effaf0);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #132033;
 }
 .shell {
-  width: min(92vw, 560px);
+  width: min(96vw, 980px);
+  margin: 0 auto;
+  padding: 56px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 560px);
+  gap: 24px;
+  align-items: center;
+}
+.intro {
+  padding: 18px;
+}
+.eyebrow {
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+.intro h1 {
+  margin: 0 0 14px;
+  font-size: clamp(2.1rem, 5vw, 3.5rem);
+  line-height: 1.02;
+}
+.intro p {
+  margin: 0;
+  color: #5a6574;
+  line-height: 1.75;
 }
 .card {
-  background: white;
-  padding: 28px;
-  border-radius: 24px;
-  box-shadow: 0 18px 42px rgba(26, 49, 32, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 30px;
+  border-radius: 28px;
+  box-shadow: 0 24px 48px rgba(19, 32, 51, 0.1);
   display: grid;
+  gap: 16px;
+  border: 1px solid rgba(19, 32, 51, 0.08);
+}
+.card h2 {
+  margin: 0 0 4px;
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 label {
@@ -1510,14 +1796,29 @@ input, textarea {
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(20, 41, 27, 0.12);
+  background: #ffffff;
 }
 button {
   border: none;
-  border-radius: 14px;
+  border-radius: 999px;
   padding: 14px 18px;
-  background: #2ea043;
+  background: #2563eb;
   color: white;
   font-weight: 700;
+  cursor: pointer;
+}
+button:hover {
+  background: #1d4ed8;
+}
+@media (max-width: 780px) {
+  .shell,
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+  .shell {
+    padding-top: 36px;
+    padding-bottom: 36px;
+  }
 }`,
       },
       { name: "script.js", type: "js", content: `console.log("Contact form template ready.");` },
