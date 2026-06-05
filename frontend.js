@@ -5343,9 +5343,9 @@ function highlightCss(code) {
     { className: "string", regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g },
     { className: "keyword", regex: /@[a-z-]+/gi },
     { className: "property", regex: /--[a-z0-9-]+(?=\s*:)|\b[a-z-]+(?=\s*:)/gi },
-    { className: "value", regex: /(?<=:\s*)[^;}{\n]+(?=\s*[;}])/g },
+    { className: "value", regex: /(?<=:)[^;}{\n]+(?=\s*[;}])/g },
     { className: "number", regex: /\b\d+(\.\d+)?(px|rem|em|%|vh|vw|s|ms)?\b/g },
-    { className: "selector", regex: /(^|})\s*[^@{}\n][^{\n]*(?=\{)/g },
+    { className: "selector", regex: /^[ \t]*[^@{}\n][^{\n]*(?=\{)/gm },
     { className: "punctuation", regex: /[{}:;(),.]/g },
   ];
   return wrapTokens(code, patterns);
@@ -7075,7 +7075,13 @@ function handleEditorKeyDown(e) {
     }
   }
 
-  if (activeFile.type === "html" && e.key === "Enter") {
+  const caretContextBefore = editor.value.substring(0, editor.selectionStart);
+  const isHtmlStyleContext =
+    activeFile.type === "html" && isInsideStyleTag(caretContextBefore);
+  const isHtmlScriptContext =
+    activeFile.type === "html" && isInsideScriptTag(caretContextBefore);
+
+  if (activeFile.type === "html" && e.key === "Enter" && !isHtmlStyleContext && !isHtmlScriptContext) {
     if (expandCxStartShortcut(editor)) {
       e.preventDefault();
       return;
@@ -7089,7 +7095,8 @@ function handleEditorKeyDown(e) {
   if (
     activeFile.type === "css" ||
     activeFile.type === "js" ||
-    (activeFile.type === "html" && (isInsideStyleTag(editor.value.substring(0, editor.selectionStart)) || isInsideScriptTag(editor.value.substring(0, editor.selectionStart))))
+    isHtmlStyleContext ||
+    isHtmlScriptContext
   ) {
     if (handleAutoCloseAndIndent(e, editor)) {
       return; // If auto-closing/indentation was handled, stop here
