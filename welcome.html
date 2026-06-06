@@ -22,8 +22,8 @@
 
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: #1e1e1e;
-        color: #ffffff;
+        background: #ffffff;
+        color: #1a1a1a;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -31,49 +31,10 @@
         padding: 20px;
       }
 
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease;
-        padding: 20px;
-      }
-
-      @keyframes fadeIn {
+      @keyframes fadeUp {
         from {
           opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      .modal-container {
-        background: #2c2c2c;
-        border-radius: 16px;
-        max-width: 600px;
-        width: 100%;
-        max-height: 90vh;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        border: 2px solid #4caf50;
-        animation: slideUp 0.4s ease;
-        display: flex;
-        flex-direction: column;
-      }
-
-      @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translateY(50px);
+          transform: translateY(24px);
         }
         to {
           opacity: 1;
@@ -81,492 +42,386 @@
         }
       }
 
-      .modal-header {
-        background: linear-gradient(135deg, #4caf50, #2e7d32);
-        padding: 25px 30px;
-        text-align: center;
+      .card {
+        background: #ffffff;
+        border: 1px solid #e8e8e8;
+        border-radius: 20px;
+        max-width: 520px;
+        width: 100%;
+        max-height: 92vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.07),
+          0 1px 4px rgba(0, 0, 0, 0.04);
+        animation: fadeUp 0.4s ease;
+      }
+
+      /* ── Header ── */
+      .card-header {
+        padding: 32px 36px 24px;
+        border-bottom: 1px solid #f0f0f0;
         flex-shrink: 0;
+        text-align: center;
       }
 
-      .modal-header h1 {
-        font-size: 2em;
-        margin-bottom: 5px;
+      .logo-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 14px;
       }
 
-      .modal-header p {
-        font-size: 0.95em;
-        opacity: 0.95;
+      .logo-row img {
+        height: 36px;
+        width: auto;
       }
 
-      .modal-content {
-        padding: 30px;
+      .brand-name {
+        font-size: 1.45em;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+
+      .brand-name .cod {
+        color: #1a1a1a;
+      }
+      .brand-name .x {
+        color: #4caf50;
+      }
+      .brand-name .editor {
+        color: #1a1a1a;
+      }
+
+      .card-header h2 {
+        font-size: 1.05em;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+      }
+
+      .card-header p {
+        font-size: 0.88em;
+        color: #888;
+      }
+
+      /* ── Body ── */
+      .card-body {
+        padding: 24px 36px;
         overflow-y: auto;
         flex: 1;
       }
 
-      .modal-content::-webkit-scrollbar {
-        width: 8px;
+      .card-body::-webkit-scrollbar {
+        width: 5px;
       }
-
-      .modal-content::-webkit-scrollbar-track {
-        background: #1e1e1e;
+      .card-body::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .card-body::-webkit-scrollbar-thumb {
+        background: #ddd;
         border-radius: 4px;
       }
 
-      .modal-content::-webkit-scrollbar-thumb {
-        background: #4caf50;
-        border-radius: 4px;
+      .summary-box {
+        background: #f4fdf5;
+        border: 1px solid #c8eac9;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        font-size: 0.88em;
+        color: #2e6e32;
+        line-height: 1.6;
       }
 
-      .modal-content::-webkit-scrollbar-thumb:hover {
-        background: #45a049;
+      .summary-box strong {
+        font-weight: 600;
       }
 
       .terms-section {
-        margin-bottom: 20px;
+        margin-bottom: 18px;
       }
 
       .terms-section h2 {
+        font-size: 0.82em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #aaa;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .terms-section h2 i {
+        font-size: 0.95em;
         color: #4caf50;
-        font-size: 1.3em;
-        margin-bottom: 10px;
       }
 
       .terms-section p,
       .terms-section li {
-        line-height: 1.6;
-        color: #cccccc;
-        margin-bottom: 8px;
+        font-size: 0.9em;
+        line-height: 1.65;
+        color: #555;
       }
 
       .terms-section ul {
-        margin-left: 20px;
+        margin-left: 16px;
       }
 
-      .highlight-box {
-        background: rgba(76, 175, 80, 0.15);
-        border-left: 4px solid #4caf50;
-        padding: 15px;
-        margin: 20px 0;
-        border-radius: 4px;
+      .terms-section li {
+        margin-bottom: 4px;
       }
 
-      .highlight-box p {
-        color: #ffffff;
-        font-weight: 500;
+      .terms-section a {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: 600;
       }
 
-      .modal-footer {
-        padding: 20px 30px;
-        background: #1e1e1e;
-        border-top: 1px solid #333333;
+      .terms-section a:hover {
+        text-decoration: underline;
+      }
+
+      .divider {
+        border: none;
+        border-top: 1px solid #f0f0f0;
+        margin: 18px 0;
+      }
+
+      .last-updated {
+        font-size: 0.82em;
+        color: #bbb;
+        margin-top: 4px;
+      }
+
+      /* ── Footer ── */
+      .card-footer {
+        padding: 20px 36px 24px;
+        border-top: 1px solid #f0f0f0;
         flex-shrink: 0;
       }
 
-      .checkbox-container {
+      .checkbox-row {
         display: flex;
         align-items: center;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 14px;
         cursor: pointer;
         user-select: none;
       }
 
-      .checkbox-container input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        margin-right: 12px;
+      .checkbox-row input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
         cursor: pointer;
         accent-color: #4caf50;
-        flex-shrink: 0;
       }
 
-      .checkbox-container label {
-        font-size: 1em;
-        color: #cccccc;
+      .checkbox-row label {
+        font-size: 0.9em;
+        color: #555;
         cursor: pointer;
         line-height: 1.4;
       }
 
-      .checkbox-container label a {
+      .checkbox-row label a {
         color: #4caf50;
-        text-decoration: none;
         font-weight: 600;
+        text-decoration: none;
       }
 
-      .checkbox-container label a:hover {
+      .checkbox-row label a:hover {
         text-decoration: underline;
       }
 
-      .action-button {
+      .continue-btn {
         width: 100%;
-        padding: 15px;
+        padding: 13px;
         border: none;
-        border-radius: 8px;
-        font-size: 1.1em;
+        border-radius: 10px;
+        font-size: 0.95em;
         font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #333333;
-        color: #888888;
-        pointer-events: none;
+        cursor: not-allowed;
+        transition:
+          background 0.2s,
+          color 0.2s,
+          box-shadow 0.2s,
+          transform 0.15s;
+        background: #f0f0f0;
+        color: #aaa;
       }
 
-      .action-button.enabled {
+      .continue-btn.enabled {
         background: #4caf50;
-        color: white;
-        pointer-events: all;
+        color: #fff;
         cursor: pointer;
+        box-shadow: 0 2px 12px rgba(76, 175, 80, 0.3);
       }
 
-      .action-button.enabled:hover {
-        background: #45a049;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+      .continue-btn.enabled:hover {
+        background: #43a047;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 18px rgba(76, 175, 80, 0.38);
       }
 
-      .action-button.enabled:active {
+      .continue-btn.enabled:active {
         transform: translateY(0);
+        box-shadow: none;
       }
 
       .help-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
+        display: block;
+        text-align: center;
         margin-top: 12px;
-        color: #9be7a2;
+        font-size: 0.85em;
+        color: #aaa;
         text-decoration: none;
-        font-weight: 700;
+        transition: color 0.2s;
       }
 
       .help-link:hover {
-        text-decoration: underline;
-      }
-
-      /* Tablet Styles */
-      @media (max-width: 768px) {
-        body {
-          padding: 15px;
-        }
-
-        .modal-overlay {
-          padding: 15px;
-        }
-
-        .modal-container {
-          max-width: 100%;
-          max-height: 95vh;
-          border-radius: 12px;
-        }
-
-        .modal-header {
-          padding: 20px;
-        }
-
-        .modal-header h1 {
-          font-size: 1.7em;
-        }
-
-        .modal-header p {
-          font-size: 0.9em;
-        }
-
-        .modal-content {
-          padding: 25px 20px;
-        }
-
-        .terms-section h2 {
-          font-size: 1.2em;
-        }
-
-        .terms-section p,
-        .terms-section li {
-          font-size: 0.95em;
-        }
-
-        .modal-footer {
-          padding: 18px 20px;
-        }
-
-        .action-button {
-          padding: 14px;
-          font-size: 1em;
-        }
-      }
-
-      /* Mobile Styles */
-      @media (max-width: 480px) {
-        header {
-          padding: 10px 15px;
-        }
-
-        .logo-container img {
-          height: 30px;
-        }
-
-        .nav-buttons {
-          width: 100%;
-          right: -100%;
-        }
-
-        body {
-          padding-top: 60px;
-        }
-
-        .container {
-          padding: 70px 15px 30px 15px;
-        }
-
-        .terms-container {
-          padding: 30px 20px;
-          border-radius: 15px;
-        }
-
-        .terms-container h1 {
-          font-size: 1.6em;
-          line-height: 1.3;
-        }
-
-        .last-updated {
-          font-size: 0.9em;
-        }
-
-        .terms-section {
-          margin-bottom: 28px;
-        }
-
-        .terms-section h2 {
-          font-size: 1.3em;
-          margin-bottom: 12px;
-          padding-bottom: 8px;
-        }
-
-        .terms-section h3 {
-          font-size: 1.1em;
-          margin: 15px 0 10px;
-        }
-
-        .terms-section p {
-          font-size: 0.95em;
-          line-height: 1.7;
-          margin-bottom: 12px;
-          text-align: justify; /* Keep body text justified */
-        }
-
-        .terms-section ul {
-          margin: 12px 0 12px 18px;
-        }
-
-        .terms-section li {
-          font-size: 0.95em;
-          line-height: 1.7;
-          margin-bottom: 8px;
-        }
-
-        .important-note {
-          padding: 15px;
-          margin: 20px 0;
-        }
-
-        .important-note p {
-          font-size: 0.95em;
-        }
-
-        .footer-content {
-          grid-template-columns: 1fr;
-          gap: 30px;
-        }
-
-        .footer-logo {
-          justify-content: center;
-        }
-
-        .footer-section {
-          text-align: center;
-        }
-
-        .footer-section h3 {
-          font-size: 1.1em;
-        }
-
-        .footer-section p,
-        .footer-section a {
-          font-size: 0.9em;
-        }
-      }
-
-      /* Extra small phones */
-      @media (max-width: 360px) {
-        .modal-header h1 {
-          font-size: 1.3em;
-        }
-
-        .modal-header p {
-          font-size: 0.8em;
-        }
-
-        .modal-content {
-          padding: 18px 12px;
-        }
-
-        .terms-section h2 {
-          font-size: 1em;
-        }
-
-        .terms-section p,
-        .terms-section li {
-          font-size: 0.85em;
-        }
-
-        .highlight-box {
-          padding: 10px;
-        }
-
-        .highlight-box p {
-          font-size: 0.85em;
-        }
-
-        .checkbox-container label {
-          font-size: 0.85em;
-        }
-
-        .action-button {
-          padding: 12px;
-          font-size: 0.9em;
-        }
-      }
-
-      /* Landscape mobile orientation */
-      @media (max-width: 768px) and (max-height: 500px) {
-        .modal-overlay {
-          align-items: flex-start;
-          padding-top: 10px;
-        }
-
-        .modal-container {
-          max-height: 95vh;
-        }
-
-        .modal-header {
-          padding: 15px;
-        }
-
-        .modal-header h1 {
-          font-size: 1.3em;
-        }
-
-        .modal-content {
-          padding: 15px;
-        }
-
-        .modal-footer {
-          padding: 12px 15px;
-        }
-      }
-    
-      .brand-wordmark .cod {
-        color: #000;
-      }
-
-      .brand-wordmark .x {
         color: #4caf50;
       }
 
-      .brand-wordmark .editor {
-        color: #000;
+      /* ── Responsive ── */
+      @media (max-width: 560px) {
+        .card {
+          border-radius: 14px;
+        }
+        .card-header,
+        .card-body,
+        .card-footer {
+          padding-left: 22px;
+          padding-right: 22px;
+        }
+        .brand-name {
+          font-size: 1.25em;
+        }
+      }
+
+      @media (max-width: 768px) and (max-height: 500px) {
+        .card {
+          max-height: 96vh;
+        }
+        .card-header {
+          padding-top: 18px;
+          padding-bottom: 14px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .card-body {
+          padding: 18px 16px;
+        }
+        .card-footer {
+          padding: 16px;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="modal-overlay" id="termsModal">
-      <div class="modal-container">
-        <div class="modal-header">
-          <h1>Welcome to <span class="brand-wordmark"><span class="cod">Cod</span><span class="x">X</span><span class="editor"> Editor</span></span>! <i class="fa-solid fa-hand"></i></h1>
-          <p>Please review our Terms and Conditions</p>
+    <div class="card" id="termsModal">
+      <div class="card-header">
+        <div class="logo-row">
+          <img src="cx.png" alt="CodX Editor Logo" />
+          <span class="brand-name">
+            <span class="cod">Cod</span><span class="x">X</span
+            ><span class="editor"> Editor</span>
+          </span>
+        </div>
+        <h2>Before you start coding</h2>
+        <p>Please review our Terms and Conditions below</p>
+      </div>
+
+      <div class="card-body">
+        <div class="summary-box">
+          <strong>Quick summary:</strong> CodX Editor is a free, browser-based
+          code editor. Your code stays local on your device. By using our
+          service, you agree to these terms.
         </div>
 
-        <div class="modal-content">
-          <div class="highlight-box">
-            <p>
-              <strong>Quick Summary:</strong> CodX Editor is a free,
-              browser-based code editor. Your code stays local on your device.
-              By using our service, you agree to these terms.
-            </p>
-          </div>
-
-          <div class="terms-section">
-            <h2><i class="fa-solid fa-clipboard-list"></i> Service Description</h2>
-            <p>
-              CodX Editor allows you to write, run, and debug HTML, CSS, and
-              JavaScript code directly in your browser. The service is provided
-              "as is" without warranties.
-            </p>
-          </div>
-
-          <div class="terms-section">
-            <h2><i class="fa-solid fa-circle-check"></i> Your Responsibilities</h2>
-            <ul>
-              <li>Use the service only for lawful purposes</li>
-              <li>Do not create or distribute malicious code or malware</li>
-              <li>Do not attempt unauthorized access to our systems</li>
-              <li>Take responsibility for backing up your own code</li>
-            </ul>
-          </div>
-
-          <div class="terms-section">
-            <h2><i class="fa-solid fa-shield-halved"></i> Your Content & Privacy</h2>
-            <p>
-              <strong>You own your code.</strong> Your work is stored locally in
-              your browser and is never uploaded to our servers.
-            </p>
-            <p>
-              We are committed to the security of your code. Your work is kept
-              private and stored only on your device. Please see our
-              <a
-                href="terms.html"
-                target="_blank"
-                style="color: #4caf50; text-decoration: none; font-weight: 600"
-                >Terms and Conditions</a
-              >
-              for full details.
-            </p>
-          </div>
-
-          <div class="terms-section">
-            <h2><i class="fa-solid fa-triangle-exclamation"></i> Disclaimer</h2>
-            <p>
-              The service is provided "as is" without guarantees. We are not
-              liable for any loss of data, code, or damages resulting from your
-              use of the service.
-            </p>
-          </div>
-
-          <div class="terms-section">
-            <h2><i class="fa-solid fa-pen-to-square"></i> Updates</h2>
-            <p>
-              We may modify these terms at any time. Continued use after changes
-              means you accept the new terms.
-            </p>
-          </div>
-
-          <div class="highlight-box">
-            <p><strong>Last Updated:</strong> February 28, 2026</p>
-          </div>
+        <div class="terms-section">
+          <h2>
+            <i class="fa-solid fa-clipboard-list"></i> Service Description
+          </h2>
+          <p>
+            CodX Editor lets you write, run, and debug HTML, CSS, and JavaScript
+            directly in your browser. The service is provided "as is" without
+            warranties.
+          </p>
         </div>
 
-        <div class="modal-footer">
-          <div class="checkbox-container">
-            <input type="checkbox" id="agreeCheckbox" />
-            <label for="agreeCheckbox">
-              I agree to the
-              <a href="terms.html" target="_blank">Terms and Conditions</a>
-            </label>
-          </div>
-          <button class="action-button" id="continueButton">
-            Start using CodX Editor
-          </button>
-          <a class="help-link" href="help.html">Need help understanding the features?</a>
+        <hr class="divider" />
+
+        <div class="terms-section">
+          <h2>
+            <i class="fa-solid fa-circle-check"></i> Your Responsibilities
+          </h2>
+          <ul>
+            <li>Use the service only for lawful purposes</li>
+            <li>Do not create or distribute malicious code or malware</li>
+            <li>Do not attempt unauthorized access to our systems</li>
+            <li>Take responsibility for backing up your own code</li>
+          </ul>
         </div>
+
+        <hr class="divider" />
+
+        <div class="terms-section">
+          <h2>
+            <i class="fa-solid fa-shield-halved"></i> Your Content &amp; Privacy
+          </h2>
+          <p>
+            <strong>You own your code.</strong> Your work is stored locally in
+            your browser and is never uploaded to our servers. See our
+            <a href="terms.html" target="_blank">Terms and Conditions</a> for
+            full details.
+          </p>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="terms-section">
+          <h2><i class="fa-solid fa-triangle-exclamation"></i> Disclaimer</h2>
+          <p>
+            The service is provided "as is" without guarantees. We are not
+            liable for any loss of data, code, or damages resulting from your
+            use of the service.
+          </p>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="terms-section">
+          <h2><i class="fa-solid fa-pen-to-square"></i> Updates</h2>
+          <p>
+            We may modify these terms at any time. Continued use after changes
+            means you accept the new terms.
+          </p>
+        </div>
+
+        <p class="last-updated">Last updated: February 28, 2026</p>
+      </div>
+
+      <div class="card-footer">
+        <div class="checkbox-row">
+          <input type="checkbox" id="agreeCheckbox" />
+          <label for="agreeCheckbox">
+            I agree to the
+            <a href="terms.html" target="_blank">Terms and Conditions</a>
+          </label>
+        </div>
+        <button class="continue-btn" id="continueButton">
+          Start using CodX Editor
+        </button>
+        <a class="help-link" href="help.html"
+          >Need help understanding the features?</a
+        >
       </div>
     </div>
 
@@ -585,39 +440,31 @@
         return "/frontend.html";
       }
 
-      // Check if user has already agreed
       if (localStorage.getItem("codxTermsAgreed") === "true") {
         modal.style.display = "none";
         window.location.href = resolveNextEditorRoute();
       }
 
-      // Enable/disable button based on checkbox
       checkbox.addEventListener("change", function () {
         if (this.checked) {
           button.classList.add("enabled");
           button.textContent = "Start using CodX Editor";
         } else {
           button.classList.remove("enabled");
-          button.textContent = "Please agree to continue";
+          button.textContent = "Start using CodX Editor";
         }
       });
 
-      // Handle continue button click
       button.addEventListener("click", function () {
         if (!checkbox.checked) return;
         localStorage.setItem("codxTermsAgreed", "true");
         localStorage.setItem("codxTermsAgreedDate", new Date().toISOString());
-
-          // Add success animation
-          button.textContent = "Welcome!";
-          button.style.background = "#2e7d32";
-
-          // Redirect to editor after brief delay
-          setTimeout(() => {
-            window.location.href = resolveNextEditorRoute();
-          }, 800);
+        button.textContent = "Welcome! 🎉";
+        button.style.background = "#2e7d32";
+        setTimeout(() => {
+          window.location.href = resolveNextEditorRoute();
+        }, 800);
       });
     </script>
-
-</body>
+  </body>
 </html>
