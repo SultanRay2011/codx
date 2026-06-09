@@ -546,6 +546,67 @@
           </div>
         </div>
 
+        <!-- Theme Color -->
+        <div style="margin-bottom: 20px">
+          <label
+            for="themeColor"
+            style="
+              display: block;
+              margin-bottom: 8px;
+              font-weight: bold;
+              color: var(--text-primary);
+            "
+          >
+            Theme Color:
+          </label>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <input
+              type="color"
+              id="themeColor"
+              style="
+                width: 60px;
+                height: 40px;
+                border: 2px solid var(--border-color);
+                border-radius: 4px;
+                cursor: pointer;
+              "
+              aria-label="Select theme color"
+            />
+            <input
+              type="text"
+              id="themeColorText"
+              placeholder="#238636"
+              maxlength="7"
+              style="
+                flex: 1;
+                padding: 10px;
+                background: var(--bg-tertiary);
+                border: 1px solid var(--border-color);
+                color: var(--text-primary);
+                border-radius: 4px;
+                font-family: monospace;
+              "
+              aria-label="Theme color code"
+            />
+            <button
+              type="button"
+              id="resetThemeColorBtn"
+              style="
+                padding: 10px 14px;
+                background: transparent;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                color: var(--text-primary);
+                cursor: pointer;
+                font-size: 13px;
+              "
+              aria-label="Reset theme color to default"
+            >
+              Reset Theme
+            </button>
+          </div>
+        </div>
+
         <!-- Text Size -->
         <div style="margin-bottom: 20px">
           <label

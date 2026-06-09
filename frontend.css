@@ -93,12 +93,12 @@ header {
 }
 
 header .run-button {
-  background: #238636;
+  background: var(--accent-color);
 }
 
 header .run-button:hover {
-  background: #2ea043;
-  box-shadow: 0 2px 8px rgba(35, 134, 54, 0.32);
+  background: var(--accent-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
 }
 
 .header-more-menu {
@@ -2184,12 +2184,12 @@ header #addMediaBtn,
 header #zenModeBtn,
 header #helpPageBtn,
 header #headerMoreBtn {
-  background: linear-gradient(180deg, #2ea043, #238636);
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent-color));
   color: #ffffff;
-  border: 1px solid #2ea043;
+  border: 1px solid var(--accent-hover);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 6px 16px rgba(35, 134, 54, 0.24);
+    0 6px 16px rgba(0, 0, 0, 0.24);
 }
 
 header #settingsBtn:hover,
@@ -2200,12 +2200,12 @@ header #addMediaBtn:hover,
 header #zenModeBtn:hover,
 header #helpPageBtn:hover,
 header #headerMoreBtn:hover {
-  background: linear-gradient(180deg, #34b24e, #2ea043);
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent-color));
   color: #ffffff;
-  border-color: #34b24e;
+  border-color: var(--accent-hover);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 8px 20px rgba(35, 134, 54, 0.3);
+    0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 #settingsBtn:hover,

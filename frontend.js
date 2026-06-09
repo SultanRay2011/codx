@@ -18,6 +18,9 @@ const applySettingsBtn = document.getElementById("applySettings");
 const resetSettingsBtn = document.getElementById("resetSettings");
 const editorBgColorInput = document.getElementById("editorBgColor");
 const editorBgColorText = document.getElementById("editorBgColorText");
+const themeColorInput = document.getElementById("themeColor");
+const themeColorText = document.getElementById("themeColorText");
+const resetThemeColorBtn = document.getElementById("resetThemeColorBtn");
 const editorTextSizeInput = document.getElementById("editorTextSize");
 const textSizeValue = document.getElementById("textSizeValue");
 const editorFontFamilySelect = document.getElementById("editorFontFamily");
@@ -2955,6 +2958,7 @@ const defaultSettings = {
   textSize: "14",
   fontFamily: "'JetBrains Mono', 'Consolas', monospace",
   fontEmbed: "",
+  themeColor: "#238636",
 };
 
 // PART 2 - UTILITY FUNCTIONS
@@ -3841,11 +3845,13 @@ function loadSettings() {
   if (savedSettings) {
     try {
       const settings = JSON.parse(savedSettings);
-      editorBgColorInput.value = settings.bgColor;
-      editorBgColorText.value = settings.bgColor;
-      editorTextSizeInput.value = settings.textSize;
-      textSizeValue.textContent = settings.textSize + "px";
-      editorFontFamilySelect.value = settings.fontFamily;
+      editorBgColorInput.value = settings.bgColor || defaultSettings.bgColor;
+      editorBgColorText.value = settings.bgColor || defaultSettings.bgColor;
+      themeColorInput.value = settings.themeColor || defaultSettings.themeColor;
+      themeColorText.value = settings.themeColor || defaultSettings.themeColor;
+      editorTextSizeInput.value = settings.textSize || defaultSettings.textSize;
+      textSizeValue.textContent = (settings.textSize || defaultSettings.textSize) + "px";
+      editorFontFamilySelect.value = settings.fontFamily || defaultSettings.fontFamily;
       if (!editorFontFamilySelect.value) {
         editorFontFamilySelect.value = defaultSettings.fontFamily;
       }
@@ -3859,6 +3865,7 @@ function loadSettings() {
   }
   applyGoogleFontImport(extractGoogleFontsCssUrl(editorFontEmbedInput.value));
   updateFontControlsState();
+  updateThemeColor(themeColorInput.value);
   updatePreviewBox();
   applySettingsToEditors();
 }
@@ -3866,12 +3873,15 @@ function loadSettings() {
 function resetToDefaultSettings() {
   editorBgColorInput.value = defaultSettings.bgColor;
   editorBgColorText.value = defaultSettings.bgColor;
+  themeColorInput.value = defaultSettings.themeColor;
+  themeColorText.value = defaultSettings.themeColor;
   editorTextSizeInput.value = defaultSettings.textSize;
   textSizeValue.textContent = defaultSettings.textSize + "px";
   editorFontFamilySelect.value = defaultSettings.fontFamily;
   editorFontEmbedInput.value = defaultSettings.fontEmbed;
   applyGoogleFontImport("");
   updateFontControlsState();
+  updateThemeColor(defaultSettings.themeColor);
 }
 
 function extractGoogleFontsCssUrl(rawInput) {
@@ -3947,6 +3957,7 @@ function updateFontControlsState() {
 
 function updatePreviewBox() {
   settingsPreview.style.backgroundColor = editorBgColorInput.value;
+  settingsPreview.style.borderColor = themeColorInput.value;
   settingsPreview.style.fontSize = editorTextSizeInput.value + "px";
   settingsPreview.style.fontFamily = getEffectiveEditorFontFamily();
   settingsPreview.style.lineHeight = "1.5";
@@ -3976,6 +3987,35 @@ function applySettingsToEditors() {
   lineNumbers.style.fontSize = editorTextSizeInput.value + "px";
   syncSyntaxLayerStyle(editor);
   renderSyntaxHighlight(editor);
+  updateThemeColor(themeColorInput.value);
+}
+
+function updateThemeColor(rawColor) {
+  const color = normalizeHexColor(rawColor) || defaultSettings.themeColor;
+  document.documentElement.style.setProperty("--accent-color", color);
+  document.documentElement.style.setProperty("--accent-hover", getHoverColor(color));
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) {
+    themeMeta.setAttribute("content", color);
+  }
+}
+
+function normalizeHexColor(rawColor) {
+  const value = String(rawColor || "").trim();
+  const match = value.match(/^#?([0-9A-Fa-f]{6})$/);
+  return match ? `#${match[1].toUpperCase()}` : "";
+}
+
+function getHoverColor(hex) {
+  const normalized = normalizeHexColor(hex);
+  if (!normalized) return defaultSettings.themeColor;
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
+  const factor = 0.18;
+  const lighten = (value) => Math.min(255, Math.max(0, Math.round(value + (255 - value) * factor)));
+  const hoverColor = `#${((1 << 24) + (lighten(r) << 16) + (lighten(g) << 8) + lighten(b)).toString(16).slice(1)}`;
+  return hoverColor;
 }
 
 editorBgColorInput.addEventListener("input", (e) => {
@@ -3992,6 +4032,29 @@ editorBgColorText.addEventListener("input", (e) => {
     updatePreviewBox();
   }
 });
+
+themeColorInput.addEventListener("input", (e) => {
+  themeColorText.value = e.target.value;
+  updatePreviewBox();
+});
+
+themeColorText.addEventListener("input", (e) => {
+  const hexValue = e.target.value;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+    themeColorInput.value = hexValue;
+    updatePreviewBox();
+  }
+});
+
+if (resetThemeColorBtn) {
+  resetThemeColorBtn.addEventListener("click", () => {
+    const defaultTheme = defaultSettings.themeColor;
+    themeColorInput.value = defaultTheme;
+    themeColorText.value = defaultTheme;
+    updateThemeColor(defaultTheme);
+    updatePreviewBox();
+  });
+}
 
 editorTextSizeInput.addEventListener("input", (e) => {
   textSizeValue.textContent = e.target.value + "px";
@@ -4032,6 +4095,7 @@ applySettingsBtn.addEventListener("click", () => {
 
   const settings = {
     bgColor: editorBgColorInput.value,
+    themeColor: themeColorInput.value,
     textSize: editorTextSizeInput.value,
     fontFamily: editorFontFamilySelect.value,
     fontEmbed: cssUrl || "",
