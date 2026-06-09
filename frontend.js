@@ -3225,6 +3225,7 @@ function scheduleProjectAutosave() {
       JSON.stringify({
         activeFileName: snapshot.activeFileName,
         savedAt: snapshot.savedAt,
+        savedProjectName: activeSavedProjectName || "",
       }),
     );
     lastAutosaveAt = Date.now();
@@ -3238,6 +3239,45 @@ function getSavedProjects() {
   } catch (_err) {
     return [];
   }
+}
+
+function findSavedProjectNameForSnapshot(snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.files)) return null;
+
+  const normalizedSnapshotFiles = snapshot.files
+    .map((file) => `${String(file.name || "")}|${String(file.type || "")}`)
+    .sort()
+    .join("||");
+  const activeFileName = String(snapshot.activeFileName || "").trim();
+
+  const savedProjects = getSavedProjects();
+  let exactMatch = null;
+  let fileMatch = null;
+
+  for (const project of savedProjects) {
+    if (!project?.snapshot || !Array.isArray(project.snapshot.files)) continue;
+    const normalizedSavedFiles = project.snapshot.files
+      .map((file) => `${String(file.name || "")}|${String(file.type || "")}`)
+      .sort()
+      .join("||");
+
+    if (normalizedSavedFiles !== normalizedSnapshotFiles) continue;
+
+    if (
+      String(project.snapshot.activeFileName || "").trim() === activeFileName ||
+      String(project.name || "").trim() === activeFileName
+    ) {
+      return String(project.name || "").trim() || null;
+    }
+
+    if (!fileMatch) {
+      fileMatch = String(project.name || "").trim() || null;
+    } else {
+      fileMatch = null;
+    }
+  }
+
+  return fileMatch;
 }
 
 function setSavedProjects(projects) {
@@ -3546,6 +3586,14 @@ async function tryRestoreAutosaveDraft() {
       return false;
     }
 
+    const rawMeta = safeLocalStorage("get", AUTOSAVE_META_KEY);
+    let autosaveMeta = {};
+    try {
+      autosaveMeta = JSON.parse(rawMeta || "{}");
+    } catch (_err) {
+      autosaveMeta = {};
+    }
+
     const currentSnapshot = serializeProjectState();
     const sameAsCurrent = JSON.stringify(snapshot?.files || []) === JSON.stringify(currentSnapshot.files || []);
     if (sameAsCurrent) return false;
@@ -3568,6 +3616,11 @@ async function tryRestoreAutosaveDraft() {
     if (!dialog?.ok) return false;
 
     applyProjectState(snapshot, "autosave");
+    activeSavedProjectName = String(autosaveMeta.savedProjectName || "").trim() || null;
+    if (!activeSavedProjectName) {
+      activeSavedProjectName = findSavedProjectNameForSnapshot(snapshot);
+    }
+    updateProjectStatusUI();
     showNotification("Restored autosaved project draft.", "info");
     return true;
   } catch (_err) {
