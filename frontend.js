@@ -6885,17 +6885,14 @@ function handleHtmlEnterIndentation(e, editor) {
   if (openTagMatch) {
     const tagName = openTagMatch[1].toLowerCase();
     const closingTagPattern = new RegExp(`^</${tagName}\\s*>`, "i");
-    if (!selfClosingTags.includes(tagName) && closingTagPattern.test(textAfter)) {
+    if (!selfClosingTags.includes(tagName)) {
       const nextIndent = currentIndent + INDENT_UNIT;
       e.preventDefault();
-      applyEditorMutation(
-        editor,
-        pos,
-        editor.selectionEnd,
-        "\n" + nextIndent + "\n" + currentIndent,
-        pos + 1 + nextIndent.length,
-        pos + 1 + nextIndent.length,
-      );
+      const replacement = closingTagPattern.test(textAfter)
+        ? "\n" + nextIndent + "\n" + currentIndent
+        : "\n" + nextIndent;
+      const caretPos = pos + 1 + nextIndent.length;
+      applyEditorMutation(editor, pos, editor.selectionEnd, replacement, caretPos, caretPos);
       return true;
     }
   }
@@ -6909,6 +6906,70 @@ function handleHtmlEnterIndentation(e, editor) {
     pos + 1 + currentIndent.length,
     pos + 1 + currentIndent.length,
   );
+  return true;
+}
+
+function getOpenHtmlTagBeforeCaret(textBefore) {
+  const lastLt = textBefore.lastIndexOf("<");
+  const lastGt = textBefore.lastIndexOf(">");
+  if (lastLt === -1 || lastGt > lastLt) return null;
+  const openTagText = textBefore.slice(lastLt);
+  if (/^<\//.test(openTagText) || /\/\s*$/.test(openTagText)) return null;
+  const tagMatch = openTagText.match(/^<([a-zA-Z][a-zA-Z0-9-]*)\b/i);
+  if (!tagMatch) return null;
+  return {
+    tagName: tagMatch[1].toLowerCase(),
+    openTagText,
+  };
+}
+
+function handleHtmlAttributeValueCompletion(e, editor) {
+  if (!activeFile || activeFile.type !== "html") return false;
+  if (e.key !== "=" && e.key !== " ") return false;
+
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const textBefore = editor.value.substring(0, start);
+  if (isInsideStyleTag(textBefore) || isInsideScriptTag(textBefore)) return false;
+
+  const tagContext = getOpenHtmlTagBeforeCaret(textBefore);
+  if (!tagContext) return false;
+
+  if (e.key === " " && tagContext.tagName === "a") {
+    const hasHref = /\bhref\s*=/.test(tagContext.openTagText);
+    const endsAtTagName = /^<a$/i.test(tagContext.openTagText);
+    if (!hasHref && endsAtTagName) {
+      e.preventDefault();
+      const insertedText = ' href=""';
+      const caretPos = start + insertedText.length - 1;
+      applyEditorMutation(editor, start, end, insertedText, caretPos, caretPos);
+      return true;
+    }
+  }
+
+  const attrMatch = tagContext.openTagText.match(/\s([a-zA-Z_:][-a-zA-Z0-9_:.]*)$/);
+  if (!attrMatch) return false;
+
+  const attrName = attrMatch[1].toLowerCase();
+  const booleanAttrs = new Set([
+    "controls",
+    "autoplay",
+    "loop",
+    "muted",
+    "required",
+    "disabled",
+    "checked",
+    "selected",
+    "hidden",
+    "readonly",
+    "multiple",
+  ]);
+  if (booleanAttrs.has(attrName)) return false;
+
+  e.preventDefault();
+  const insertedText = e.key === "=" ? '=""' : '="" ';
+  const caretPos = start + 2;
+  applyEditorMutation(editor, start, end, insertedText, caretPos, caretPos);
   return true;
 }
 
@@ -6992,6 +7053,295 @@ function expandCxStartShortcut(editor) {
   return true;
 }
 
+function getEmmetAbbreviationAtCaret(editor) {
+  if (!activeFile || activeFile.type !== "html") return null;
+  if (editor.selectionStart !== editor.selectionEnd) return null;
+
+  const pos = editor.selectionStart;
+  const textBefore = editor.value.substring(0, pos);
+  if (isInsideStyleTag(textBefore) || isInsideScriptTag(textBefore)) return null;
+
+  const lineStart = textBefore.lastIndexOf("\n") + 1;
+  const lineBeforeCaret = textBefore.substring(lineStart);
+  const match = lineBeforeCaret.match(/([!a-zA-Z0-9._#>[\]=:'"{}()+*$-]+)$/);
+  if (!match) return null;
+
+  const abbreviation = match[1];
+  if (!abbreviation || abbreviation.includes("<")) return null;
+  if (!/[.#>[{(+*:]|^!$|^[a-zA-Z][a-zA-Z0-9-]*$/.test(abbreviation)) return null;
+
+  return {
+    abbreviation,
+    replaceStart: pos - abbreviation.length,
+    replaceEnd: pos,
+    lineIndent: lineBeforeCaret.match(/^\s*/)?.[0] || "",
+  };
+}
+
+function parseEmmetAttributes(source) {
+  const attrs = {};
+  source
+    .trim()
+    .match(/(?:[^\s"'=]+(?:=(?:"[^"]*"|'[^']*'|[^\s"']+))?)/g)
+    ?.forEach((part) => {
+      const eqIndex = part.indexOf("=");
+      if (eqIndex === -1) {
+        attrs[part] = "";
+        return;
+      }
+      const name = part.slice(0, eqIndex);
+      const rawValue = part.slice(eqIndex + 1).replace(/^["']|["']$/g, "");
+      attrs[name] = rawValue;
+    });
+  return attrs;
+}
+
+function cloneEmmetNode(node) {
+  return {
+    tag: node.tag,
+    id: node.id,
+    classes: [...node.classes],
+    attrs: { ...node.attrs },
+    text: node.text,
+    children: node.children.map(cloneEmmetNode),
+  };
+}
+
+function expandEmmetNumber(value, index) {
+  return String(value || "").replace(/\$+/g, (token) =>
+    String(index).padStart(token.length, "0"),
+  );
+}
+
+function parseEmmetAbbreviation(abbreviation) {
+  let index = 0;
+
+  const peek = () => abbreviation[index] || "";
+  const readWhile = (regex) => {
+    let value = "";
+    while (index < abbreviation.length && regex.test(abbreviation[index])) {
+      value += abbreviation[index];
+      index += 1;
+    }
+    return value;
+  };
+  const readBalanced = (open, close) => {
+    if (peek() !== open) return "";
+    index += 1;
+    let value = "";
+    let quote = "";
+    while (index < abbreviation.length) {
+      const char = abbreviation[index];
+      index += 1;
+      if (quote) {
+        if (char === quote) quote = "";
+        value += char;
+        continue;
+      }
+      if (char === '"' || char === "'") {
+        quote = char;
+        value += char;
+        continue;
+      }
+      if (char === close) return value;
+      value += char;
+    }
+    return null;
+  };
+  const readMultiplier = () => {
+    if (peek() !== "*") return 1;
+    index += 1;
+    const count = Number(readWhile(/[0-9]/));
+    return Number.isInteger(count) && count > 0 && count <= 100 ? count : 1;
+  };
+
+  const parseExpression = (stopOnParen = false) => {
+    const siblings = [];
+    while (index < abbreviation.length) {
+      if (stopOnParen && peek() === ")") break;
+      siblings.push(...parseTerm(stopOnParen));
+      if (peek() !== "+") break;
+      index += 1;
+    }
+    return siblings;
+  };
+
+  const parseTerm = (stopOnParen = false) => {
+    const roots = parseAtom(stopOnParen);
+    if (!roots.length) return roots;
+    if (peek() === ">") {
+      index += 1;
+      const children = parseExpression(stopOnParen);
+      roots.forEach((root) => {
+        root.children.push(...children.map(cloneEmmetNode));
+      });
+    }
+    return roots;
+  };
+
+  const parseAtom = (stopOnParen = false) => {
+    let nodes = [];
+    if (peek() === "(") {
+      index += 1;
+      nodes = parseExpression(true);
+      if (peek() !== ")") throw new Error("Unclosed Emmet group");
+      index += 1;
+    } else {
+      nodes = [parseElement()];
+    }
+
+    const multiplier = readMultiplier();
+    if (multiplier === 1) return nodes;
+    const repeated = [];
+    for (let itemIndex = 1; itemIndex <= multiplier; itemIndex += 1) {
+      nodes.forEach((node) => {
+        const clone = cloneEmmetNode(node);
+        applyEmmetNumbering(clone, itemIndex);
+        repeated.push(clone);
+      });
+    }
+    return repeated;
+  };
+
+  const parseElement = () => {
+    const node = {
+      tag: "",
+      id: "",
+      classes: [],
+      attrs: {},
+      text: "",
+      children: [],
+    };
+
+    if (/[a-zA-Z]/.test(peek())) {
+      node.tag = readWhile(/[a-zA-Z0-9-]/);
+    }
+
+    while (index < abbreviation.length) {
+      const char = peek();
+      if (char === "." || char === "#") {
+        index += 1;
+        const value = readWhile(/[a-zA-Z0-9_$-]/);
+        if (!value) throw new Error("Invalid Emmet identifier");
+        if (char === ".") node.classes.push(value);
+        else node.id = value;
+      } else if (char === "[") {
+        const rawAttrs = readBalanced("[", "]");
+        if (rawAttrs === null) throw new Error("Unclosed Emmet attribute");
+        Object.assign(node.attrs, parseEmmetAttributes(rawAttrs));
+      } else if (char === "{") {
+        const text = readBalanced("{", "}");
+        if (text === null) throw new Error("Unclosed Emmet text");
+        node.text = text;
+      } else {
+        break;
+      }
+    }
+
+    if (!node.tag) node.tag = "div";
+    return node;
+  };
+
+  const applyEmmetNumbering = (node, number) => {
+    node.tag = expandEmmetNumber(node.tag, number);
+    node.id = expandEmmetNumber(node.id, number);
+    node.classes = node.classes.map((value) => expandEmmetNumber(value, number));
+    node.text = expandEmmetNumber(node.text, number);
+    Object.keys(node.attrs).forEach((name) => {
+      const nextName = expandEmmetNumber(name, number);
+      const nextValue = expandEmmetNumber(node.attrs[name], number);
+      if (nextName !== name) delete node.attrs[name];
+      node.attrs[nextName] = nextValue;
+    });
+    node.children.forEach((child) => applyEmmetNumbering(child, number));
+  };
+
+  const parsed = parseExpression(false);
+  if (!parsed.length || index < abbreviation.length) return null;
+  return parsed;
+}
+
+function renderEmmetNodes(nodes, baseIndent = "") {
+  const renderNode = (node, depth) => {
+    const indent = baseIndent + INDENT_UNIT.repeat(depth);
+    const attrs = [];
+    if (node.id) attrs.push(`id="${node.id}"`);
+    if (node.classes.length) attrs.push(`class="${node.classes.join(" ")}"`);
+    Object.entries(node.attrs).forEach(([name, value]) => {
+      attrs.push(value === "" ? name : `${name}="${value}"`);
+    });
+    const openTag = `<${node.tag}${attrs.length ? " " + attrs.join(" ") : ""}>`;
+
+    if (selfClosingTags.includes(node.tag.toLowerCase()) && !node.text && !node.children.length) {
+      return `${indent}${openTag.replace(/>$/, " />")}`;
+    }
+
+    if (!node.children.length) {
+      return `${indent}${openTag}${node.text || ""}</${node.tag}>`;
+    }
+
+    const childMarkup = node.children.map((child) => renderNode(child, depth + 1)).join("\n");
+    const textLine = node.text ? `\n${baseIndent}${INDENT_UNIT.repeat(depth + 1)}${node.text}` : "";
+    return `${indent}${openTag}${textLine}\n${childMarkup}\n${indent}</${node.tag}>`;
+  };
+
+  return nodes.map((node) => renderNode(node, 0)).join("\n");
+}
+
+function isExplicitEmmetAbbreviation(abbreviation) {
+  const value = String(abbreviation || "");
+  return value === "!" || value.toLowerCase() === "html:5" || /[.#>[{(+*:]/.test(value);
+}
+
+function expandEmmetAbbreviation(editor, options = {}) {
+  const context = getEmmetAbbreviationAtCaret(editor);
+  if (!context) return false;
+  if (options.requireExplicit && !isExplicitEmmetAbbreviation(context.abbreviation)) {
+    return false;
+  }
+
+  try {
+    if (context.abbreviation === "!" || context.abbreviation.toLowerCase() === "html:5") {
+      const replacement = getDefaultHtmlStarter()
+        .split("\n")
+        .map((line) => (line ? context.lineIndent + line : line))
+        .join("\n");
+      const bodyMatch = replacement.match(/<body>\n([\s\S]*?)\n<\/body>/i);
+      const bodyContentOffset =
+        bodyMatch && bodyMatch[1] ? replacement.indexOf(bodyMatch[1]) : replacement.length;
+      const caretPos = context.replaceStart + bodyContentOffset;
+      applyEditorMutation(
+        editor,
+        context.replaceStart,
+        context.replaceEnd,
+        replacement,
+        caretPos,
+        caretPos,
+      );
+      hideSuggestions();
+      return true;
+    }
+
+    const nodes = parseEmmetAbbreviation(context.abbreviation);
+    if (!nodes) return false;
+
+    const replacement = renderEmmetNodes(nodes, context.lineIndent);
+    const caretPos = context.replaceStart + replacement.length;
+    applyEditorMutation(
+      editor,
+      context.replaceStart,
+      context.replaceEnd,
+      replacement,
+      caretPos,
+      caretPos,
+    );
+    hideSuggestions();
+    return true;
+  } catch (_err) {
+    return false;
+  }
+}
+
 /**
  * Handles all keydown events in the editor for suggestions, tab, and auto-closing. (REVISED)
  */
@@ -7043,6 +7393,23 @@ function handleEditorKeyDown(e) {
     updateLineNumbers(editor);
   }
 
+  const caretContextBefore = editor.value.substring(0, editor.selectionStart);
+  const isHtmlStyleContext =
+    activeFile.type === "html" && isInsideStyleTag(caretContextBefore);
+  const isHtmlScriptContext =
+    activeFile.type === "html" && isInsideScriptTag(caretContextBefore);
+
+  if (activeFile.type === "html" && e.key === "Enter" && !isHtmlStyleContext && !isHtmlScriptContext) {
+    hideSuggestions();
+    if (expandCxStartShortcut(editor)) {
+      e.preventDefault();
+      return;
+    }
+    if (handleHtmlEnterIndentation(e, editor)) {
+      return;
+    }
+  }
+
   // --- 1. Suggestion Popup Navigation (HTML only) ---
   if (suggestionPopup.style.display === "block") {
     const items = suggestionPopup.querySelectorAll(".suggestion-item");
@@ -7067,6 +7434,16 @@ function handleEditorKeyDown(e) {
       return;
     } else if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
+      if (
+        e.key === "Tab" &&
+        activeFile.type === "html" &&
+        !isHtmlStyleContext &&
+        !isHtmlScriptContext &&
+        expandEmmetAbbreviation(editor)
+      ) {
+        return;
+      }
+
       const selectedIndex = activeSuggestion > -1 ? activeSuggestion : 0;
       const selected = items[selectedIndex];
       if (selected) {
@@ -7088,6 +7465,10 @@ function handleEditorKeyDown(e) {
   }
 
   // --- 2. Auto-Closing & Indentation (CSS and JS) ---
+  if (activeFile.type === "html" && handleHtmlAttributeValueCompletion(e, editor)) {
+    return;
+  }
+
   if (activeFile.type === "html" && e.key === "=") {
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
@@ -7103,18 +7484,9 @@ function handleEditorKeyDown(e) {
     }
   }
 
-  const caretContextBefore = editor.value.substring(0, editor.selectionStart);
-  const isHtmlStyleContext =
-    activeFile.type === "html" && isInsideStyleTag(caretContextBefore);
-  const isHtmlScriptContext =
-    activeFile.type === "html" && isInsideScriptTag(caretContextBefore);
-
-  if (activeFile.type === "html" && e.key === "Enter" && !isHtmlStyleContext && !isHtmlScriptContext) {
-    if (expandCxStartShortcut(editor)) {
+  if (activeFile.type === "html" && e.key === "Tab" && !isHtmlStyleContext && !isHtmlScriptContext) {
+    if (expandEmmetAbbreviation(editor)) {
       e.preventDefault();
-      return;
-    }
-    if (handleHtmlEnterIndentation(e, editor)) {
       return;
     }
   }
