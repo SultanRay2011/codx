@@ -2938,9 +2938,17 @@ function getDefaultHtmlStarter() {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <script src="script.js"></script>
+    
 </body>
 </html>`;
+}
+
+function getHtmlStarterCursorPosition(html) {
+  const indentLine = "\n    \n</body>";
+  const index = html.indexOf(indentLine);
+  return index >= 0 ? index + 1 + 4 : html.length;
 }
 
 function getFreshProjectState() {
@@ -3853,6 +3861,9 @@ async function createNewFile() {
   const editor = document.getElementById("activeEditor");
   editor.value = newFile.content; // Set editor value to the template
   updateLineNumbers(editor);
+  const cursorPos = getHtmlStarterCursorPosition(newFile.content);
+  editor.focus();
+  editor.setSelectionRange(cursorPos, cursorPos);
   renderFileList();
   scheduleProjectAutosave();
   if (autoRunCheckbox.checked) updatePreview();
@@ -7232,10 +7243,14 @@ function expandCxStartShortcut(editor) {
     .map((line) => (line ? linePrefix + line : line))
     .join("\n");
 
-  const bodyMatch = replacement.match(/<body>\n([\s\S]*?)\n<\/body>/i);
-  const bodyContentOffset =
-    bodyMatch && bodyMatch[1] ? replacement.indexOf(bodyMatch[1]) : replacement.length;
-  const caretPos = lineStart + bodyContentOffset;
+  const scriptEnd = replacement.indexOf("</script>");
+  let caretPos = replacement.length;
+  if (scriptEnd >= 0) {
+    const nextLineIndex = replacement.indexOf("\n", scriptEnd);
+    if (nextLineIndex >= 0) {
+      caretPos = nextLineIndex + 1 + 4;
+    }
+  }
   applyEditorMutation(
     editor,
     lineStart,
