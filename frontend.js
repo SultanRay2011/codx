@@ -7389,11 +7389,23 @@ function expandEmmetAbbreviation(editor, options = {}) {
     const nodes = parseEmmetAbbreviation(context.abbreviation);
     if (!nodes) return false;
 
-    const replacement = renderEmmetNodes(nodes, context.lineIndent);
-    const caretPos = context.replaceStart + replacement.length;
+    const textBeforeAbbreviation = editor.value.substring(
+      editor.value.lastIndexOf("\n", context.replaceStart - 1) + 1,
+      context.replaceStart,
+    );
+    const shouldPreserveIndent = /^[\t ]*$/.test(textBeforeAbbreviation);
+    const replacement = renderEmmetNodes(
+      nodes,
+      shouldPreserveIndent ? context.lineIndent : "",
+    );
+    const insertStart = shouldPreserveIndent
+      ? editor.value.lastIndexOf("\n", context.replaceStart - 1) + 1
+      : context.replaceStart;
+    const caretPos = insertStart + replacement.length;
+
     applyEditorMutation(
       editor,
-      context.replaceStart,
+      insertStart,
       context.replaceEnd,
       replacement,
       caretPos,
