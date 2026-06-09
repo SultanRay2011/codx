@@ -3533,7 +3533,13 @@ function renderFileList() {
     fileItem.className = `file-item ${file.active ? "active" : ""}`;
 
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = file.name;
+    nameSpan.className = "file-name";
+    nameSpan.appendChild(createFileExtensionIcon(file.name));
+
+    const fileNameText = document.createElement("span");
+    fileNameText.className = "file-name-text";
+    fileNameText.textContent = file.name;
+    nameSpan.appendChild(fileNameText);
     if (
       currentTypingIndicator &&
       currentTypingIndicator.name !== myInfo.name &&
@@ -6094,9 +6100,31 @@ function getFileIcon(fileName) {
   if (ext === "html") return "HTML";
   if (ext === "css") return "CSS";
   if (ext === "js" || ext === "mjs") return "JS";
+  if (ext === "env") return "ENV";
   if (["png", "jpg", "jpeg", "gif", "svg", "webp", "ico"].includes(ext)) return "IMG";
   if (["mp3", "wav", "ogg", "mp4", "webm", "m4a"].includes(ext)) return "MED";
   return "FILE";
+}
+
+function createFileExtensionIcon(fileName) {
+  const ext = getFileType(fileName);
+  const iconByExtension = {
+    html: "fa-brands fa-html5",
+    css: "fa-brands fa-css3-alt",
+    js: "fa-brands fa-js",
+    mjs: "fa-brands fa-js",
+    env: "fa-solid fa-key",
+  };
+  const safeExt = ["html", "css", "js", "mjs", "env"].includes(ext) ? ext : "file";
+  const icon = document.createElement("span");
+  icon.className = `file-extension-icon file-extension-icon-${safeExt}`;
+  icon.title = `${getFileIcon(fileName)} file`;
+  icon.setAttribute("aria-hidden", "true");
+
+  const glyph = document.createElement("i");
+  glyph.className = iconByExtension[ext] || "fa-solid fa-file-code";
+  icon.appendChild(glyph);
+  return icon;
 }
 
 function getCaretCoordinates(textarea, pos) {

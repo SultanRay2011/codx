@@ -309,6 +309,50 @@ body.zen-mode #zenExitBtn {
   font-weight: 500;
 }
 
+.file-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.file-name-text {
+  min-width: 0;
+}
+
+.file-extension-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.95;
+}
+
+.file-extension-icon-html {
+  color: #e34f26;
+}
+
+.file-extension-icon-css {
+  color: #1572b6;
+}
+
+.file-extension-icon-js,
+.file-extension-icon-mjs {
+  color: #f7df1e;
+}
+
+.file-extension-icon-env {
+  color: var(--warning-color);
+}
+
+.file-item.active .file-extension-icon {
+  color: #ffffff;
+}
+
 .file-typing-indicator {
   margin-left: 6px;
   font-size: 11px;
