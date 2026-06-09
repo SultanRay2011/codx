@@ -61,6 +61,7 @@ const runDeveloperCommandBtn = document.getElementById("runDeveloperCommandBtn")
 const clearDeveloperConsoleBtn = document.getElementById("clearDeveloperConsoleBtn");
 const closeDeveloperConsoleBtn = document.getElementById("closeDeveloperConsoleBtn");
 const saveProjectBtn = document.getElementById("saveProjectBtn");
+const projectStatusSaveBtn = document.getElementById("projectStatusSaveBtn");
 const newProjectBtn = document.getElementById("newProjectBtn");
 const openSavedProjectsBtn = document.getElementById("openSavedProjectsBtn");
 const templatesBtn = document.getElementById("templatesBtn");
@@ -1375,6 +1376,7 @@ const jsSuggestions = [
 ];
 
 let hasUnsavedChanges = false;
+let activeSavedProjectName = null;
 let autoRunTimeout;
 let latestDiagnostics = [];
 let sessionData = {};
@@ -2993,12 +2995,18 @@ function formatProjectStatusTime(timestamp) {
 function updateProjectStatusUI() {
   if (!projectStatusBadge || !projectStatusMeta) return;
   projectStatusBadge.classList.remove("saved", "unsaved");
+  if (projectStatusSaveBtn) {
+    projectStatusSaveBtn.hidden = true;
+  }
   if (hasUnsavedChanges) {
     projectStatusBadge.textContent = "Unsaved";
     projectStatusBadge.classList.add("unsaved");
     projectStatusMeta.textContent = lastAutosaveAt
       ? `Autosaved ${formatProjectStatusTime(lastAutosaveAt)}`
       : "Save to keep this version";
+    if (projectStatusSaveBtn && activeSavedProjectName) {
+      projectStatusSaveBtn.hidden = false;
+    }
     return;
   }
   projectStatusBadge.textContent = "Saved";
@@ -3268,6 +3276,7 @@ function saveCurrentProjectToLibrary(projectName) {
     projects.unshift(nextRecord);
   }
   setSavedProjects(projects.slice(0, 24));
+  activeSavedProjectName = trimmedName;
   hasUnsavedChanges = false;
   lastAutosaveAt = Date.now();
   updateProjectStatusUI();
@@ -3477,8 +3486,9 @@ function renderProjectLibrary(mode = "saved") {
       const project = savedProjects.find((entry) => entry.id === btn.dataset.projectId);
       if (!project?.snapshot) return;
       applyProjectState(project.snapshot, "saved project");
+      activeSavedProjectName = project.name;
       closeProjectLibrary();
-      showNotification(`Opened "${project.name}".`, "success");
+      updateProjectStatusUI();
     };
   });
 
@@ -11381,6 +11391,22 @@ if (newProjectBtn) {
 }
 if (saveProjectBtn) {
   saveProjectBtn.addEventListener("click", async () => {
+    const dialog = await showAppPrompt(
+      "SAVE PROJECT",
+      "Choose a name for this saved project:",
+      getSuggestedProjectName(),
+      "codx-project",
+    );
+    if (!dialog?.ok) return;
+    saveCurrentProjectToLibrary(dialog.value);
+  });
+}
+if (projectStatusSaveBtn) {
+  projectStatusSaveBtn.addEventListener("click", async () => {
+    if (activeSavedProjectName) {
+      saveCurrentProjectToLibrary(activeSavedProjectName);
+      return;
+    }
     const dialog = await showAppPrompt(
       "SAVE PROJECT",
       "Choose a name for this saved project:",
