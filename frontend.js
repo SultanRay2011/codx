@@ -769,6 +769,37 @@ const cssPropertySuggestions = [
   "border-radius",
   "border-color",
   "border-width",
+  "border-bottom-width",
+  "border-collapse",
+  "border-spacing",
+  "border-image",
+  "border-image-source",
+  "border-image-slice",
+  "border-image-width",
+  "border-image-outset",
+  "border-image-repeat",
+  "table-layout",
+  "caption-side",
+  "column-count",
+  "column-gap",
+  "column-rule",
+  "column-rule-color",
+  "column-rule-style",
+  "column-rule-width",
+  "column-span",
+  "scroll-behavior",
+  "scroll-snap-type",
+  "scroll-snap-align",
+  "transform-origin",
+  "transform-style",
+  "perspective",
+  "perspective-origin",
+  "mix-blend-mode",
+  "background-blend-mode",
+  "clip-path",
+  "text-decoration-skip-ink",
+  "writing-mode",
+  "text-orientation",
   "box-sizing",
   "outline",
   "outline-color",
@@ -990,6 +1021,24 @@ const cssValueSuggestionsByProperty = {
   "background-attachment": ["scroll", "fixed", "local"],
   "background-clip": ["border-box", "padding-box", "content-box", "text"],
   "background-origin": ["border-box", "padding-box", "content-box"],
+  "text-decoration-skip-ink": ["auto", "none"],
+  "scroll-behavior": ["auto", "smooth"],
+  "scroll-snap-type": ["none", "x", "y", "block", "inline", "both", "x mandatory", "y proximity"],
+  "scroll-snap-align": ["start", "center", "end", "nearest"],
+  "transform-origin": ["center", "top", "bottom", "left", "right", "center center", "top left", "50% 50%"],
+  "transform-style": ["flat", "preserve-3d"],
+  "perspective": ["none", "500px", "1000px", "1500px", "2000px"],
+  "perspective-origin": ["50% 50%", "top left", "top center", "bottom right"],
+  "mix-blend-mode": ["normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion", "hue", "saturation", "color", "luminosity"],
+  "background-blend-mode": ["normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion"],
+  "clip-path": ["none", "circle(50% at 50% 50%)", "ellipse(50% 40% at 50% 50%)", "inset(0 0 0 0 round 16px)", "polygon(0 0, 100% 0, 100% 100%, 0 100%)"],
+  "font-variant": ["normal", "small-caps", "all-small-caps", "petite-caps"],
+  "table-layout": ["auto", "fixed"],
+  "border-collapse": ["separate", "collapse"],
+  "border-spacing": ["0", "0.5rem", "1rem", "2rem"],
+  "caption-side": ["top", "bottom"],
+  "writing-mode": ["horizontal-tb", "vertical-rl", "vertical-lr"],
+  "text-orientation": ["mixed", "upright", "sideways"],
   "text-align": ["left", "center", "right", "justify"],
   "font-family": [
     "Arial, sans-serif",
@@ -1281,6 +1330,11 @@ const cssSelectorSuggestions = [
   "textarea",
   "select",
   "option",
+  "input[type=\"text\"]",
+  "input[type=\"email\"]",
+  "input[type=\"submit\"]",
+  "input[type=\"checkbox\"]",
+  "input[type=\"radio\"]",
   "h1",
   "h2",
   "h3",
@@ -1317,10 +1371,16 @@ const cssSelectorSuggestions = [
   ".button-primary",
   ".button-secondary",
   ".grid",
+  ".grid-item",
   ".stack",
   ".flow > * + *",
   ".visually-hidden",
   ".sr-only",
+  ".button-group > button",
+  ".card + .card",
+  ".nav a.active",
+  ".is-active",
+  ".is-hidden",
   ".grid > *",
   ".stack > * + *",
   "main > section",
@@ -1335,10 +1395,14 @@ const cssSelectorSuggestions = [
   ":nth-child(2)",
   ":nth-of-type(2)",
   ":not(.active)",
+  ":not(:last-child)",
+  ":not([disabled])",
   ":empty",
   ":checked",
   ":disabled",
   ":required",
+  ":first-of-type",
+  ":last-of-type",
   ":has(.active)",
   "::before",
   "::after",
@@ -2936,21 +3000,19 @@ function getDefaultHtmlStarter() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodX Editor</title>
+    <title>New File</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <script src="script.js"></script>
     
+    <script src="script.js"></script>
 </body>
 </html>`;
 }
 
 function getHtmlStarterCursorPosition(html) {
-  const indentLine = "\n    \n</body>";
-  const index = html.indexOf(indentLine);
-  return index >= 0 ? index + 1 + 4 : html.length;
+  const position = html.indexOf("\n    \n    <script");
+  return position >= 0 ? position + 1 + 4 : html.length;
 }
 
 function getFreshProjectState() {
@@ -3333,7 +3395,7 @@ function getSuggestedProjectName() {
 
 async function startFreshProject() {
   applyProjectState(getFreshProjectState(), "new project");
-  document.title = "New File";
+  document.title = "CodX Editor";
   clearConsole();
   showNotification("Started a fresh HTML starter project.", "success");
 }
@@ -3931,7 +3993,7 @@ async function createNewFile() {
   scheduleProjectAutosave();
   if (autoRunCheckbox.checked) updatePreview();
   syncProjectWithSession();
-  document.title = "New File";
+  document.title = "CodX Editor";
   showNotification(`File ${trimmedName} created`, "success");
 }
 
@@ -7306,14 +7368,7 @@ function expandCxStartShortcut(editor) {
     .map((line) => (line ? linePrefix + line : line))
     .join("\n");
 
-  const scriptEnd = replacement.indexOf("</script>");
-  let caretPos = replacement.length;
-  if (scriptEnd >= 0) {
-    const nextLineIndex = replacement.indexOf("\n", scriptEnd);
-    if (nextLineIndex >= 0) {
-      caretPos = nextLineIndex + 1 + 4;
-    }
-  }
+  const caretPos = getHtmlStarterCursorPosition(replacement);
   applyEditorMutation(
     editor,
     lineStart,
@@ -7322,7 +7377,7 @@ function expandCxStartShortcut(editor) {
     caretPos,
     caretPos,
   );
-  document.title = "New File";
+  document.title = "CodX Editor";
   return true;
 }
 
