@@ -310,12 +310,9 @@ app.get("/published/:id", (req, res) => {
 });
 
 // Fallback: unknown GET routes go to custom 404 page.
-app.get(/^(?!\/socket\.io\/).*/, (req, res) => {
-  if (req.path === "/404.html") {
-    res.status(404).sendFile(path.join(__dirname, "404.html"));
-    return;
-  }
-  res.redirect(302, "/404.html");
+// Fallback: unknown GET routes go to custom 404 page.
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "404.html"));
 });
 
 function cloneFiles(files) {
