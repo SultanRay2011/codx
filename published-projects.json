@@ -242,5 +242,109 @@
     ],
     "activeFileName": "index.html",
     "createdAt": 1775911504426
+  },
+  {
+    "id": "PUB-RSUQZ3-MQB0T800",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>New File</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <a href=\"\"></a>\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "style.css",
+        "type": "css",
+        "content": "",
+        "active": false
+      },
+      {
+        "name": "script.js",
+        "type": "js",
+        "content": "console.log(\"WELCOME TO CODX EDITOR\");",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1781274442176
+  },
+  {
+    "id": "PUB-WDX7Z4-MQB0YB3N",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor Starter</title>\n    <link rel=\"icon\" href=\"cx.png\">\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <main class=\"shell\">\n      <section class=\"hero\">\n        <img class=\"brand-logo\" src=\"cx.png\" alt=\"CodX logo\">\n        <p class=\"eyebrow\">CodX Editor Starter</p>\n        <h1>Build and preview web apps instantly</h1>\n        <p class=\"lead\">\n          Write HTML, CSS, and JavaScript in separate files and see updates live in the preview panel.\n        </p>\n      </section>\n\n      <section class=\"grid\">\n        <article class=\"card\">\n          <h2>What you can do</h2>\n          <ul>\n            <li>Create and switch between multiple files</li>\n            <li>Use Auto-Run for instant preview updates</li>\n            <li>Debug quickly with the built-in console</li>\n            <li>Import/Export projects as ZIP files</li>\n          </ul>\n        </article>\n\n        <article class=\"card\">\n          <h2>Controls</h2>\n          <ul>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd> Export your project as a ZIP</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Enter</kbd> Run preview manually</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd> Create a new file</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>\n            <li><kbd>Esc</kbd> Exit Zen Mode</li>\n            <li>Type <strong>cxstart</strong> in an empty HTML file and press <kbd>Enter</kbd></li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>C</kbd>, then <kbd>X</kbd> Open developer tools</li>\n          </ul>\n        </article>\n      </section>\n    </main>\n\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "style.css",
+        "type": "css",
+        "content": ":root {\n  --bg: #ffffff;\n  --panel: #ffffff;\n  --panel-2: #f8fafc;\n  --text: #111827;\n  --muted: #4b5563;\n  --accent: #0f766e;\n}\n\n* {\n  box-sizing: border-box;\n}\n\nbody {\n  margin: 0;\n  min-height: 100vh;\n  font-family: \"Segoe UI\", Tahoma, sans-serif;\n  color: var(--text);\n  background: var(--bg);\n  display: grid;\n  place-items: center;\n  padding: 24px;\n}\n\n.shell {\n  width: min(920px, 100%);\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  padding: 28px;\n  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);\n}\n\n.brand-logo {\n  width: 54px;\n  height: 54px;\n  object-fit: contain;\n  margin-bottom: 10px;\n}\n\n.eyebrow {\n  margin: 0 0 10px;\n  color: var(--accent);\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  font-weight: 700;\n  font-size: 0.78rem;\n}\n\nh1 {\n  margin: 0;\n  font-size: clamp(1.6rem, 2.6vw, 2.2rem);\n}\n\n.lead {\n  margin: 12px 0 0;\n  color: var(--muted);\n  max-width: 65ch;\n}\n\n.grid {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 16px;\n  margin-top: 22px;\n}\n\n.card {\n  background: linear-gradient(180deg, var(--panel), var(--panel-2));\n  border: 1px solid #e5e7eb;\n  border-radius: 12px;\n  padding: 16px;\n}\n\nh2 {\n  margin: 0 0 10px;\n  font-size: 1.05rem;\n}\n\nul {\n  margin: 0;\n  padding-left: 18px;\n}\n\nli {\n  margin: 8px 0;\n  color: var(--muted);\n}\n\nkbd {\n  background: #f3f4f6;\n  border: 1px solid #d1d5db;\n  border-bottom-width: 2px;\n  border-radius: 6px;\n  padding: 2px 6px;\n  color: var(--text);\n  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n  font-size: 0.82rem;\n}\n\n@media (max-width: 760px) {\n  .shell {\n    padding: 20px;\n  }\n\n  .grid {\n    grid-template-columns: 1fr;\n  }\n}",
+        "active": false
+      },
+      {
+        "name": "script.js",
+        "type": "js",
+        "content": "console.log(\"WELCOME TO CODX EDITOR\");",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1781274679475
+  },
+  {
+    "id": "PUB-CGLV8L-MQB0ZMAD",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor Starter</title>\n    <link rel=\"icon\" href=\"cx.png\">\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <main class=\"shell\">\n      <section class=\"hero\">\n        <img class=\"brand-logo\" src=\"cx.png\" alt=\"CodX logo\">\n        <p class=\"eyebrow\">CodX Editor Starter</p>\n        <h1>Build and preview web apps instantly</h1>\n        <p class=\"lead\">\n          Write HTML, CSS, and JavaScript in separate files and see updates live in the preview panel.\n        </p>\n      </section>\n\n      <section class=\"grid\">\n        <article class=\"card\">\n          <h2>What you can do</h2>\n          <ul>\n            <li>Create and switch between multiple files</li>\n            <li>Use Auto-Run for instant preview updates</li>\n            <li>Debug quickly with the built-in console</li>\n            <li>Import/Export projects as ZIP files</li>\n          </ul>\n        </article>\n\n        <article class=\"card\">\n          <h2>Controls</h2>\n          <ul>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd> Export your project as a ZIP</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Enter</kbd> Run preview manually</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd> Create a new file</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>\n            <li><kbd>Esc</kbd> Exit Zen Mode</li>\n            <li>Type <strong>cxstart</strong> in an empty HTML file and press <kbd>Enter</kbd></li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>C</kbd>, then <kbd>X</kbd> Open developer tools</li>\n          </ul>\n        </article>\n      </section>\n    </main>\n\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "style.css",
+        "type": "css",
+        "content": ":root {\n  --bg: #ffffff;\n  --panel: #ffffff;\n  --panel-2: #f8fafc;\n  --text: #111827;\n  --muted: #4b5563;\n  --accent: #0f766e;\n}\n\n* {\n  box-sizing: border-box;\n}\n\nbody {\n  margin: 0;\n  min-height: 100vh;\n  font-family: \"Segoe UI\", Tahoma, sans-serif;\n  color: var(--text);\n  background: var(--bg);\n  display: grid;\n  place-items: center;\n  padding: 24px;\n}\n\n.shell {\n  width: min(920px, 100%);\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  padding: 28px;\n  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);\n}\n\n.brand-logo {\n  width: 54px;\n  height: 54px;\n  object-fit: contain;\n  margin-bottom: 10px;\n}\n\n.eyebrow {\n  margin: 0 0 10px;\n  color: var(--accent);\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  font-weight: 700;\n  font-size: 0.78rem;\n}\n\nh1 {\n  margin: 0;\n  font-size: clamp(1.6rem, 2.6vw, 2.2rem);\n}\n\n.lead {\n  margin: 12px 0 0;\n  color: var(--muted);\n  max-width: 65ch;\n}\n\n.grid {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 16px;\n  margin-top: 22px;\n}\n\n.card {\n  background: linear-gradient(180deg, var(--panel), var(--panel-2));\n  border: 1px solid #e5e7eb;\n  border-radius: 12px;\n  padding: 16px;\n}\n\nh2 {\n  margin: 0 0 10px;\n  font-size: 1.05rem;\n}\n\nul {\n  margin: 0;\n  padding-left: 18px;\n}\n\nli {\n  margin: 8px 0;\n  color: var(--muted);\n}\n\nkbd {\n  background: #f3f4f6;\n  border: 1px solid #d1d5db;\n  border-bottom-width: 2px;\n  border-radius: 6px;\n  padding: 2px 6px;\n  color: var(--text);\n  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n  font-size: 0.82rem;\n}\n\n@media (max-width: 760px) {\n  .shell {\n    padding: 20px;\n  }\n\n  .grid {\n    grid-template-columns: 1fr;\n  }\n}",
+        "active": false
+      },
+      {
+        "name": "script.js",
+        "type": "js",
+        "content": "console.log(\"WELCOME TO CODX EDITOR\");",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1781274740629
+  },
+  {
+    "id": "PUB-NPCYSQ-MQB15V2M",
+    "projectName": "CodX Project",
+    "files": [
+      {
+        "name": "index.html",
+        "type": "html",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>CodX Editor Starter</title>\n    <link rel=\"icon\" href=\"cx.png\">\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <main class=\"shell\">\n      <section class=\"hero\">\n        <img class=\"brand-logo\" src=\"cx.png\" alt=\"CodX logo\">\n        <p class=\"eyebrow\">CodX Editor Starter</p>\n        <h1>Build and preview web apps instantly</h1>\n        <p class=\"lead\">\n          Write HTML, CSS, and JavaScript in separate files and see updates live in the preview panel.\n        </p>\n      </section>\n\n      <section class=\"grid\">\n        <article class=\"card\">\n          <h2>What you can do</h2>\n          <ul>\n            <li>Create and switch between multiple files</li>\n            <li>Use Auto-Run for instant preview updates</li>\n            <li>Debug quickly with the built-in console</li>\n            <li>Import/Export projects as ZIP files</li>\n          </ul>\n        </article>\n\n        <article class=\"card\">\n          <h2>Controls</h2>\n          <ul>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd> Export your project as a ZIP</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Enter</kbd> Run preview manually</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Q</kbd> Create a new file</li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> Toggle console</li>\n            <li><kbd>Esc</kbd> Exit Zen Mode</li>\n            <li>Type <strong>cxstart</strong> in an empty HTML file and press <kbd>Enter</kbd></li>\n            <li><kbd>Ctrl/Cmd</kbd> + <kbd>C</kbd>, then <kbd>X</kbd> Open developer tools</li>\n          </ul>\n        </article>\n      </section>\n    </main>\n\n    <script src=\"script.js\"></script>\n</body>\n</html>",
+        "active": true
+      },
+      {
+        "name": "style.css",
+        "type": "css",
+        "content": ":root {\n  --bg: #ffffff;\n  --panel: #ffffff;\n  --panel-2: #f8fafc;\n  --text: #111827;\n  --muted: #4b5563;\n  --accent: #0f766e;\n}\n\n* {\n  box-sizing: border-box;\n}\n\nbody {\n  margin: 0;\n  min-height: 100vh;\n  font-family: \"Segoe UI\", Tahoma, sans-serif;\n  color: var(--text);\n  background: var(--bg);\n  display: grid;\n  place-items: center;\n  padding: 24px;\n}\n\n.shell {\n  width: min(920px, 100%);\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-radius: 16px;\n  padding: 28px;\n  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);\n}\n\n.brand-logo {\n  width: 54px;\n  height: 54px;\n  object-fit: contain;\n  margin-bottom: 10px;\n}\n\n.eyebrow {\n  margin: 0 0 10px;\n  color: var(--accent);\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  font-weight: 700;\n  font-size: 0.78rem;\n}\n\nh1 {\n  margin: 0;\n  font-size: clamp(1.6rem, 2.6vw, 2.2rem);\n}\n\n.lead {\n  margin: 12px 0 0;\n  color: var(--muted);\n  max-width: 65ch;\n}\n\n.grid {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 16px;\n  margin-top: 22px;\n}\n\n.card {\n  background: linear-gradient(180deg, var(--panel), var(--panel-2));\n  border: 1px solid #e5e7eb;\n  border-radius: 12px;\n  padding: 16px;\n}\n\nh2 {\n  margin: 0 0 10px;\n  font-size: 1.05rem;\n}\n\nul {\n  margin: 0;\n  padding-left: 18px;\n}\n\nli {\n  margin: 8px 0;\n  color: var(--muted);\n}\n\nkbd {\n  background: #f3f4f6;\n  border: 1px solid #d1d5db;\n  border-bottom-width: 2px;\n  border-radius: 6px;\n  padding: 2px 6px;\n  color: var(--text);\n  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n  font-size: 0.82rem;\n}\n\n@media (max-width: 760px) {\n  .shell {\n    padding: 20px;\n  }\n\n  .grid {\n    grid-template-columns: 1fr;\n  }\n}",
+        "active": false
+      },
+      {
+        "name": "script.js",
+        "type": "js",
+        "content": "console.log(\"WELCOME TO CODX EDITOR\");",
+        "active": false
+      }
+    ],
+    "activeFileName": "index.html",
+    "createdAt": 1781275031950
   }
 ]

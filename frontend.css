@@ -7,6 +7,11 @@
   --syntax-comment: #8b949e;
   --syntax-tag: #7ee787;
   --syntax-attr: #d2a8ff;
+  --syntax-entity: #56d364;
+  --syntax-builtin: #79c0ff;
+  --syntax-function: #ff9bce;
+  --syntax-regex: #f2cc60;
+  --syntax-pseudo: #f2cc60;
   --syntax-property: #ffa657;
   --syntax-selector: #f2cc60;
   --syntax-operator: #ff9bce;
@@ -54,6 +59,11 @@ body.light {
   --syntax-comment: #6e7781;
   --syntax-tag: #116329;
   --syntax-attr: #6f42c1;
+  --syntax-entity: #0f5132;
+  --syntax-builtin: #0550ae;
+  --syntax-function: #8250df;
+  --syntax-regex: #a79000;
+  --syntax-pseudo: #7a4e00;
   --syntax-property: #953800;
   --syntax-selector: #7a4e00;
   --syntax-operator: #8250df;
@@ -652,6 +662,26 @@ body.light .error-token-highlight {
 
 #highlightLayer .token.attr {
   color: var(--syntax-attr);
+}
+
+#highlightLayer .token.entity {
+  color: var(--syntax-entity);
+}
+
+#highlightLayer .token.builtin {
+  color: var(--syntax-builtin);
+}
+
+#highlightLayer .token.function {
+  color: var(--syntax-function);
+}
+
+#highlightLayer .token.regex {
+  color: var(--syntax-regex);
+}
+
+#highlightLayer .token.pseudo {
+  color: var(--syntax-pseudo);
 }
 
 #highlightLayer .token.property {

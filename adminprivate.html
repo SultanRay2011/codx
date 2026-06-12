@@ -787,6 +787,133 @@
         line-height: 1.55;
       }
 
+      .table-scroll {
+        overflow-x: auto;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(20, 41, 27, 0.1);
+        box-shadow: 0 16px 34px rgba(24, 46, 31, 0.08);
+      }
+
+      .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 520px;
+      }
+
+      .admin-table th,
+      .admin-table td {
+        padding: 16px 18px;
+        text-align: left;
+        border-bottom: 1px solid rgba(20, 41, 27, 0.08);
+      }
+
+      .admin-table th {
+        font-size: 0.88rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        border-bottom-width: 2px;
+      }
+
+      .admin-table td {
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+
+      .admin-table tbody tr:hover {
+        background: rgba(76, 175, 80, 0.05);
+      }
+
+      .admin-table .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .status-pill.online {
+        background: rgba(76, 175, 80, 0.14);
+        color: var(--green-dark);
+      }
+
+      .status-pill.attention {
+        background: rgba(245, 165, 36, 0.14);
+        color: #986300;
+      }
+
+      .status-pill.danger {
+        background: rgba(209, 67, 67, 0.12);
+        color: var(--danger);
+      }
+
+      .action-link {
+        background: rgba(76, 175, 80, 0.08);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: var(--green-dark);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .action-link:hover {
+        background: rgba(76, 175, 80, 0.16);
+        border-color: rgba(76, 175, 80, 0.5);
+        transform: translateY(-1px);
+      }
+
+      .action-link:active {
+        transform: translateY(0);
+        background: rgba(76, 175, 80, 0.24);
+      }
+
+      .table-shell {
+        padding: 26px;
+        margin-bottom: 22px;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(20, 41, 27, 0.08);
+        border-radius: 24px;
+        box-shadow: 0 18px 40px rgba(24, 46, 31, 0.08);
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .admin-sidebar .sidebar-link {
+        text-align: left;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        border: none;
+        width: 100%;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .admin-sidebar .sidebar-link:hover {
+        background: rgba(76, 175, 80, 0.1);
+      }
+
+      .sidebar-link.active {
+        background: linear-gradient(135deg, var(--green), #69cc6c);
+        color: #fff;
+      }
+
+      .sidebar-link.active i {
+        color: #fff;
+      }
+
       .footer-note {
         margin-top: 24px;
         text-align: center;
@@ -1349,12 +1476,19 @@
           </nav>
         </div>
         <div class="sidebar-card">
-          <div class="sidebar-title">Jump To</div>
-          <nav class="sidebar-nav" aria-label="Admin section navigation">
-            <a class="sidebar-link" href="#overview"><i class="fa-solid fa-chart-pie"></i> Overview</a>
-            <a class="sidebar-link" href="#moderation"><i class="fa-solid fa-list-check"></i> Moderation</a>
-            <a class="sidebar-link" href="#activity"><i class="fa-solid fa-clock-rotate-left"></i> Activity Feed</a>
-            <a class="sidebar-link" href="#toolset"><i class="fa-solid fa-sliders"></i> Toolset</a>
+          <div class="sidebar-title">Admin Panels</div>
+          <nav class="sidebar-nav" aria-label="Admin panel navigation">
+            <button class="sidebar-link active" type="button" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</button>
+            <button class="sidebar-link" type="button" data-tab="sessions"><i class="fa-solid fa-users"></i> Sessions</button>
+            <button class="sidebar-link" type="button" data-tab="moderation"><i class="fa-solid fa-list-check"></i> Moderation</button>
+            <button class="sidebar-link" type="button" data-tab="activity"><i class="fa-solid fa-clock-rotate-left"></i> Activity</button>
+            <button class="sidebar-link" type="button" data-tab="tools"><i class="fa-solid fa-sliders"></i> Tools</button>
+            <button class="sidebar-link" type="button" data-tab="users"><i class="fa-solid fa-person"></i> Users</button>
+            <button class="sidebar-link" type="button" data-tab="health"><i class="fa-solid fa-heartbeat"></i> System Health</button>
+            <button class="sidebar-link" type="button" data-tab="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</button>
+            <button class="sidebar-link" type="button" data-tab="security"><i class="fa-solid fa-lock"></i> Security</button>
+            <button class="sidebar-link" type="button" data-tab="settings"><i class="fa-solid fa-gear"></i> Settings</button>
+            <button class="sidebar-link" type="button" data-tab="logs"><i class="fa-solid fa-file-lines"></i> Logs</button>
           </nav>
         </div>
         <div class="sidebar-card">
@@ -1425,6 +1559,182 @@
         </div>
       </aside>
       <div class="sidebar-main">
+        <section class="section-card table-shell" aria-label="Admin tab panels">
+          <div class="section-header">
+            <div class="section-copy">
+              <h2>Admin panel tables</h2>
+              <p>Click the sidebar options to reveal the corresponding administration table for a cleaner, more organized view.</p>
+            </div>
+            <span class="pill online"><i class="fa-solid fa-table-list"></i> Table mode</span>
+          </div>
+
+          <div class="tab-panel active" id="tab-overview">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Active editor users</td><td id="tableActiveSessions">--</td><td><span class="status-pill online">Healthy</span></td></tr>
+                  <tr><td>Collaboration rooms</td><td id="tableLiveSessions">--</td><td><span class="status-pill online">Live</span></td></tr>
+                  <tr><td>Moderation items</td><td id="tableModerationItems">--</td><td><span class="status-pill attention">Review</span></td></tr>
+                  <tr><td>Platform capacity</td><td id="tableCapacityLoad">--</td><td><span class="status-pill online">Stable</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="tab-sessions">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Session</th><th>Participants</th><th>Share link</th><th>Status</th></tr>
+                </thead>
+                <tbody id="sessionsTableBody">
+                  <tr><td colspan="4">Loading session table…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="tab-moderation">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Issue</th><th>Room</th><th>Severity</th><th>Action</th></tr>
+                </thead>
+                <tbody id="moderationTableBody">
+                  <tr><td>Pending review</td><td>Session queue</td><td><span class="status-pill attention">Medium</span></td><td>Inspect</td></tr>
+                  <tr><td>Flagged user</td><td>Unknown</td><td><span class="status-pill danger">High</span></td><td>Investigate</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="tab-activity">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Event</th><th>Detail</th><th>Time</th></tr>
+                </thead>
+                <tbody id="activityTableBody">
+                  <tr><td>Loading activity</td><td>Refreshing live feed…</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="tab-tools">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Tool</th><th>Description</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Session lock</td><td>Lock or unlock active rooms.</td><td><span class="status-pill online">Ready</span></td></tr>
+                  <tr><td>Spectator mode</td><td>View room state without joining.</td><td><span class="status-pill online">Ready</span></td></tr>
+                  <tr><td>Link regen</td><td>Rotate share links for privacy.</td><td><span class="status-pill online">Ready</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-users">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>User</th><th>Email</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>John Developer</td><td>john@example.com</td><td><span class="status-pill online">Active</span></td><td><button class="action-link">View</button></td></tr>
+                  <tr><td>Sarah Coder</td><td>sarah@example.com</td><td><span class="status-pill online">Active</span></td><td><button class="action-link">View</button></td></tr>
+                  <tr><td>Mike Designer</td><td>mike@example.com</td><td><span class="status-pill attention">Flagged</span></td><td><button class="action-link">Review</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-health">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Component</th><th>Status</th><th>Value</th><th>Threshold</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Server CPU</td><td><span class="status-pill online">Healthy</span></td><td>34%</td><td>&lt; 85%</td></tr>
+                  <tr><td>Memory Usage</td><td><span class="status-pill online">Healthy</span></td><td>2.1 GB</td><td>&lt; 4 GB</td></tr>
+                  <tr><td>Disk Space</td><td><span class="status-pill online">Healthy</span></td><td>56 GB free</td><td>&gt; 10 GB</td></tr>
+                  <tr><td>Database</td><td><span class="status-pill online">Healthy</span></td><td>Connected</td><td>24h uptime</td></tr>
+                  <tr><td>API Response</td><td><span class="status-pill online">Healthy</span></td><td>145ms avg</td><td>&lt; 500ms</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-analytics">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Metric</th><th>Today</th><th>This Week</th><th>Trend</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>New Sessions</td><td>24</td><td>168</td><td><span class="status-pill online">↑ 12%</span></td></tr>
+                  <tr><td>Total Participants</td><td>89</td><td>612</td><td><span class="status-pill online">↑ 8%</span></td></tr>
+                  <tr><td>Code Executions</td><td>341</td><td>2,847</td><td><span class="status-pill online">↑ 15%</span></td></tr>
+                  <tr><td>Files Shared</td><td>127</td><td>894</td><td><span class="status-pill online">↑ 6%</span></td></tr>
+                  <tr><td>Avg Session Duration</td><td>24m 13s</td><td>22m 45s</td><td><span class="status-pill online">↑ 3%</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-security">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Policy</th><th>Setting</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Rate Limiting</td><td>100 req/min per IP</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
+                  <tr><td>IP Whitelist</td><td>5 IPs allowed</td><td><span class="status-pill attention">Custom</span></td><td><button class="action-link">Manage</button></td></tr>
+                  <tr><td>Session Timeout</td><td>30 minutes</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
+                  <tr><td>Two-Factor Auth</td><td>Optional for admins</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
+                  <tr><td>HTTPS Only</td><td>Enforced</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-settings">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Setting</th><th>Value</th><th>Category</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Max Users Per Session</td><td>50</td><td>Collaboration</td><td><button class="action-link">Configure</button></td></tr>
+                  <tr><td>File Size Limit</td><td>50 MB</td><td>Storage</td><td><button class="action-link">Configure</button></td></tr>
+                  <tr><td>Session Duration</td><td>24 hours</td><td>Time</td><td><button class="action-link">Configure</button></td></tr>
+                  <tr><td>Feature: Code Execution</td><td><span class="status-pill online">Enabled</span></td><td>Features</td><td><button class="action-link">Toggle</button></td></tr>
+                  <tr><td>Feature: Live Chat</td><td><span class="status-pill online">Enabled</span></td><td>Features</td><td><button class="action-link">Toggle</button></td></tr>
+                  <tr><td>Email Notifications</td><td><span class="status-pill online">Enabled</span></td><td>Communication</td><td><button class="action-link">Configure</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-logs">
+            <div class="table-scroll">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Timestamp</th><th>Event</th><th>User/Source</th><th>Level</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>04:55 PM</td><td>Admin login successful</td><td>administrator</td><td><span class="status-pill online">Info</span></td></tr>
+                  <tr><td>04:52 PM</td><td>Session created</td><td>GuestUser</td><td><span class="status-pill online">Info</span></td></tr>
+                  <tr><td>04:48 PM</td><td>File uploaded</td><td>127.0.0.1</td><td><span class="status-pill online">Info</span></td></tr>
+                  <tr><td>04:45 PM</td><td>API rate limit warning</td><td>192.168.1.10</td><td><span class="status-pill attention">Warning</span></td></tr>
+                  <tr><td>04:30 PM</td><td>Database backup completed</td><td>system</td><td><span class="status-pill online">Info</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
       <section class="hero">
         <article class="hero-panel">
           <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> PLATFORM CONTROL CENTER</div>
@@ -2030,6 +2340,71 @@
         `).join("");
       }
 
+      function activateAdminTab(tabName) {
+        document.querySelectorAll('.sidebar-link[data-tab]').forEach((link) => {
+          link.classList.toggle('active', link.dataset.tab === tabName);
+        });
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.classList.toggle('active', panel.id === `tab-${tabName}`);
+        });
+      }
+
+      function renderSessionsTable(sessions) {
+        const body = document.getElementById('sessionsTableBody');
+        if (!body) return;
+        if (!sessions || !sessions.length) {
+          body.innerHTML = `<tr><td colspan="4">No sessions available.</td></tr>`;
+          return;
+        }
+        body.innerHTML = sessions.slice(0, 8).map((session) => {
+          const status = session.roomLocked ? '<span class="status-pill danger">Locked</span>' : '<span class="status-pill online">Active</span>';
+          return `
+            <tr>
+              <td>${escapeHtml(session.sessionId)}</td>
+              <td>${escapeHtml(String(session.participantCount || 0))}</td>
+              <td>${escapeHtml(session.shareLink || '—')}</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function renderActivityTable(items) {
+        const body = document.getElementById('activityTableBody');
+        if (!body) return;
+        if (!items || !items.length) {
+          body.innerHTML = `<tr><td colspan="3">No activity found.</td></tr>`;
+          return;
+        }
+        body.innerHTML = items.slice(0, 8).map((item) => `
+          <tr>
+            <td>${escapeHtml(item.title)}</td>
+            <td>${escapeHtml(item.detail)}</td>
+            <td>${escapeHtml(formatRelativeTime(item.ts))}</td>
+          </tr>
+        `).join('');
+      }
+
+      function updateAdminTableData(overview, sessions, activity) {
+        const tableActiveSessions = document.getElementById('tableActiveSessions');
+        const tableLiveSessions = document.getElementById('tableLiveSessions');
+        const tableModerationItems = document.getElementById('tableModerationItems');
+        const tableCapacityLoad = document.getElementById('tableCapacityLoad');
+        if (tableActiveSessions) tableActiveSessions.textContent = formatCompactCount(overview.stats.activeUsers);
+        if (tableLiveSessions) tableLiveSessions.textContent = formatCompactCount(overview.stats.collaboratingUsers || 0);
+        if (tableModerationItems) tableModerationItems.textContent = `${overview.stats.moderationItems}`;
+        if (tableCapacityLoad) tableCapacityLoad.textContent = `${overview.stats.capacityLoad}%`;
+        renderSessionsTable(sessions || []);
+        renderActivityTable(activity || []);
+      }
+
+      function initializeAdminTabs() {
+        document.querySelectorAll('.sidebar-link[data-tab]').forEach((button) => {
+          button.addEventListener('click', () => activateAdminTab(button.dataset.tab));
+        });
+        activateAdminTab('overview');
+      }
+
       async function loadAdminData() {
         if (!isAdminUnlocked()) return;
         try {
@@ -2071,6 +2446,15 @@
           liveSessionsTrend.textContent = `${overview.stats.liveSessions} room${overview.stats.liveSessions === 1 ? "" : "s"}`;
           moderationPill.innerHTML = `<i class="fa-solid fa-list-check"></i> ${overview.stats.moderationItems} live item${overview.stats.moderationItems === 1 ? "" : "s"}`;
 
+          const tableActiveSessions = document.getElementById("tableActiveSessions");
+          const tableLiveSessions = document.getElementById("tableLiveSessions");
+          const tableModerationItems = document.getElementById("tableModerationItems");
+          const tableCapacityLoad = document.getElementById("tableCapacityLoad");
+          if (tableActiveSessions) tableActiveSessions.textContent = formatCompactCount(overview.stats.activeUsers);
+          if (tableLiveSessions) tableLiveSessions.textContent = formatCompactCount(overview.stats.collaboratingUsers || 0);
+          if (tableModerationItems) tableModerationItems.textContent = `${overview.stats.moderationItems}`;
+          if (tableCapacityLoad) tableCapacityLoad.textContent = `${overview.stats.capacityLoad}%`;
+
           queueApprovalsValue.textContent = `${overview.queue.pendingJoinApprovals}`;
           queueApprovalsText.textContent = `${overview.queue.pendingJoinApprovals} pending approval request${overview.queue.pendingJoinApprovals === 1 ? "" : "s"} across all rooms.`;
           queueFlaggedValue.textContent = `${overview.queue.flaggedParticipants}`;
@@ -2082,6 +2466,7 @@
           queuePublishedValue.textContent = `${overview.stats.publishedProjects || 0}`;
           queuePublishedText.textContent = `${overview.stats.publishedProjects || 0} published project${Number(overview.stats.publishedProjects || 0) === 1 ? "" : "s"} currently stored on the server.`;
 
+          updateAdminTableData(overview, sessionsPayload.sessions, activityPayload.activity || []);
           renderModerationSessions((sessionsPayload.sessions || []).slice(0, 6));
           renderActivity(activityPayload.activity || []);
           setStatus(`Admin panel live. Last refresh ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`);
@@ -2190,6 +2575,7 @@
       });
       spectateFileSelect.addEventListener("change", renderSpectateCode);
 
+      initializeAdminTabs();
       setAdminLockedState(!isAdminUnlocked());
       if (!isAdminUnlocked()) {
         focusFirstEmptyPin();

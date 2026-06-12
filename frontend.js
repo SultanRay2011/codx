@@ -5677,11 +5677,16 @@ function highlightCss(code) {
   const patterns = [
     { className: "comment", regex: /\/\*[\s\S]*?\*\//g },
     { className: "string", regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g },
+    { className: "hex", regex: /#[0-9a-fA-F]{3,8}\b/g },
     { className: "keyword", regex: /@[a-z-]+/gi },
+    { className: "important", regex: /!important\b/g },
     { className: "property", regex: /--[a-z0-9-]+(?=\s*:)|\b[a-z-]+(?=\s*:)/gi },
+    { className: "variable", regex: /var\(--[a-zA-Z0-9-_]+\)/g },
+    { className: "function", regex: /\b(?:calc|var|rgb|rgba|hsl|hsla|url|min|max|clamp|repeat|fit-content|attr|counter|cubic-bezier)\b(?=\s*\()/gi },
+    { className: "pseudo", regex: /::?[a-zA-Z-]+/g },
     { className: "value", regex: /(?<=:)[^;}{\n]+(?=\s*[;}])/g },
-    { className: "number", regex: /\b\d+(\.\d+)?(px|rem|em|%|vh|vw|s|ms)?\b/g },
-    { className: "selector", regex: /^[ \t]*[^@{}\n][^{\n]*(?=\{)/gm },
+    { className: "number", regex: /\b\d+(\.\d+)?(px|rem|em|%|vh|vw|s|ms|ch|fr|deg|rad|turn)?\b/g },
+    { className: "selector", regex: /(?:\.[a-zA-Z_][a-zA-Z0-9_-]*|#[a-zA-Z_][a-zA-Z0-9_-]*|\b[a-zA-Z][a-zA-Z0-9_-]*\b)(?=\s*[{,])/g },
     { className: "punctuation", regex: /[{}:;(),.]/g },
   ];
   return wrapTokens(code, patterns);
@@ -5694,11 +5699,13 @@ function highlightJs(code) {
       className: "string",
       regex: /`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g,
     },
+    { className: "regex", regex: /\/(?:\\.|[^\/\\\n])+\/[gimsuy]*/g },
     {
       className: "keyword",
       regex:
-        /\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|new|class|extends|import|export|default|async|await|this|super|typeof|instanceof|in|of|null|undefined|true|false)\b/g,
+        /\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|new|class|extends|import|export|default|async|await|this|super|typeof|instanceof|in|of|null|undefined|true|false|yield|delete|void)\b/g,
     },
+    { className: "builtin", regex: /\b(?:Math|JSON|Object|Array|String|Number|Boolean|Date|RegExp|Promise|Set|Map|console|window|document|fetch|localStorage|sessionStorage|parseInt|parseFloat|encodeURI|decodeURI)\b/g },
     { className: "number", regex: /\b\d+(\.\d+)?\b/g },
     { className: "operator", regex: /[=+\-*/%<>!&|^~?:]+/g },
     { className: "punctuation", regex: /[()[\]{};,.]/g },
@@ -7336,25 +7343,28 @@ function handleTagClosing(e) {
 
     e.preventDefault();
     const closingTag = `</${tagName}>`;
-    const textAfter = editor.value.substring(editor.selectionEnd);
+
+    const tagNameEnd = tagMatch.index + 1 + tagName.length;
+    const trailingSpace = pos - tagNameEnd;
+    const insertStart = trailingSpace > 0 ? tagNameEnd : pos;
 
     applyEditorMutation(
       editor,
-      pos,
+      insertStart,
       editor.selectionEnd,
       ">" + closingTag,
-      pos + 1,
-      pos + 1,
+      insertStart + 1,
+      insertStart + 1,
     );
 
     const loweredTag = tagName.toLowerCase();
     if (loweredTag === "style" || loweredTag === "script") {
-      const after = editor.value.substring(pos + 1);
+      const after = editor.value.substring(insertStart + 1);
       const wsMatch = after.match(/^\s+(<\/(?:style|script)>)/i);
       if (wsMatch) {
         const wsLen = wsMatch[0].length - wsMatch[1].length;
         if (wsLen > 0) {
-          applyEditorMutation(editor, pos + 1, pos + 1 + wsLen, "", pos + 1, pos + 1);
+          applyEditorMutation(editor, insertStart + 1, insertStart + 1 + wsLen, "", insertStart + 1, insertStart + 1);
         }
       }
     }
@@ -12222,12 +12232,3 @@ window.addEventListener("load", () => {
   // Give the page a moment to fully render
   setTimeout(checkTutorialStatus, 800);
 });
-
-
-
-
-
-
-
-
-
