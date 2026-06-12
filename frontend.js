@@ -6854,12 +6854,21 @@ function selectSuggestion(tag) {
     return;
   }
 
-  const insertedTag = isPlain ? `<${tag}>` : `${tag}>`;
+  let insertedTag = isPlain ? `<${tag}>` : `${tag}>`;
+  if (!isClosing && tag === "a") {
+    insertedTag = `<a href="">`;
+  }
   const shouldAutoClose = !isClosing && !selfClosingTags.includes(tag);
   const closingTag = shouldAutoClose ? `</${tag}>` : "";
   const replaceStart = textBefore.length - prefix.length;
   const insertedText = insertedTag + closingTag;
-  const caretPos = textBeforeTrigger.length + insertedTag.length;
+  let caretPos = textBeforeTrigger.length + insertedTag.length;
+  if (tag === "a" && !isClosing) {
+    const hrefPos = insertedTag.indexOf("href=\"");
+    if (hrefPos !== -1) {
+      caretPos = textBeforeTrigger.length + hrefPos + 6;
+    }
+  }
   applyEditorMutation(
     editor,
     replaceStart,
@@ -7739,7 +7748,13 @@ function handleEditorKeyDown(e) {
   const isHtmlScriptContext =
     activeFile.type === "html" && isInsideScriptTag(caretContextBefore);
 
-  if (activeFile.type === "html" && e.key === "Enter" && !isHtmlStyleContext && !isHtmlScriptContext) {
+  if (
+    activeFile.type === "html" &&
+    e.key === "Enter" &&
+    !isHtmlStyleContext &&
+    !isHtmlScriptContext &&
+    suggestionPopup.style.display !== "block"
+  ) {
     hideSuggestions();
     if (expandCxStartShortcut(editor)) {
       e.preventDefault();
