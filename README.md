@@ -98,7 +98,6 @@ http://localhost:3000/frontend.html
 - `server.js` - backend collaboration server
 - `index.html` - homepage
 - `help.html` - complete feature guide
-- `adminprivate.html` - admin panel
 - `welcome.html` - terms gate / entry page
 
 ## Summary
