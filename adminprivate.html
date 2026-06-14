@@ -3,1408 +3,551 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Preview an admin panel for CodX Editor with moderation, platform health, collaboration control, and activity oversight tools."
-    />
+    <meta name="description" content="Admin panel for CodX Editor — moderation, platform health, collaboration control, and activity oversight." />
     <meta name="theme-color" content="#4CAF50" />
     <link rel="icon" type="image/png" href="cx.png" />
     <link rel="stylesheet" href="theme.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>Admin Panel | CodX Editor</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+      /* ── Reset & tokens ──────────────────────────────────────── */
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
       :root {
-        --green: #4caf50;
-        --green-dark: #2e7d32;
-        --green-soft: #e9f8ed;
-        --ink: #131713;
-        --muted: #5b675f;
-        --line: rgba(20, 41, 27, 0.12);
-        --panel: rgba(255, 255, 255, 0.94);
-        --shadow: 0 20px 48px rgba(24, 46, 31, 0.12);
-        --danger: #d14343;
-        --amber: #f5a524;
+        --green:       #4caf50;
+        --green-d:     #2e7d32;
+        --green-s:     #e9f8ed;
+        --green-glow:  rgba(76,175,80,.18);
+        --ink:         #0f1a12;
+        --muted:       #5b6f60;
+        --line:        rgba(20,41,27,.10);
+        --panel:       rgba(255,255,255,.95);
+        --shadow-card: 0 8px 28px rgba(20,46,28,.10);
+        --danger:      #d14343;
+        --amber:       #f5a524;
+        --amber-bg:    rgba(245,165,36,.13);
+        --danger-bg:   rgba(209,67,67,.11);
+        --sb-bg:       #111a14;          /* sidebar dark bg */
+        --sb-border:   rgba(76,175,80,.14);
+        --sb-text:     rgba(230,245,233,.82);
+        --sb-muted:    rgba(180,210,185,.55);
+        --sb-hover:    rgba(76,175,80,.10);
+        --sb-active-from: #3d9e41;
+        --sb-active-to:   #67c96a;
+        --sb-w:        260px;
+        --header-h:    64px;
+        --radius-lg:   20px;
+        --radius-md:   14px;
+        --radius-sm:   9px;
+        --transition:  .18s ease;
       }
 
+      html { scroll-behavior: smooth; }
+
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: #f2f8f3;
         color: var(--ink);
-        background:
-          radial-gradient(circle at top left, rgba(76, 175, 80, 0.16), transparent 24%),
-          radial-gradient(circle at right center, rgba(129, 199, 132, 0.18), transparent 22%),
-          linear-gradient(135deg, #f5fff7 0%, #ffffff 54%, #eef8f1 100%);
-        padding-top: 84px;
+        min-height: 100vh;
+        padding-top: var(--header-h);
         overflow-x: hidden;
       }
 
-      header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-        background: rgba(255, 255, 255, 0.96);
-        backdrop-filter: blur(12px);
-        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);
-        padding: 15px 40px;
-      }
-
-      .header-content {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-      }
-
-      .logo-container {
-        display: flex;
-        align-items: center;
-      }
-
-      .logo-container img {
-        height: 45px;
-        width: auto;
-      }
-
-      .nav-buttons {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-
-      .nav-btn {
-        padding: 10px 22px;
-        border-radius: 999px;
-        text-decoration: none;
-        font-size: 0.95rem;
-        font-weight: 700;
-        transition: 0.25s ease;
-      }
-
-      .nav-btn.active {
-        background: var(--green);
-        color: #fff;
-      }
-
-      .nav-btn:not(.active) {
-        color: #243129;
-        background: rgba(76, 175, 80, 0.08);
-      }
-
-      .nav-btn:not(.active):hover {
-        background: rgba(76, 175, 80, 0.16);
-        color: var(--green-dark);
-      }
-
-      .particles {
-        position: fixed;
-        inset: 0;
-        overflow: hidden;
-        z-index: 0;
-        pointer-events: none;
-      }
-
-      body.admin-locked {
-        overflow: hidden;
-      }
-
+      body.admin-locked { overflow: hidden; }
       body.admin-locked main,
       body.admin-locked header,
-      body.admin-locked .particles {
-        filter: blur(10px);
-        pointer-events: none;
-        user-select: none;
-      }
+      body.admin-locked .particles { filter: blur(10px); pointer-events: none; user-select: none; }
 
-      .admin-pin-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 5000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: rgba(14, 19, 15, 0.28);
-        backdrop-filter: blur(8px);
-      }
-
-      .admin-pin-card {
-        width: min(460px, 100%);
-        background: rgba(255, 255, 255, 0.97);
-        border: 1px solid rgba(20, 41, 27, 0.1);
-        border-radius: 30px;
-        box-shadow: 0 28px 70px rgba(14, 30, 19, 0.18);
-        padding: 28px;
-        display: grid;
-        gap: 18px;
-        text-align: center;
-      }
-
-      .admin-pin-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin: 0 auto;
-        padding: 10px 16px;
-        border-radius: 999px;
-        background: var(--green-soft);
-        color: var(--green-dark);
-        font-weight: 800;
-        font-size: 0.88rem;
-      }
-
-      .admin-pin-card h2 {
-        font-size: clamp(1.7rem, 3vw, 2.3rem);
-        line-height: 1.08;
-      }
-
-      .admin-pin-card p {
-        color: var(--muted);
-        line-height: 1.65;
-        font-size: 0.98rem;
-      }
-
-      .admin-pin-form {
-        display: grid;
-        gap: 18px;
-      }
-
-      .admin-pin-inputs {
-        display: grid;
-        gap: 12px;
-      }
-
-      .admin-login-field {
-        width: 100%;
-        height: 58px;
-        border-radius: 18px;
-        border: 1px solid rgba(20, 41, 27, 0.14);
-        background: #fff;
-        color: var(--ink);
-        padding: 0 16px;
-        font-size: 1rem;
-        font-weight: 700;
-        outline: none;
-        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
-      }
-
-      .admin-login-field:focus {
-        border-color: rgba(76, 175, 80, 0.55);
-        box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.12);
-      }
-
-      .admin-pin-card.error .admin-login-field {
-        border-color: rgba(209, 67, 67, 0.56);
-        background: rgba(209, 67, 67, 0.06);
-        color: #8f1e1e;
-      }
-
-      .admin-pin-card.error {
-        animation: adminPinShake 0.32s ease;
-      }
-
-      .admin-pin-message {
-        min-height: 20px;
-        font-size: 0.9rem;
-        color: var(--muted);
-      }
-
-      .admin-pin-card.error .admin-pin-message {
-        color: var(--danger);
-        font-weight: 700;
-      }
-
-      .admin-pin-submit {
-        border: none;
-        border-radius: 16px;
-        padding: 14px 18px;
-        background: linear-gradient(135deg, var(--green), #6dcd70);
-        color: #fff;
-        font-size: 0.98rem;
-        font-weight: 800;
-        cursor: pointer;
-        transition: transform 0.18s ease, box-shadow 0.18s ease;
-      }
-
-      .admin-pin-submit:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 12px 26px rgba(76, 175, 80, 0.18);
-      }
-
-      .admin-pin-note {
-        font-size: 0.84rem;
-        color: var(--muted);
-      }
-
-      .admin-pin-overlay.hidden {
-        display: none;
-      }
-
-      @keyframes adminPinShake {
-        0%, 100% { transform: translateX(0); }
-        20% { transform: translateX(-10px); }
-        40% { transform: translateX(10px); }
-        60% { transform: translateX(-8px); }
-        80% { transform: translateX(8px); }
-      }
-
+      /* ── Particles ───────────────────────────────────────────── */
+      .particles { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
       .particle {
-        position: absolute;
-        width: 4px;
-        height: 4px;
-        background: rgba(76, 175, 80, 0.28);
-        border-radius: 50%;
-        animation: float 15s infinite;
+        position: absolute; width: 3px; height: 3px;
+        background: rgba(76,175,80,.22); border-radius: 50%;
+        animation: float 18s infinite;
       }
-
-      .particle:nth-child(1) { left: 9%; animation-delay: 0s; }
-      .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
-      .particle:nth-child(3) { left: 31%; animation-delay: 4s; }
-      .particle:nth-child(4) { left: 45%; animation-delay: 6s; }
-      .particle:nth-child(5) { left: 58%; animation-delay: 8s; }
-      .particle:nth-child(6) { left: 71%; animation-delay: 10s; }
-      .particle:nth-child(7) { left: 85%; animation-delay: 12s; }
-
+      .particle:nth-child(1){left:8%;animation-delay:0s}
+      .particle:nth-child(2){left:21%;animation-delay:3s}
+      .particle:nth-child(3){left:35%;animation-delay:6s}
+      .particle:nth-child(4){left:50%;animation-delay:9s}
+      .particle:nth-child(5){left:65%;animation-delay:12s}
+      .particle:nth-child(6){left:79%;animation-delay:15s}
+      .particle:nth-child(7){left:90%;animation-delay:1.5s}
       @keyframes float {
-        0% { transform: translateY(100vh) scale(0); opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+        0%   { transform: translateY(100vh) scale(0); opacity:0 }
+        10%  { opacity:1 }
+        90%  { opacity:1 }
+        100% { transform: translateY(-100vh) scale(1.2); opacity:0 }
       }
 
-      .page-shell {
-        position: relative;
-        z-index: 1;
-        max-width: 1480px;
-        margin: 0 auto;
-        padding: 30px 18px 52px;
-      }
-
-      .admin-layout {
-        display: grid;
-        grid-template-columns: 220px minmax(0, 1fr);
-        gap: 30px;
-        align-items: start;
-      }
-
-      .admin-sidebar {
-        position: sticky;
-        top: 98px;
-        display: grid;
-        gap: 12px;
-      }
-
-      .sidebar-card {
-        background: rgba(255, 255, 255, 0.74);
-        border: 1px solid rgba(20, 41, 27, 0.08);
-        border-radius: 18px;
-        box-shadow: 0 10px 28px rgba(24, 46, 31, 0.08);
-        padding: 14px;
-        backdrop-filter: blur(8px);
-      }
-
-      .sidebar-title {
-        font-size: 0.74rem;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 10px;
-      }
-
-      .sidebar-nav {
-        display: grid;
-        gap: 6px;
-      }
-
-      .sidebar-link {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        text-decoration: none;
-        padding: 10px 11px;
-        border-radius: 12px;
-        background: rgba(76, 175, 80, 0.06);
-        color: #223027;
-        font-size: 0.92rem;
-        font-weight: 700;
-        border: 1px solid transparent;
-        transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
-      }
-
-      .sidebar-link:hover {
-        background: rgba(76, 175, 80, 0.1);
-        border-color: rgba(76, 175, 80, 0.16);
-        transform: translateX(2px);
-      }
-
-      .sidebar-link.active {
-        background: linear-gradient(135deg, var(--green), #6dcd70);
-        color: #fff;
-      }
-
-      .sidebar-copy {
-        display: grid;
-        gap: 8px;
-      }
-
-      .sidebar-copy p {
-        color: var(--muted);
-        font-size: 0.86rem;
-        line-height: 1.55;
-      }
-
-      .sidebar-main {
-        min-width: 0;
-      }
-
-      .hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.82fr);
-        gap: 22px;
-        margin-bottom: 22px;
-      }
-
-      .hero-panel,
-      .side-panel,
-      .section-card,
-      .stat-card,
-      .queue-card,
-      .log-card,
-      .tool-card {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 22px;
-        box-shadow: 0 16px 34px rgba(24, 46, 31, 0.09);
-      }
-
-      .hero-panel {
-        padding: 30px;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .hero-panel::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-          linear-gradient(120deg, rgba(76, 175, 80, 0.13), transparent 42%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(76, 175, 80, 0.04));
-        pointer-events: none;
-      }
-
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        background: var(--green-soft);
-        color: var(--green-dark);
-        border-radius: 999px;
-        padding: 8px 14px;
-        font-size: 0.88rem;
-        font-weight: 700;
-        margin-bottom: 18px;
-      }
-
-      .hero h1 {
-        font-size: clamp(2.2rem, 4vw, 3.7rem);
-        line-height: 1.02;
-        margin-bottom: 14px;
-        max-width: 12ch;
-      }
-
-      .hero p {
-        color: var(--muted);
-        font-size: 1.04rem;
-        line-height: 1.72;
-        max-width: 62ch;
-      }
-
-      .hero-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 18px;
-      }
-
-      .action-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        border-radius: 16px;
-        padding: 13px 18px;
-        text-decoration: none;
-        font-weight: 700;
-        border: 1px solid transparent;
-        transition: transform 0.22s ease, box-shadow 0.22s ease;
-      }
-
-      .action-btn:hover {
-        transform: translateY(-2px);
-      }
-
-      .action-btn.primary {
-        background: linear-gradient(135deg, var(--green), #69cc6c);
-        color: #fff;
-      }
-
-      .action-btn.secondary {
-        background: #fff;
-        color: var(--ink);
-        border-color: var(--line);
-      }
-
-      .side-panel {
+      /* ── Lock overlay ────────────────────────────────────────── */
+      .admin-pin-overlay {
+        position: fixed; inset: 0; z-index: 5000;
+        display: flex; align-items: center; justify-content: center;
         padding: 24px;
-        display: grid;
-        gap: 12px;
-        align-content: start;
-      }
-
-      .panel-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .panel-header h2,
-      .section-header h2 {
-        font-size: 1.08rem;
-      }
-
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border-radius: 999px;
-        padding: 8px 12px;
-        font-size: 0.82rem;
-        font-weight: 700;
-      }
-
-      .pill.online {
-        background: rgba(76, 175, 80, 0.14);
-        color: var(--green-dark);
-      }
-
-      .pill.alert {
-        background: rgba(245, 165, 36, 0.16);
-        color: #986300;
-      }
-
-      .health-list,
-      .activity-list,
-      .queue-list,
-      .tool-list {
-        display: grid;
-        gap: 9px;
-      }
-
-      .health-item,
-      .activity-item,
-      .queue-item,
-      .tool-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 11px 12px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(76, 175, 80, 0.1);
-      }
-
-      .item-copy {
-        display: grid;
-        gap: 4px;
-      }
-
-      .item-copy strong {
-        font-size: 0.86rem;
-      }
-
-      .item-copy span {
-        color: var(--muted);
-        font-size: 0.78rem;
-      }
-
-      .item-value {
-        font-weight: 800;
-        color: var(--green-dark);
-        white-space: nowrap;
-        font-size: 0.86rem;
-      }
-
-      .overview-grid,
-      .main-grid,
-      .lower-grid {
-        display: grid;
-        gap: 22px;
-      }
-
-      .overview-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        margin-bottom: 22px;
-      }
-
-      .stat-card {
-        padding: 20px;
-        display: grid;
-        gap: 12px;
-      }
-
-      .stat-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 16px;
-        display: grid;
-        place-items: center;
-        background: var(--green-soft);
-        color: var(--green-dark);
-        font-size: 1.15rem;
-      }
-
-      .stat-trend {
-        font-size: 0.84rem;
-        font-weight: 800;
-        color: var(--green-dark);
-      }
-
-      .stat-card h3 {
-        font-size: 2rem;
-        line-height: 1;
-      }
-
-      .stat-card p {
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-
-      .main-grid {
-        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-        margin-bottom: 22px;
-      }
-
-      .section-card,
-      .queue-card,
-      .log-card,
-      .tool-card {
-        padding: 22px;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 18px;
-      }
-
-      .section-copy {
-        display: grid;
-        gap: 6px;
-      }
-
-      .section-copy p {
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-
-      .moderation-grid {
-        display: grid;
-        gap: 14px;
-      }
-
-      .moderation-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1.2fr) auto;
-        gap: 16px;
-        align-items: center;
-        padding: 16px 18px;
-        border-radius: 22px;
-        border: 1px solid rgba(20, 41, 27, 0.09);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(233, 248, 237, 0.7));
-      }
-
-      .row-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 8px;
-      }
-
-      .mini-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        border-radius: 999px;
-        padding: 7px 10px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        background: rgba(76, 175, 80, 0.1);
-        color: var(--green-dark);
-      }
-
-      .mini-pill.warn {
-        background: rgba(245, 165, 36, 0.14);
-        color: #986300;
-      }
-
-      .mini-pill.danger {
-        background: rgba(209, 67, 67, 0.12);
-        color: var(--danger);
-      }
-
-      .row-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: flex-end;
-      }
-
-      .tiny-btn {
-        border: none;
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-size: 0.86rem;
-        font-weight: 800;
-        cursor: pointer;
-        transition: transform 0.22s ease, opacity 0.22s ease;
-      }
-
-      .tiny-btn:hover {
-        transform: translateY(-1px);
-      }
-
-      .tiny-btn.green {
-        background: var(--green-soft);
-        color: var(--green-dark);
-      }
-
-      .tiny-btn.dark {
-        background: #18201a;
-        color: #fff;
-      }
-
-      .tiny-btn.red {
-        background: rgba(209, 67, 67, 0.12);
-        color: var(--danger);
-      }
-
-      .lower-grid {
-        grid-template-columns: minmax(300px, 0.86fr) minmax(0, 1.14fr);
-      }
-
-      .log-card {
-        display: grid;
-        gap: 16px;
-      }
-
-      .log-item {
-        display: grid;
-        gap: 6px;
-        padding: 14px 16px;
-        border-radius: 18px;
-        border: 1px solid rgba(20, 41, 27, 0.09);
-        background: rgba(255, 255, 255, 0.92);
-      }
-
-      .log-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .log-top strong {
-        font-size: 0.98rem;
-      }
-
-      .log-top time,
-      .log-item p {
-        color: var(--muted);
-        font-size: 0.9rem;
-      }
-
-      .tool-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .tool-item {
-        align-items: flex-start;
-      }
-
-      .tool-item i {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        background: var(--green-soft);
-        color: var(--green-dark);
-        font-size: 1rem;
-        flex-shrink: 0;
-      }
-
-      .tool-copy {
-        display: grid;
-        gap: 5px;
-      }
-
-      .tool-copy h3 {
-        font-size: 0.98rem;
-      }
-
-      .tool-copy p {
-        color: var(--muted);
-        font-size: 0.9rem;
-        line-height: 1.55;
-      }
-
-      .table-scroll {
-        overflow-x: auto;
-        border-radius: 24px;
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid rgba(20, 41, 27, 0.1);
-        box-shadow: 0 16px 34px rgba(24, 46, 31, 0.08);
-      }
-
-      .admin-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 520px;
-      }
-
-      .admin-table th,
-      .admin-table td {
-        padding: 16px 18px;
-        text-align: left;
-        border-bottom: 1px solid rgba(20, 41, 27, 0.08);
-      }
-
-      .admin-table th {
-        font-size: 0.88rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted);
-        border-bottom-width: 2px;
-      }
-
-      .admin-table td {
-        color: var(--ink);
-        font-size: 0.95rem;
-      }
-
-      .admin-table tbody tr:hover {
-        background: rgba(76, 175, 80, 0.05);
-      }
-
-      .admin-table .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border-radius: 999px;
-        padding: 8px 12px;
-        font-size: 0.78rem;
-        font-weight: 700;
-      }
-
-      .status-pill.online {
-        background: rgba(76, 175, 80, 0.14);
-        color: var(--green-dark);
-      }
-
-      .status-pill.attention {
-        background: rgba(245, 165, 36, 0.14);
-        color: #986300;
-      }
-
-      .status-pill.danger {
-        background: rgba(209, 67, 67, 0.12);
-        color: var(--danger);
-      }
-
-      .action-link {
-        background: rgba(76, 175, 80, 0.08);
-        border: 1px solid rgba(76, 175, 80, 0.3);
-        color: var(--green-dark);
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .action-link:hover {
-        background: rgba(76, 175, 80, 0.16);
-        border-color: rgba(76, 175, 80, 0.5);
-        transform: translateY(-1px);
-      }
-
-      .action-link:active {
-        transform: translateY(0);
-        background: rgba(76, 175, 80, 0.24);
-      }
-
-      .table-shell {
-        padding: 26px;
-        margin-bottom: 22px;
-        background: rgba(255, 255, 255, 0.86);
-        border: 1px solid rgba(20, 41, 27, 0.08);
-        border-radius: 24px;
-        box-shadow: 0 18px 40px rgba(24, 46, 31, 0.08);
-      }
-
-      .tab-panel {
-        display: none;
-      }
-
-      .tab-panel.active {
-        display: block;
-      }
-
-      .admin-sidebar .sidebar-link {
-        text-align: left;
-        display: grid;
-        grid-template-columns: auto 1fr;
-        align-items: center;
-        border: none;
-        width: 100%;
-        background: transparent;
-        cursor: pointer;
-      }
-
-      .admin-sidebar .sidebar-link:hover {
-        background: rgba(76, 175, 80, 0.1);
-      }
-
-      .sidebar-link.active {
-        background: linear-gradient(135deg, var(--green), #69cc6c);
-        color: #fff;
-      }
-
-      .sidebar-link.active i {
-        color: #fff;
-      }
-
-      .footer-note {
-        margin-top: 24px;
-        text-align: center;
-        color: var(--muted);
-        font-size: 0.92rem;
-      }
-
-      .spectate-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 4800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: rgba(12, 18, 14, 0.42);
-        backdrop-filter: blur(8px);
-      }
-
-      .spectate-overlay.hidden {
-        display: none;
-      }
-
-      .spectate-modal {
-        width: min(1100px, 100%);
-        max-height: min(84vh, 920px);
-        overflow: auto;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid rgba(20, 41, 27, 0.1);
-        border-radius: 30px;
-        box-shadow: 0 28px 70px rgba(14, 30, 19, 0.22);
-        padding: 26px;
-        display: grid;
-        gap: 20px;
-      }
-
-      .spectate-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 18px;
-      }
-
-      .spectate-title {
-        display: grid;
-        gap: 8px;
-      }
-
-      .spectate-title h2 {
-        font-size: 1.5rem;
-      }
-
-      .spectate-title p {
-        color: var(--muted);
-        line-height: 1.6;
-      }
-
-      .spectate-close {
-        border: none;
-        border-radius: 14px;
-        width: 44px;
-        height: 44px;
-        background: rgba(20, 41, 27, 0.08);
-        color: var(--ink);
-        font-size: 1.05rem;
-        cursor: pointer;
-      }
-
-      .spectate-meta {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .spectate-card {
-        border: 1px solid rgba(20, 41, 27, 0.1);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(233, 248, 237, 0.76));
-        border-radius: 22px;
-        padding: 16px;
-        display: grid;
-        gap: 6px;
-      }
-
-      .spectate-card-label {
-        font-size: 0.8rem;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        font-weight: 800;
-      }
-
-      .spectate-card-value {
-        font-size: 1.02rem;
-        font-weight: 800;
-        color: var(--green-dark);
-        word-break: break-word;
-      }
-
-      .spectate-layout {
-        display: grid;
-        grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
-        gap: 20px;
-      }
-
-      .spectate-panel {
-        border: 1px solid rgba(20, 41, 27, 0.1);
-        border-radius: 24px;
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.95);
-        display: grid;
-        gap: 16px;
-      }
-
-      .spectate-panel h3 {
-        font-size: 1rem;
-      }
-
-      .spectate-participants {
-        display: grid;
-        gap: 10px;
-      }
-
-      .spectate-participant {
-        display: grid;
-        gap: 8px;
-        padding: 14px 15px;
-        border-radius: 18px;
-        border: 1px solid rgba(20, 41, 27, 0.08);
-        background: rgba(249, 252, 249, 0.96);
-      }
-
-      .spectate-participant-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .spectate-name {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 800;
-      }
-
-      .spectate-color-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
-        flex-shrink: 0;
-      }
-
-      .spectate-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .spectate-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        border-radius: 999px;
-        padding: 6px 10px;
-        font-size: 0.78rem;
-        font-weight: 800;
-        background: rgba(76, 175, 80, 0.1);
-        color: var(--green-dark);
-      }
-
-      .spectate-file-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .spectate-select {
-        min-width: 220px;
-        border: 1px solid rgba(20, 41, 27, 0.12);
-        border-radius: 12px;
-        padding: 11px 12px;
-        font: inherit;
-        color: var(--ink);
-        background: #fff;
-      }
-
-      .spectate-code {
-        min-height: 420px;
-        max-height: 52vh;
-        overflow: auto;
-        margin: 0;
-        padding: 18px;
-        border-radius: 18px;
-        background: #101612;
-        color: #e8f4e9;
-        font: 0.92rem/1.6 Consolas, "Courier New", monospace;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-
-      .spectate-view-stack {
-        display: grid;
-        gap: 18px;
-      }
-
-      .spectate-preview-shell {
-        border: 1px solid rgba(20, 41, 27, 0.1);
-        border-radius: 20px;
-        overflow: hidden;
-        background: #f7faf7;
-      }
-
-      .spectate-preview-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 12px 14px;
-        border-bottom: 1px solid rgba(20, 41, 27, 0.08);
-        background: rgba(255, 255, 255, 0.96);
-      }
-
-      .spectate-preview-title {
-        font-size: 0.9rem;
-        font-weight: 800;
-        color: var(--ink);
-      }
-
-      .spectate-preview-note {
-        font-size: 0.8rem;
-        color: var(--muted);
-      }
-
-      .spectate-preview-frame {
-        width: 100%;
-        height: 300px;
-        border: none;
-        background: #fff;
-      }
-
-      .spectate-empty {
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-
-      @media (max-width: 1120px) {
-        .admin-layout,
-        .overview-grid,
-        .main-grid,
-        .lower-grid,
-        .hero {
-          grid-template-columns: 1fr;
-        }
-
-        .admin-sidebar {
-          position: static;
-        }
-
-        .tool-list {
-          grid-template-columns: 1fr;
-        }
-
-        .spectate-meta,
-        .spectate-layout {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      @media (max-width: 780px) {
-        header {
-          padding: 14px 18px;
-        }
-
-        .page-shell {
-          padding: 24px 16px 44px;
-        }
-
-        .hero-panel,
-        .side-panel,
-        .section-card,
-        .queue-card,
-        .log-card,
-        .tool-card,
-        .stat-card {
-          padding: 22px;
-        }
-
-        .hero h1 {
-          max-width: none;
-        }
-
-        .moderation-row {
-          grid-template-columns: 1fr;
-        }
-
-        .row-actions {
-          justify-content: flex-start;
-        }
-      }
-
-
-      .admin-layout {
-        grid-template-columns: 280px minmax(0, 1fr);
-        gap: 22px;
-      }
-
-      .admin-sidebar {
-        gap: 14px;
-      }
-
-      .sidebar-card {
-        background: linear-gradient(180deg, rgba(15, 27, 20, 0.96), rgba(22, 39, 29, 0.94));
-        color: #eef7ef;
-        border: 1px solid rgba(109, 205, 112, 0.12);
-        border-radius: 24px;
-        box-shadow: 0 18px 36px rgba(11, 24, 16, 0.22);
-        padding: 16px;
+        background: rgba(10,16,12,.35);
         backdrop-filter: blur(10px);
       }
+      .admin-pin-overlay.hidden { display: none; }
 
-      .sidebar-title {
-        color: rgba(232, 244, 233, 0.68);
+      .admin-pin-card {
+        width: min(440px,100%);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: 0 32px 72px rgba(10,20,14,.18);
+        padding: 32px 28px 26px;
+        display: grid; gap: 18px; text-align: center;
       }
-
-      .sidebar-card-primary {
-        padding: 18px;
+      .admin-pin-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 8px; margin: 0 auto;
+        padding: 8px 16px; border-radius: 999px;
+        background: var(--green-s); color: var(--green-d);
+        font-weight: 800; font-size: .82rem; letter-spacing: .06em;
       }
+      .admin-pin-card h2 { font-size: clamp(1.6rem,4vw,2.1rem); line-height: 1.1; }
+      .admin-pin-card > p { color: var(--muted); line-height: 1.65; font-size: .95rem; }
+      .admin-pin-form { display: grid; gap: 14px; }
+      .admin-login-field {
+        width: 100%; height: 54px;
+        border-radius: 14px; border: 1px solid rgba(20,41,27,.14);
+        background: #fafcfa; color: var(--ink);
+        padding: 0 16px; font-size: 1rem; font-weight: 600;
+        outline: none; transition: border-color var(--transition), box-shadow var(--transition);
+      }
+      .admin-login-field:focus {
+        border-color: rgba(76,175,80,.55);
+        box-shadow: 0 0 0 4px rgba(76,175,80,.11);
+      }
+      .admin-pin-card.error .admin-login-field { border-color: rgba(209,67,67,.5); background: rgba(209,67,67,.04); color:#8f1e1e; }
+      .admin-pin-card.error { animation: shake .3s ease; }
+      @keyframes shake {
+        0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)}
+        40%{transform:translateX(9px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+      }
+      .admin-pin-message { min-height: 18px; font-size: .88rem; color: var(--muted); }
+      .admin-pin-card.error .admin-pin-message { color: var(--danger); font-weight: 700; }
+      .admin-pin-submit {
+        border: none; border-radius: 14px; padding: 14px 18px;
+        background: linear-gradient(135deg, var(--green), #69cc6c);
+        color: #fff; font-size: .98rem; font-weight: 800; cursor: pointer;
+        transition: transform var(--transition), box-shadow var(--transition);
+      }
+      .admin-pin-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(76,175,80,.22); }
+      .admin-pin-note { font-size: .82rem; color: var(--muted); }
 
-      .sidebar-brand {
+      /* ── Spectate overlay ────────────────────────────────────── */
+      .spectate-overlay {
+        position: fixed; inset: 0; z-index: 4800;
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+        background: rgba(10,18,13,.42);
+        backdrop-filter: blur(8px);
+      }
+      .spectate-overlay.hidden { display: none; }
+      .spectate-modal {
+        width: min(1100px,100%); max-height: min(86vh,960px); overflow: auto;
+        background: rgba(255,255,255,.98);
+        border: 1px solid var(--line); border-radius: 28px;
+        box-shadow: 0 28px 72px rgba(10,26,16,.22);
+        padding: 26px; display: grid; gap: 20px;
+      }
+      .spectate-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+      .spectate-title { display:grid; gap:6px; }
+      .spectate-title h2 { font-size:1.45rem; }
+      .spectate-title p { color:var(--muted); font-size:.93rem; line-height:1.6; }
+      .spectate-close {
+        border:none; border-radius:12px; width:42px; height:42px;
+        background:rgba(20,41,27,.07); color:var(--ink); font-size:1rem; cursor:pointer;
+        flex-shrink:0; transition: background var(--transition);
+      }
+      .spectate-close:hover { background: rgba(20,41,27,.12); }
+      .spectate-meta { display:grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap:12px; }
+      .spectate-card {
+        border:1px solid rgba(20,41,27,.09);
+        background: linear-gradient(180deg,#fff,rgba(233,248,237,.7));
+        border-radius: var(--radius-md); padding:14px; display:grid; gap:5px;
+      }
+      .spectate-card-label { font-size:.74rem; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; font-weight:800; }
+      .spectate-card-value { font-size:.98rem; font-weight:800; color:var(--green-d); word-break:break-word; }
+      .spectate-layout { display:grid; grid-template-columns: minmax(270px,.8fr) minmax(0,1.2fr); gap:18px; }
+      .spectate-panel { border:1px solid var(--line); border-radius:var(--radius-lg); padding:18px; background:#fff; display:grid; gap:14px; }
+      .spectate-panel h3 { font-size:.98rem; }
+      .spectate-participants { display:grid; gap:9px; }
+      .spectate-participant { display:grid; gap:6px; padding:12px 14px; border-radius:var(--radius-md); border:1px solid var(--line); background:#fafcfa; }
+      .spectate-participant-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .spectate-name { display:inline-flex; align-items:center; gap:9px; font-weight:800; font-size:.92rem; }
+      .spectate-color-dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+      .spectate-tags { display:flex; flex-wrap:wrap; gap:6px; }
+      .spectate-tag { display:inline-flex; align-items:center; gap:5px; border-radius:999px; padding:5px 9px; font-size:.75rem; font-weight:800; background:var(--green-s); color:var(--green-d); }
+      .spectate-file-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+      .spectate-select { min-width:200px; border:1px solid rgba(20,41,27,.12); border-radius:10px; padding:10px 12px; font:inherit; color:var(--ink); background:#fff; }
+      .spectate-code { min-height:380px; max-height:50vh; overflow:auto; margin:0; padding:16px; border-radius:var(--radius-md); background:#101612; color:#e8f4e9; font:.9rem/1.6 Consolas,"Courier New",monospace; white-space:pre-wrap; word-break:break-word; }
+      .spectate-view-stack { display:grid; gap:16px; }
+      .spectate-preview-shell { border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden; background:#f7faf7; }
+      .spectate-preview-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.96); }
+      .spectate-preview-title { font-size:.88rem; font-weight:800; }
+      .spectate-preview-note { font-size:.78rem; color:var(--muted); }
+      .spectate-preview-frame { width:100%; height:290px; border:none; background:#fff; }
+      .spectate-empty { color:var(--muted); font-size:.92rem; }
+
+      /* ── Header ──────────────────────────────────────────────── */
+      header {
+        position: fixed; top:0; left:0; width:100%; height:var(--header-h); z-index:1000;
+        background: rgba(255,255,255,.96); backdrop-filter: blur(14px);
+        box-shadow: 0 1px 0 var(--line), 0 2px 12px rgba(0,0,0,.05);
+        display: flex; align-items: center; padding: 0 24px;
+      }
+      .header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; }
+      .logo-container { display:flex; align-items:center; gap:10px; text-decoration:none; }
+      .logo-container img { height:38px; width:auto; }
+      .header-right { display:flex; align-items:center; gap:8px; }
+      .nav-btn {
+        padding:8px 18px; border-radius:999px; text-decoration:none;
+        font-size:.88rem; font-weight:700; transition: var(--transition);
+      }
+      .nav-btn.active { background: var(--green); color:#fff; }
+      .nav-btn:not(.active) { color:#223027; background:rgba(76,175,80,.08); }
+      .nav-btn:not(.active):hover { background:rgba(76,175,80,.16); color:var(--green-d); }
+
+      /* ── Layout shell ────────────────────────────────────────── */
+      .page-shell {
+        position: relative; z-index:1;
         display: grid;
-        gap: 14px;
+        grid-template-columns: var(--sb-w) minmax(0,1fr);
+        min-height: calc(100vh - var(--header-h));
       }
 
-      .sidebar-brand-top {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+      /* ── Sidebar ─────────────────────────────────────────────── */
+      .admin-sidebar {
+        background: var(--sb-bg);
+        border-right: 1px solid var(--sb-border);
+        position: sticky; top: var(--header-h);
+        height: calc(100vh - var(--header-h));
+        overflow-y: auto; overflow-x: hidden;
+        display: flex; flex-direction: column;
+        scrollbar-width: thin; scrollbar-color: rgba(76,175,80,.18) transparent;
+      }
+      .admin-sidebar::-webkit-scrollbar { width:4px; }
+      .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(76,175,80,.2); border-radius:4px; }
+
+      /* sidebar brand */
+      .sb-brand {
+        padding: 20px 18px 16px;
+        border-bottom: 1px solid var(--sb-border);
+        display: grid; gap: 14px;
+      }
+      .sb-brand-row { display:flex; align-items:center; gap:11px; }
+      .sb-brand-icon {
+        width:40px; height:40px; border-radius:12px;
+        background: linear-gradient(135deg, rgba(76,175,80,.28), rgba(109,205,112,.12));
+        display:grid; place-items:center; color:#a8e6ab; font-size:1rem; flex-shrink:0;
+      }
+      .sb-brand-name { font-size:.95rem; font-weight:800; color:#e6f5e8; }
+      .sb-brand-sub  { font-size:.74rem; color:var(--sb-muted); margin-top:2px; }
+      .sb-pills { display:flex; flex-wrap:wrap; gap:6px; }
+      .sb-pill {
+        display:inline-flex; align-items:center; gap:6px; padding:5px 10px;
+        border-radius:999px; border:1px solid rgba(255,255,255,.07);
+        background:rgba(255,255,255,.05); color:var(--sb-text);
+        font-size:.72rem; font-weight:700;
+      }
+      .sb-pill .dot { width:6px; height:6px; border-radius:50%; background:var(--green); }
+
+      /* sidebar sections */
+      .sb-section { padding: 14px 12px 6px; }
+      .sb-label {
+        font-size:.68rem; font-weight:800; letter-spacing:.12em;
+        text-transform:uppercase; color:var(--sb-muted);
+        padding: 0 6px 8px;
+      }
+      .sb-nav { display:grid; gap:2px; }
+      .sb-link {
+        display:grid; grid-template-columns:28px 1fr; align-items:center; gap:0;
+        padding:9px 10px; border-radius:var(--radius-sm);
+        background:transparent; border:1px solid transparent;
+        color:var(--sb-text); font-size:.88rem; font-weight:600;
+        text-decoration:none; cursor:pointer; width:100%; text-align:left;
+        transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition);
+      }
+      .sb-link i { font-size:.85rem; color:var(--sb-muted); transition: color var(--transition); justify-self:center; }
+      .sb-link:hover { background:var(--sb-hover); border-color:rgba(76,175,80,.12); }
+      .sb-link:hover i { color:#a8d8ab; }
+      .sb-link.active {
+        background: linear-gradient(135deg, var(--sb-active-from), var(--sb-active-to));
+        border-color: transparent; color:#fff; font-weight:700;
+      }
+      .sb-link.active i { color:#fff; }
+
+      /* sidebar stats blocks */
+      .sb-stats { display:grid; gap:4px; padding: 0 12px 10px; }
+      .sb-stat-item {
+        display:flex; align-items:center; justify-content:space-between; gap:10px;
+        padding:9px 10px; border-radius:var(--radius-sm);
+        background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.05);
+      }
+      .sb-stat-label { font-size:.78rem; color:var(--sb-muted); line-height:1.3; }
+      .sb-stat-label strong { display:block; font-size:.82rem; color:var(--sb-text); font-weight:700; }
+      .sb-stat-val { font-weight:800; font-size:.9rem; color:#a8e6ab; white-space:nowrap; flex-shrink:0; }
+
+      .sb-divider { height:1px; background: var(--sb-border); margin: 4px 12px; }
+
+      /* ── Main content area ───────────────────────────────────── */
+      .main-area {
+        padding: 24px 26px 48px;
+        display: grid; gap: 22px;
       }
 
-      .sidebar-brand-badge {
-        width: 48px;
-        height: 48px;
-        border-radius: 16px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, rgba(76, 175, 80, 0.24), rgba(109, 205, 112, 0.12));
-        color: #bff1c1;
-        font-size: 1.12rem;
+      /* page header row */
+      .page-header {
+        display:flex; align-items:center; justify-content:space-between; gap:16px;
+        flex-wrap:wrap;
+      }
+      .page-title-block { display:grid; gap:4px; }
+      .page-eyebrow {
+        display:inline-flex; align-items:center; gap:8px;
+        background:var(--green-s); color:var(--green-d);
+        border-radius:999px; padding:6px 12px; font-size:.76rem; font-weight:800; letter-spacing:.06em;
+        width:fit-content;
+      }
+      .page-title { font-size:clamp(1.5rem,2.5vw,2rem); line-height:1.1; margin-top:6px; }
+      .page-sub { color:var(--muted); font-size:.93rem; margin-top:4px; }
+      .page-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+      /* stat cards row */
+      .stat-row { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap:14px; }
+      .stat-card {
+        background: var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+        box-shadow: var(--shadow-card); padding:18px;
+        display:grid; gap:10px;
+      }
+      .stat-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .stat-icon {
+        width:44px; height:44px; border-radius:13px;
+        display:grid; place-items:center;
+        background: var(--green-s); color:var(--green-d); font-size:1.05rem;
+      }
+      .stat-trend { font-size:.8rem; font-weight:700; color:var(--green-d); }
+      .stat-card h3 { font-size:1.9rem; line-height:1; font-weight:800; }
+      .stat-card p { color:var(--muted); font-size:.82rem; line-height:1.55; }
+
+      /* table section card */
+      .table-section {
+        background: var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+        box-shadow: var(--shadow-card); overflow:hidden;
+      }
+      .table-section-header {
+        display:flex; align-items:center; justify-content:space-between; gap:14px;
+        padding:18px 22px; border-bottom:1px solid var(--line);
+        flex-wrap:wrap;
+      }
+      .ts-title-block { display:grid; gap:4px; }
+      .ts-title { font-size:1rem; font-weight:800; }
+      .ts-sub { color:var(--muted); font-size:.83rem; }
+      .ts-header-right { display:flex; align-items:center; gap:10px; }
+
+      /* pill badges */
+      .pill {
+        display:inline-flex; align-items:center; gap:7px;
+        border-radius:999px; padding:6px 12px; font-size:.77rem; font-weight:800;
+      }
+      .pill.green { background:rgba(76,175,80,.13); color:var(--green-d); }
+      .pill.amber { background:var(--amber-bg); color:#7a4f00; }
+      .pill.red   { background:var(--danger-bg); color:var(--danger); }
+
+      /* tab bar inside section */
+      .tab-bar {
+        display:flex; gap:2px; padding:12px 22px 0;
+        border-bottom:1px solid var(--line); overflow-x:auto;
+      }
+      .tab-btn {
+        padding:8px 14px; border:none; background:none; cursor:pointer;
+        color:var(--muted); font-size:.85rem; font-weight:700; white-space:nowrap;
+        border-bottom:2px solid transparent; transition: color var(--transition), border-color var(--transition);
+        display:flex; align-items:center; gap:7px;
+      }
+      .tab-btn.active { color:var(--green-d); border-bottom-color:var(--green); }
+      .tab-btn:hover:not(.active) { color:var(--ink); }
+      .tab-btn i { font-size:.8rem; }
+
+      .tab-panel { display:none; }
+      .tab-panel.active { display:block; }
+
+      /* The actual table */
+      .tbl-wrap { overflow-x:auto; }
+      .admin-table {
+        width:100%; border-collapse:collapse; min-width:540px;
+        font-size:.88rem;
+      }
+      .admin-table thead tr { background:rgba(245,250,246,.9); }
+      .admin-table th {
+        padding:11px 18px; text-align:left;
+        font-size:.72rem; font-weight:800; letter-spacing:.08em;
+        text-transform:uppercase; color:var(--muted);
+        border-bottom:1px solid var(--line); white-space:nowrap;
+      }
+      .admin-table td {
+        padding:13px 18px; border-bottom:1px solid var(--line);
+        color:var(--ink); vertical-align:middle;
+      }
+      .admin-table tbody tr:last-child td { border-bottom:none; }
+      .admin-table tbody tr { transition: background var(--transition); }
+      .admin-table tbody tr:hover { background:rgba(76,175,80,.04); }
+
+      /* cell sub-text */
+      .cell-main { font-weight:700; }
+      .cell-sub  { font-size:.76rem; color:var(--muted); margin-top:2px; }
+
+      /* user avatar cell */
+      .user-cell { display:flex; align-items:center; gap:10px; }
+      .user-avatar {
+        width:34px; height:34px; border-radius:10px; flex-shrink:0;
+        display:grid; place-items:center; font-size:.8rem; font-weight:800; color:#fff;
       }
 
-      .sidebar-brand-copy {
-        display: grid;
-        gap: 4px;
+      /* status pill inside table */
+      .s-pill {
+        display:inline-flex; align-items:center; gap:6px;
+        border-radius:999px; padding:5px 10px; font-size:.74rem; font-weight:800;
+        white-space:nowrap;
       }
+      .s-pill i { font-size:.6rem; }
+      .s-pill.online  { background:rgba(76,175,80,.13); color:var(--green-d); }
+      .s-pill.flagged { background:var(--amber-bg); color:#7a4f00; }
+      .s-pill.danger  { background:var(--danger-bg); color:var(--danger); }
+      .s-pill.neutral { background:rgba(20,41,27,.07); color:var(--muted); }
+      .s-pill.info    { background:rgba(56,120,220,.10); color:#1d4fa0; }
 
-      .sidebar-brand-copy strong {
-        font-size: 1rem;
+      /* dot indicator */
+      .live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block; flex-shrink:0; }
+      .warn-dot { width:7px; height:7px; border-radius:50%; background:var(--amber); display:inline-block; flex-shrink:0; }
+      .red-dot  { width:7px; height:7px; border-radius:50%; background:var(--danger); display:inline-block; flex-shrink:0; }
+
+      /* action buttons in table */
+      .tbl-btn {
+        padding:5px 11px; border-radius:7px; border:1px solid transparent;
+        font-size:.78rem; font-weight:700; cursor:pointer; white-space:nowrap;
+        transition: background var(--transition), border-color var(--transition), transform var(--transition);
       }
+      .tbl-btn:hover { transform:translateY(-1px); }
+      .tbl-btn.view   { background:var(--green-s); border-color:rgba(76,175,80,.25); color:var(--green-d); }
+      .tbl-btn.warn   { background:var(--amber-bg); border-color:rgba(245,165,36,.3); color:#7a4f00; }
+      .tbl-btn.danger { background:var(--danger-bg); border-color:rgba(209,67,67,.3); color:var(--danger); }
+      .tbl-btn.dark   { background:rgba(15,26,18,.85); color:#e6f5e8; border-color:rgba(76,175,80,.15); }
+      .tbl-btn.ghost  { background:transparent; border-color:var(--line); color:var(--muted); }
 
-      .sidebar-brand-copy span,
-      .sidebar-copy p {
-        color: rgba(232, 244, 233, 0.72);
+      .btn-group { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+
+      /* meta chips in cells */
+      .chip {
+        display:inline-flex; align-items:center; gap:5px;
+        padding:3px 8px; border-radius:6px; font-size:.72rem; font-weight:700;
+        background:rgba(20,41,27,.06); color:var(--muted);
+        margin:2px 2px 0 0;
       }
+      .chip i { font-size:.65rem; }
+      .chip.green { background:rgba(76,175,80,.11); color:var(--green-d); }
+      .chip.amber { background:var(--amber-bg); color:#7a4f00; }
+      .chip.red   { background:var(--danger-bg); color:var(--danger); }
 
-      .sidebar-status-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
+      /* progress bar */
+      .progress-bar { height:6px; border-radius:4px; background:rgba(20,41,27,.08); overflow:hidden; min-width:80px; }
+      .progress-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--green),#69cc6c); }
+
+      /* empty state */
+      .empty-state { padding:36px; text-align:center; color:var(--muted); font-size:.9rem; }
+      .empty-state i { font-size:2rem; opacity:.35; margin-bottom:10px; display:block; }
+
+      /* activity list (below tables) */
+      .activity-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      .log-card {
+        background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+        box-shadow:var(--shadow-card); padding:20px; display:grid; gap:12px;
       }
-
-      .sidebar-status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        border-radius: 999px;
-        padding: 7px 11px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #eef7ef;
-        font-size: 0.78rem;
-        font-weight: 700;
+      .log-header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .log-title { font-size:.95rem; font-weight:800; }
+      .log-item {
+        display:grid; gap:4px; padding:11px 13px; border-radius:var(--radius-sm);
+        border:1px solid var(--line); background:rgba(245,250,246,.6);
       }
+      .log-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .log-top strong { font-size:.88rem; }
+      .log-top time { font-size:.78rem; color:var(--muted); }
+      .log-item p { color:var(--muted); font-size:.8rem; line-height:1.5; }
 
-      .sidebar-link {
-        background: rgba(255, 255, 255, 0.05);
-        color: rgba(238, 247, 239, 0.88);
-        border: 1px solid rgba(255, 255, 255, 0.04);
+      /* moderation queue rows */
+      .mod-row {
+        display:grid; grid-template-columns:1fr auto; gap:14px; align-items:center;
+        padding:14px 18px; border-radius:var(--radius-md);
+        border:1px solid var(--line); background:rgba(245,250,246,.7);
+        margin-bottom:8px;
       }
+      .mod-row:last-child { margin-bottom:0; }
+      .mod-meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+      .mod-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
 
-      .sidebar-link:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(109, 205, 112, 0.16);
+      /* footer */
+      .admin-footer { text-align:center; color:var(--muted); font-size:.82rem; padding:10px 0; }
+
+      /* ── Responsive ──────────────────────────────────────────── */
+      @media (max-width: 1100px) {
+        .page-shell { grid-template-columns: 220px minmax(0,1fr); }
+        :root { --sb-w: 220px; }
+        .stat-row { grid-template-columns: repeat(2,1fr); }
+        .activity-grid { grid-template-columns:1fr; }
       }
-
-      .sidebar-main {
-        display: grid;
-        gap: 22px;
-        background: rgba(255, 255, 255, 0.48);
-        border: 1px solid rgba(255, 255, 255, 0.72);
-        border-radius: 30px;
-        padding: 20px;
-        box-shadow: 0 24px 50px rgba(24, 46, 31, 0.08);
-        backdrop-filter: blur(12px);
-      }
-
-      .footer-note {
-        margin-top: 4px;
-        padding: 12px 14px 0;
-      }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
-      @media (max-width: 1120px) {
-        .sidebar-main {
-          padding: 18px;
-        }
-      }
-
       @media (max-width: 780px) {
-        .sidebar-main {
-          border-radius: 24px;
-          padding: 16px;
-        }
+        .page-shell { grid-template-columns: 1fr; }
+        .admin-sidebar { position:static; height:auto; border-right:none; border-bottom:1px solid var(--sb-border); }
+        .main-area { padding:18px 14px 36px; }
+        .stat-row { grid-template-columns: 1fr 1fr; }
+        .spectate-meta, .spectate-layout { grid-template-columns:1fr; }
       }
-
+      @media (max-width:520px) {
+        .stat-row { grid-template-columns:1fr; }
+      }
     </style>
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2215422685538558"
-     crossorigin="anonymous"></script>
   </head>
   <body>
+
+    <!-- ── PIN OVERLAY ──────────────────────────────────── -->
     <div class="admin-pin-overlay" id="adminPinOverlay" role="dialog" aria-modal="true" aria-labelledby="adminPinTitle">
       <div class="admin-pin-card" id="adminPinCard">
         <div class="admin-pin-badge"><i class="fa-solid fa-lock"></i> PRIVATE ACCESS</div>
         <h2 id="adminPinTitle">Admin Sign In</h2>
-        <p>Admin controls are locked. Enter the correct administrator username and password to access the private panel.</p>
+        <p>Enter your administrator credentials to unlock the control panel.</p>
         <form class="admin-pin-form" id="adminPinForm">
-          <div class="admin-pin-inputs" aria-label="Admin credentials">
-            <input class="admin-login-field" id="adminUsernameInput" type="text" autocomplete="username" placeholder="Username" />
-            <input class="admin-login-field" id="adminPasswordInput" type="password" autocomplete="current-password" placeholder="Password" />
-          </div>
+          <input class="admin-login-field" id="adminUsernameInput" type="text" autocomplete="username" placeholder="Username" />
+          <input class="admin-login-field" id="adminPasswordInput" type="password" autocomplete="current-password" placeholder="Password" />
           <div class="admin-pin-message" id="adminPinMessage">Enter your admin credentials to continue.</div>
           <button class="admin-pin-submit" type="submit">Unlock Admin Panel</button>
         </form>
-        <div class="admin-pin-note">Only authorized access is allowed on this page.</div>
+        <p class="admin-pin-note">Only authorized personnel may access this panel.</p>
       </div>
     </div>
 
+    <!-- ── SPECTATE OVERLAY ─────────────────────────────── -->
     <div class="spectate-overlay hidden" id="spectateOverlay" role="dialog" aria-modal="true" aria-labelledby="spectateTitle">
       <div class="spectate-modal">
         <div class="spectate-header">
           <div class="spectate-title">
             <h2 id="spectateTitle">Spectate Session</h2>
-            <p id="spectateSubtitle">Read-only admin view of a live room. This does not join the room as a visible participant.</p>
+            <p id="spectateSubtitle">Read-only admin view. You are not visible to participants.</p>
           </div>
-          <button class="spectate-close" id="spectateCloseBtn" type="button" aria-label="Close spectate view">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+          <button class="spectate-close" id="spectateCloseBtn" type="button" aria-label="Close spectate view"><i class="fa-solid fa-xmark"></i></button>
         </div>
-
         <div class="spectate-meta">
-          <div class="spectate-card">
-            <div class="spectate-card-label">Session</div>
-            <div class="spectate-card-value" id="spectateSessionId">--</div>
-          </div>
-          <div class="spectate-card">
-            <div class="spectate-card-label">Host</div>
-            <div class="spectate-card-value" id="spectateHost">--</div>
-          </div>
-          <div class="spectate-card">
-            <div class="spectate-card-label">Participants</div>
-            <div class="spectate-card-value" id="spectateParticipantCount">--</div>
-          </div>
-          <div class="spectate-card">
-            <div class="spectate-card-label">Active File</div>
-            <div class="spectate-card-value" id="spectateActiveFile">--</div>
-          </div>
-          <div class="spectate-card">
-            <div class="spectate-card-label">Chat</div>
-            <div class="spectate-card-value" id="spectateChatCount">--</div>
-          </div>
+          <div class="spectate-card"><div class="spectate-card-label">Session ID</div><div class="spectate-card-value" id="spectateSessionId">--</div></div>
+          <div class="spectate-card"><div class="spectate-card-label">Host</div><div class="spectate-card-value" id="spectateHost">--</div></div>
+          <div class="spectate-card"><div class="spectate-card-label">Participants</div><div class="spectate-card-value" id="spectateParticipantCount">--</div></div>
+          <div class="spectate-card"><div class="spectate-card-label">Active File</div><div class="spectate-card-value" id="spectateActiveFile">--</div></div>
+          <div class="spectate-card"><div class="spectate-card-label">Chat</div><div class="spectate-card-value" id="spectateChatCount">--</div></div>
         </div>
-
         <div class="spectate-layout">
           <section class="spectate-panel">
-            <h3>People In This Room</h3>
+            <h3><i class="fa-solid fa-users" style="color:var(--green-d);margin-right:6px"></i>People In This Room</h3>
             <div class="spectate-participants" id="spectateParticipants"></div>
           </section>
-
           <section class="spectate-view-stack">
             <div class="spectate-panel">
               <div class="spectate-preview-shell">
@@ -1415,10 +558,9 @@
                 <iframe class="spectate-preview-frame" id="spectatePreviewFrame" title="Spectated session preview"></iframe>
               </div>
             </div>
-
             <div class="spectate-panel">
               <div class="spectate-file-toolbar">
-                <h3>Live File Viewer</h3>
+                <h3><i class="fa-solid fa-file-code" style="color:var(--green-d);margin-right:6px"></i>Live File Viewer</h3>
                 <select class="spectate-select" id="spectateFileSelect"></select>
               </div>
               <div class="spectate-empty" id="spectateFileMeta">Choose a file to inspect the current room state.</div>
@@ -1429,1192 +571,1023 @@
       </div>
     </div>
 
+    <!-- ── PARTICLES ────────────────────────────────────── -->
     <div class="particles" aria-hidden="true">
-      <div class="particle"></div>
-      <div class="particle"></div>
-      <div class="particle"></div>
-      <div class="particle"></div>
-      <div class="particle"></div>
-      <div class="particle"></div>
+      <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+      <div class="particle"></div><div class="particle"></div><div class="particle"></div>
       <div class="particle"></div>
     </div>
 
+    <!-- ── HEADER ───────────────────────────────────────── -->
     <header>
-      <div class="header-content">
+      <div class="header-inner">
         <a class="logo-container" href="index.html" aria-label="CodX Editor home">
           <img src="cx.png" alt="CodX Editor logo" />
         </a>
+        <nav class="header-right">
+          <a class="nav-btn" href="index.html">Home</a>
+          <a class="nav-btn" href="frontend.html">Editor</a>
+          <a class="nav-btn active" href="adminprivate.html"><i class="fa-solid fa-shield-halved"></i> Admin</a>
+        </nav>
       </div>
     </header>
 
-    <main class="page-shell">
-      <div class="admin-layout">
-      <aside class="admin-sidebar">
-        <div class="sidebar-card sidebar-card-primary">
-          <div class="sidebar-brand">
-            <div class="sidebar-brand-top">
-              <div class="sidebar-brand-badge"><i class="fa-solid fa-shield-halved"></i></div>
-              <div class="sidebar-brand-copy">
-                <strong>CodX Admin</strong>
-                <span>Operations dashboard</span>
-              </div>
-            </div>
-            <div class="sidebar-status-row">
-              <span class="sidebar-status-pill"><i class="fa-solid fa-wave-square"></i> Live monitoring</span>
-              <span class="sidebar-status-pill"><i class="fa-solid fa-user-shield"></i> Private access</span>
+    <!-- ── PAGE SHELL ───────────────────────────────────── -->
+    <div class="page-shell">
+
+      <!-- ══ SIDEBAR ══════════════════════════════════════ -->
+      <aside class="admin-sidebar" aria-label="Admin navigation">
+
+        <!-- Brand -->
+        <div class="sb-brand">
+          <div class="sb-brand-row">
+            <div class="sb-brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div>
+              <div class="sb-brand-name">CodX Admin</div>
+              <div class="sb-brand-sub">Operations dashboard</div>
             </div>
           </div>
+          <div class="sb-pills">
+            <span class="sb-pill"><span class="dot"></span> Live monitoring</span>
+            <span class="sb-pill"><i class="fa-solid fa-user-shield" style="font-size:.65rem;color:var(--sb-muted)"></i> Private access</span>
+          </div>
         </div>
-        <div class="sidebar-card">
-          <div class="sidebar-title">Workspace</div>
-          <nav class="sidebar-nav" aria-label="Admin navigation">
-            <a class="sidebar-link" href="index.html"><i class="fa-solid fa-house"></i> Home</a>
-            <a class="sidebar-link" href="about.html"><i class="fa-solid fa-circle-info"></i> About</a>
-            <a class="sidebar-link" href="help.html"><i class="fa-solid fa-book-open"></i> Help</a>
-            <a class="sidebar-link active" href="adminprivate.html"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
-            <a class="sidebar-link" href="frontend.html"><i class="fa-solid fa-rocket"></i> Launch Editor</a>
+
+        <!-- Workspace links -->
+        <div class="sb-section">
+          <div class="sb-label">Workspace</div>
+          <nav class="sb-nav">
+            <a class="sb-link" href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+            <a class="sb-link" href="about.html"><i class="fa-solid fa-circle-info"></i> About</a>
+            <a class="sb-link" href="help.html"><i class="fa-solid fa-book-open"></i> Help</a>
+            <a class="sb-link active" href="adminprivate.html"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
+            <a class="sb-link" href="frontend.html"><i class="fa-solid fa-rocket"></i> Launch Editor</a>
           </nav>
         </div>
-        <div class="sidebar-card">
-          <div class="sidebar-title">Admin Panels</div>
-          <nav class="sidebar-nav" aria-label="Admin panel navigation">
-            <button class="sidebar-link active" type="button" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</button>
-            <button class="sidebar-link" type="button" data-tab="sessions"><i class="fa-solid fa-users"></i> Sessions</button>
-            <button class="sidebar-link" type="button" data-tab="moderation"><i class="fa-solid fa-list-check"></i> Moderation</button>
-            <button class="sidebar-link" type="button" data-tab="activity"><i class="fa-solid fa-clock-rotate-left"></i> Activity</button>
-            <button class="sidebar-link" type="button" data-tab="tools"><i class="fa-solid fa-sliders"></i> Tools</button>
-            <button class="sidebar-link" type="button" data-tab="users"><i class="fa-solid fa-person"></i> Users</button>
-            <button class="sidebar-link" type="button" data-tab="health"><i class="fa-solid fa-heartbeat"></i> System Health</button>
-            <button class="sidebar-link" type="button" data-tab="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</button>
-            <button class="sidebar-link" type="button" data-tab="security"><i class="fa-solid fa-lock"></i> Security</button>
-            <button class="sidebar-link" type="button" data-tab="settings"><i class="fa-solid fa-gear"></i> Settings</button>
-            <button class="sidebar-link" type="button" data-tab="logs"><i class="fa-solid fa-file-lines"></i> Logs</button>
+
+        <div class="sb-divider"></div>
+
+        <!-- Admin panel tabs -->
+        <div class="sb-section">
+          <div class="sb-label">Admin Panels</div>
+          <nav class="sb-nav">
+            <button class="sb-link active" type="button" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</button>
+            <button class="sb-link" type="button" data-tab="users"><i class="fa-solid fa-person"></i> Users</button>
+            <button class="sb-link" type="button" data-tab="sessions"><i class="fa-solid fa-users"></i> Sessions</button>
+            <button class="sb-link" type="button" data-tab="moderation"><i class="fa-solid fa-list-check"></i> Moderation</button>
+            <button class="sb-link" type="button" data-tab="activity"><i class="fa-solid fa-clock-rotate-left"></i> Activity</button>
+            <button class="sb-link" type="button" data-tab="health"><i class="fa-solid fa-heart-pulse"></i> System Health</button>
+            <button class="sb-link" type="button" data-tab="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</button>
+            <button class="sb-link" type="button" data-tab="security"><i class="fa-solid fa-lock"></i> Security</button>
+            <button class="sb-link" type="button" data-tab="tools"><i class="fa-solid fa-sliders"></i> Tools</button>
+            <button class="sb-link" type="button" data-tab="settings"><i class="fa-solid fa-gear"></i> Settings</button>
+            <button class="sb-link" type="button" data-tab="logs"><i class="fa-solid fa-file-lines"></i> Logs</button>
           </nav>
         </div>
-        <div class="sidebar-card">
-          <div class="sidebar-title">Live Platform Health</div>
-          <div class="health-list">
-            <div class="health-item">
-              <div class="item-copy">
-                <strong>Realtime sessions</strong>
-                <span id="healthSessionsText">Checking active collaboration traffic.</span>
-              </div>
-              <span class="item-value" id="healthSessionsValue">--</span>
+
+        <div class="sb-divider"></div>
+
+        <!-- Live health quick stats -->
+        <div class="sb-section" style="padding-bottom:14px">
+          <div class="sb-label">Live Platform Health</div>
+          <div class="sb-stats">
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Realtime sessions</strong><span id="healthSessionsText">Checking…</span></div>
+              <div class="sb-stat-val" id="healthSessionsValue">--</div>
             </div>
-            <div class="health-item">
-              <div class="item-copy">
-                <strong>Connected sockets</strong>
-                <span id="healthSocketsText">Checking realtime socket load.</span>
-              </div>
-              <span class="item-value" id="healthSocketsValue">--</span>
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Connected sockets</strong><span id="healthSocketsText">Checking…</span></div>
+              <div class="sb-stat-val" id="healthSocketsValue">--</div>
             </div>
-            <div class="health-item">
-              <div class="item-copy">
-                <strong>Moderation queue</strong>
-                <span id="healthQueueText">Review queue is loading.</span>
-              </div>
-              <span class="item-value" id="healthQueueValue">--</span>
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Moderation queue</strong><span id="healthQueueText">Loading…</span></div>
+              <div class="sb-stat-val" id="healthQueueValue">--</div>
             </div>
           </div>
         </div>
-        <div class="sidebar-card">
-          <div class="sidebar-title">Admin Focus</div>
-          <div class="queue-list">
-            <div class="queue-item">
-              <div class="item-copy">
-                <strong>Join approval queue</strong>
-                <span id="queueApprovalsText">Pending requests are loading.</span>
-              </div>
-              <span class="item-value" id="queueApprovalsValue">--</span>
+
+        <div class="sb-divider"></div>
+
+        <!-- Admin focus queue -->
+        <div class="sb-section" style="padding-bottom:18px">
+          <div class="sb-label">Admin Focus</div>
+          <div class="sb-stats">
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Join approvals</strong><span id="queueApprovalsText">Loading…</span></div>
+              <div class="sb-stat-val" id="queueApprovalsValue">--</div>
             </div>
-            <div class="queue-item">
-              <div class="item-copy">
-                <strong>Flagged participants</strong>
-                <span id="queueFlaggedText">Participant flags are loading.</span>
-              </div>
-              <span class="item-value" id="queueFlaggedValue">--</span>
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Flagged participants</strong><span id="queueFlaggedText">Loading…</span></div>
+              <div class="sb-stat-val" id="queueFlaggedValue">--</div>
             </div>
-            <div class="queue-item">
-              <div class="item-copy">
-                <strong>Locked rooms</strong>
-                <span id="queueLockedText">Room lock count is loading.</span>
-              </div>
-              <span class="item-value" id="queueLockedValue">--</span>
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Locked rooms</strong><span id="queueLockedText">Loading…</span></div>
+              <div class="sb-stat-val" id="queueLockedValue">--</div>
             </div>
-            <div class="queue-item">
-              <div class="item-copy">
-                <strong>Paused rooms</strong>
-                <span id="queuePausedText">Paused room count is loading.</span>
-              </div>
-              <span class="item-value" id="queuePausedValue">--</span>
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Paused rooms</strong><span id="queuePausedText">Loading…</span></div>
+              <div class="sb-stat-val" id="queuePausedValue">--</div>
             </div>
-            <div class="queue-item">
-              <div class="item-copy">
-                <strong>Published projects</strong>
-                <span id="queuePublishedText">Published project count is loading.</span>
-              </div>
-              <span class="item-value" id="queuePublishedValue">--</span>
+            <div class="sb-stat-item">
+              <div class="sb-stat-label"><strong>Published projects</strong><span id="queuePublishedText">Loading…</span></div>
+              <div class="sb-stat-val" id="queuePublishedValue">--</div>
             </div>
           </div>
         </div>
+
       </aside>
-      <div class="sidebar-main">
-        <section class="section-card table-shell" aria-label="Admin tab panels">
-          <div class="section-header">
-            <div class="section-copy">
-              <h2>Admin panel tables</h2>
-              <p>Click the sidebar options to reveal the corresponding administration table for a cleaner, more organized view.</p>
+      <!-- ══ END SIDEBAR ══════════════════════════════════ -->
+
+      <!-- ══ MAIN CONTENT ═════════════════════════════════ -->
+      <main class="main-area">
+
+        <!-- Page header -->
+        <div class="page-header">
+          <div class="page-title-block">
+            <div class="page-eyebrow"><i class="fa-solid fa-shield-halved"></i> PLATFORM CONTROL CENTER</div>
+            <h1 class="page-title">Admin Panel</h1>
+            <p class="page-sub">Monitor sessions, users, moderation, and platform health from one place.</p>
+          </div>
+          <div class="page-actions">
+            <span class="pill green" id="platformHealthPill"><span class="live-dot"></span> Loading…</span>
+            <a class="tbl-btn view" href="frontend.html"><i class="fa-solid fa-rocket"></i> Open Editor</a>
+          </div>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="stat-row">
+          <article class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon"><i class="fa-solid fa-users"></i></span>
+              <span class="stat-trend" id="activeUsersTrend">Editor open</span>
             </div>
-            <span class="pill online"><i class="fa-solid fa-table-list"></i> Table mode</span>
+            <h3 id="activeUsersValue">--</h3>
+            <p>People currently inside the code editor.</p>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon"><i class="fa-solid fa-people-arrows"></i></span>
+              <span class="stat-trend" id="liveSessionsTrend">Collaborating now</span>
+            </div>
+            <h3 id="liveSessionsValue">--</h3>
+            <p>People inside active collaboration rooms.</p>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+              <span class="stat-trend" id="moderationTrend">Needs attention</span>
+            </div>
+            <h3 id="moderationValue">--</h3>
+            <p>Flags and moderation events awaiting review.</p>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon"><i class="fa-solid fa-hard-drive"></i></span>
+              <span class="stat-trend" id="capacityTrend">Platform load</span>
+            </div>
+            <h3 id="capacityValue">--</h3>
+            <p>Current system capacity across active traffic.</p>
+          </article>
+        </div>
+
+        <!-- ── BIG TABLE SECTION ──────────────────────── -->
+        <div class="table-section">
+
+          <!-- Inner tab bar -->
+          <div class="tab-bar" id="innerTabBar">
+            <button class="tab-btn active" data-inner-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</button>
+            <button class="tab-btn" data-inner-tab="users"><i class="fa-solid fa-person"></i> Users</button>
+            <button class="tab-btn" data-inner-tab="sessions"><i class="fa-solid fa-users"></i> Sessions</button>
+            <button class="tab-btn" data-inner-tab="moderation"><i class="fa-solid fa-list-check"></i> Moderation</button>
+            <button class="tab-btn" data-inner-tab="activity"><i class="fa-solid fa-clock-rotate-left"></i> Activity</button>
+            <button class="tab-btn" data-inner-tab="health"><i class="fa-solid fa-heart-pulse"></i> Health</button>
+            <button class="tab-btn" data-inner-tab="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</button>
+            <button class="tab-btn" data-inner-tab="security"><i class="fa-solid fa-lock"></i> Security</button>
+            <button class="tab-btn" data-inner-tab="tools"><i class="fa-solid fa-sliders"></i> Tools</button>
+            <button class="tab-btn" data-inner-tab="settings"><i class="fa-solid fa-gear"></i> Settings</button>
+            <button class="tab-btn" data-inner-tab="logs"><i class="fa-solid fa-file-lines"></i> Logs</button>
           </div>
 
-          <div class="tab-panel active" id="tab-overview">
-            <div class="table-scroll">
+          <!-- ─ Overview ─ -->
+          <div class="tab-panel active" id="inner-tab-overview">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Platform Overview</div>
+                <div class="ts-sub">Live snapshot of key platform metrics.</div>
+              </div>
+              <div class="ts-header-right"><span class="pill green"><span class="live-dot"></span> Live</span></div>
+            </div>
+            <div class="tbl-wrap">
               <table class="admin-table">
-                <thead>
-                  <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
-                </thead>
+                <thead><tr><th>Metric</th><th>Current Value</th><th>Status</th><th>Notes</th></tr></thead>
                 <tbody>
-                  <tr><td>Active editor users</td><td id="tableActiveSessions">--</td><td><span class="status-pill online">Healthy</span></td></tr>
-                  <tr><td>Collaboration rooms</td><td id="tableLiveSessions">--</td><td><span class="status-pill online">Live</span></td></tr>
-                  <tr><td>Moderation items</td><td id="tableModerationItems">--</td><td><span class="status-pill attention">Review</span></td></tr>
-                  <tr><td>Platform capacity</td><td id="tableCapacityLoad">--</td><td><span class="status-pill online">Stable</span></td></tr>
+                  <tr><td><div class="cell-main">Active editor users</div><div class="cell-sub">Users with editor open</div></td><td id="tableActiveSessions">--</td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Healthy</span></td><td class="cell-sub">Solo + collaborative users counted.</td></tr>
+                  <tr><td><div class="cell-main">Collaboration rooms</div><div class="cell-sub">Live multi-user sessions</div></td><td id="tableLiveSessions">--</td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Live</span></td><td class="cell-sub">Rooms with ≥ 2 active participants.</td></tr>
+                  <tr><td><div class="cell-main">Moderation items</div><div class="cell-sub">Flags pending review</div></td><td id="tableModerationItems">--</td><td><span class="s-pill flagged"><i class="fa-solid fa-triangle-exclamation"></i> Review</span></td><td class="cell-sub">Includes reports, flags, and auto-detections.</td></tr>
+                  <tr><td><div class="cell-main">Platform capacity</div><div class="cell-sub">System load estimate</div></td><td id="tableCapacityLoad">--</td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Stable</span></td><td class="cell-sub">Aggregated CPU + memory load index.</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div class="tab-panel" id="tab-sessions">
-            <div class="table-scroll">
+          <!-- ─ Users ─ -->
+          <div class="tab-panel" id="inner-tab-users">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Registered Users</div>
+                <div class="ts-sub">Every user account with full profile details, status, and quick actions.</div>
+              </div>
+              <div class="ts-header-right">
+                <span class="pill green"><i class="fa-solid fa-person"></i> 3 users shown</span>
+              </div>
+            </div>
+            <div class="tbl-wrap">
               <table class="admin-table">
                 <thead>
-                  <tr><th>Session</th><th>Participants</th><th>Share link</th><th>Status</th></tr>
+                  <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                    <th>Last Active</th>
+                    <th>Sessions</th>
+                    <th>Projects</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="user-cell">
+                        <div class="user-avatar" style="background:linear-gradient(135deg,#4caf50,#2e7d32)">JD</div>
+                        <div>
+                          <div class="cell-main">John Developer</div>
+                          <div class="cell-sub"><i class="fa-solid fa-hashtag" style="font-size:.65rem"></i> usr_001</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><div class="cell-main">john@example.com</div><div class="cell-sub">Verified <i class="fa-solid fa-circle-check" style="color:var(--green-d);font-size:.75rem"></i></div></td>
+                    <td><span class="s-pill online"><i class="fa-solid fa-crown"></i> Admin</span></td>
+                    <td><div class="cell-main">Jan 12, 2025</div><div class="cell-sub">186 days ago</div></td>
+                    <td><div class="cell-main">2 min ago</div><div class="cell-sub"><span class="live-dot"></span> Online now</div></td>
+                    <td><div class="cell-main">47</div><div class="cell-sub">8 this week</div></td>
+                    <td><div class="cell-main">23</div><div class="cell-sub">3 published</div></td>
+                    <td><span class="s-pill online"><span class="live-dot"></span> Active</span></td>
+                    <td>
+                      <div class="btn-group">
+                        <button class="tbl-btn view">View</button>
+                        <button class="tbl-btn ghost">Edit</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="user-cell">
+                        <div class="user-avatar" style="background:linear-gradient(135deg,#6c63ff,#3a3490)">SC</div>
+                        <div>
+                          <div class="cell-main">Sarah Coder</div>
+                          <div class="cell-sub"><i class="fa-solid fa-hashtag" style="font-size:.65rem"></i> usr_002</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><div class="cell-main">sarah@example.com</div><div class="cell-sub">Verified <i class="fa-solid fa-circle-check" style="color:var(--green-d);font-size:.75rem"></i></div></td>
+                    <td><span class="s-pill info"><i class="fa-solid fa-user"></i> Member</span></td>
+                    <td><div class="cell-main">Mar 3, 2025</div><div class="cell-sub">136 days ago</div></td>
+                    <td><div class="cell-main">14 min ago</div><div class="cell-sub"><span class="live-dot"></span> Online now</div></td>
+                    <td><div class="cell-main">31</div><div class="cell-sub">5 this week</div></td>
+                    <td><div class="cell-main">11</div><div class="cell-sub">1 published</div></td>
+                    <td><span class="s-pill online"><span class="live-dot"></span> Active</span></td>
+                    <td>
+                      <div class="btn-group">
+                        <button class="tbl-btn view">View</button>
+                        <button class="tbl-btn ghost">Edit</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="user-cell">
+                        <div class="user-avatar" style="background:linear-gradient(135deg,#f5a524,#b85c00)">MD</div>
+                        <div>
+                          <div class="cell-main">Mike Designer</div>
+                          <div class="cell-sub"><i class="fa-solid fa-hashtag" style="font-size:.65rem"></i> usr_003</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><div class="cell-main">mike@example.com</div><div class="cell-sub">Unverified <i class="fa-solid fa-circle-xmark" style="color:var(--amber);font-size:.75rem"></i></div></td>
+                    <td><span class="s-pill info"><i class="fa-solid fa-user"></i> Member</span></td>
+                    <td><div class="cell-main">May 19, 2025</div><div class="cell-sub">60 days ago</div></td>
+                    <td><div class="cell-main">3 hr ago</div><div class="cell-sub"><span class="warn-dot"></span> Idle</div></td>
+                    <td><div class="cell-main">9</div><div class="cell-sub">2 this week</div></td>
+                    <td><div class="cell-main">4</div><div class="cell-sub">0 published</div></td>
+                    <td><span class="s-pill flagged"><i class="fa-solid fa-triangle-exclamation"></i> Flagged</span></td>
+                    <td>
+                      <div class="btn-group">
+                        <button class="tbl-btn view">View</button>
+                        <button class="tbl-btn warn">Review</button>
+                        <button class="tbl-btn danger">Ban</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ─ Sessions ─ -->
+          <div class="tab-panel" id="inner-tab-sessions">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Active Sessions</div>
+                <div class="ts-sub">All live collaboration rooms with participant counts, settings, and admin controls.</div>
+              </div>
+              <div class="ts-header-right">
+                <span class="pill green"><span class="live-dot"></span> Real-time</span>
+              </div>
+            </div>
+            <div class="tbl-wrap">
+              <table class="admin-table" id="sessionsTable">
+                <thead>
+                  <tr>
+                    <th>Session ID</th>
+                    <th>Host</th>
+                    <th>Participants</th>
+                    <th>Active File</th>
+                    <th>Created</th>
+                    <th>Duration</th>
+                    <th>Flags</th>
+                    <th>Room State</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
                 </thead>
                 <tbody id="sessionsTableBody">
-                  <tr><td colspan="4">Loading session table…</td></tr>
+                  <tr><td colspan="10" class="empty-state"><i class="fa-solid fa-satellite-dish"></i>Loading session data…</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div class="tab-panel" id="tab-moderation">
-            <div class="table-scroll">
+          <!-- ─ Moderation ─ -->
+          <div class="tab-panel" id="inner-tab-moderation">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Moderation Queue</div>
+                <div class="ts-sub">Flagged sessions, pending approvals, and policy violations requiring action.</div>
+              </div>
+              <div class="ts-header-right">
+                <span class="pill amber" id="moderationPill"><i class="fa-solid fa-list-check"></i> Live queue</span>
+              </div>
+            </div>
+            <div class="tbl-wrap">
               <table class="admin-table">
-                <thead>
-                  <tr><th>Issue</th><th>Room</th><th>Severity</th><th>Action</th></tr>
-                </thead>
+                <thead><tr><th>Issue</th><th>Room / User</th><th>Severity</th><th>Reported</th><th>Action</th></tr></thead>
                 <tbody id="moderationTableBody">
-                  <tr><td>Pending review</td><td>Session queue</td><td><span class="status-pill attention">Medium</span></td><td>Inspect</td></tr>
-                  <tr><td>Flagged user</td><td>Unknown</td><td><span class="status-pill danger">High</span></td><td>Investigate</td></tr>
+                  <tr><td><div class="cell-main">Pending review</div><div class="cell-sub">Auto-flagged by system</div></td><td>Session queue</td><td><span class="s-pill flagged"><i class="fa-solid fa-triangle-exclamation"></i> Medium</span></td><td class="cell-sub">just now</td><td><button class="tbl-btn warn">Inspect</button></td></tr>
+                  <tr><td><div class="cell-main">Flagged user</div><div class="cell-sub">Report from participant</div></td><td>Unknown room</td><td><span class="s-pill danger"><i class="fa-solid fa-radiation"></i> High</span></td><td class="cell-sub">5 min ago</td><td><button class="tbl-btn danger">Investigate</button></td></tr>
                 </tbody>
               </table>
             </div>
+            <!-- Live moderation rows from JS -->
+            <div style="padding:16px 20px" id="moderationGrid"></div>
           </div>
 
-          <div class="tab-panel" id="tab-activity">
-            <div class="table-scroll">
+          <!-- ─ Activity ─ -->
+          <div class="tab-panel" id="inner-tab-activity">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Recent Activity</div>
+                <div class="ts-sub">Latest platform events from the past hour.</div>
+              </div>
+              <div class="ts-header-right"><span class="pill green"><i class="fa-solid fa-clock-rotate-left"></i> Last hour</span></div>
+            </div>
+            <div class="tbl-wrap">
               <table class="admin-table">
-                <thead>
-                  <tr><th>Event</th><th>Detail</th><th>Time</th></tr>
-                </thead>
+                <thead><tr><th>Event</th><th>Detail</th><th>User / Source</th><th>Time</th></tr></thead>
                 <tbody id="activityTableBody">
-                  <tr><td>Loading activity</td><td>Refreshing live feed…</td><td>—</td></tr>
+                  <tr><td colspan="4" class="empty-state"><i class="fa-solid fa-satellite-dish"></i>Loading activity feed…</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div class="tab-panel" id="tab-tools">
-            <div class="table-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr><th>Tool</th><th>Description</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>Session lock</td><td>Lock or unlock active rooms.</td><td><span class="status-pill online">Ready</span></td></tr>
-                  <tr><td>Spectator mode</td><td>View room state without joining.</td><td><span class="status-pill online">Ready</span></td></tr>
-                  <tr><td>Link regen</td><td>Rotate share links for privacy.</td><td><span class="status-pill online">Ready</span></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="tab-panel" id="tab-users">
-            <div class="table-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr><th>User</th><th>Email</th><th>Status</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>John Developer</td><td>john@example.com</td><td><span class="status-pill online">Active</span></td><td><button class="action-link">View</button></td></tr>
-                  <tr><td>Sarah Coder</td><td>sarah@example.com</td><td><span class="status-pill online">Active</span></td><td><button class="action-link">View</button></td></tr>
-                  <tr><td>Mike Designer</td><td>mike@example.com</td><td><span class="status-pill attention">Flagged</span></td><td><button class="action-link">Review</button></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="tab-panel" id="tab-health">
-            <div class="table-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr><th>Component</th><th>Status</th><th>Value</th><th>Threshold</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>Server CPU</td><td><span class="status-pill online">Healthy</span></td><td>34%</td><td>&lt; 85%</td></tr>
-                  <tr><td>Memory Usage</td><td><span class="status-pill online">Healthy</span></td><td>2.1 GB</td><td>&lt; 4 GB</td></tr>
-                  <tr><td>Disk Space</td><td><span class="status-pill online">Healthy</span></td><td>56 GB free</td><td>&gt; 10 GB</td></tr>
-                  <tr><td>Database</td><td><span class="status-pill online">Healthy</span></td><td>Connected</td><td>24h uptime</td></tr>
-                  <tr><td>API Response</td><td><span class="status-pill online">Healthy</span></td><td>145ms avg</td><td>&lt; 500ms</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="tab-panel" id="tab-analytics">
-            <div class="table-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr><th>Metric</th><th>Today</th><th>This Week</th><th>Trend</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>New Sessions</td><td>24</td><td>168</td><td><span class="status-pill online">↑ 12%</span></td></tr>
-                  <tr><td>Total Participants</td><td>89</td><td>612</td><td><span class="status-pill online">↑ 8%</span></td></tr>
-                  <tr><td>Code Executions</td><td>341</td><td>2,847</td><td><span class="status-pill online">↑ 15%</span></td></tr>
-                  <tr><td>Files Shared</td><td>127</td><td>894</td><td><span class="status-pill online">↑ 6%</span></td></tr>
-                  <tr><td>Avg Session Duration</td><td>24m 13s</td><td>22m 45s</td><td><span class="status-pill online">↑ 3%</span></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="tab-panel" id="tab-security">
-            <div class="table-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr><th>Policy</th><th>Setting</th><th>Status</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>Rate Limiting</td><td>100 req/min per IP</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
-                  <tr><td>IP Whitelist</td><td>5 IPs allowed</td><td><span class="status-pill attention">Custom</span></td><td><button class="action-link">Manage</button></td></tr>
-                  <tr><td>Session Timeout</td><td>30 minutes</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
-                  <tr><td>Two-Factor Auth</td><td>Optional for admins</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
-                  <tr><td>HTTPS Only</td><td>Enforced</td><td><span class="status-pill online">Enabled</span></td><td><button class="action-link">Edit</button></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="tab-panel" id="tab-settings">
-            <div class="table-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr><th>Setting</th><th>Value</th><th>Category</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>Max Users Per Session</td><td>50</td><td>Collaboration</td><td><button class="action-link">Configure</button></td></tr>
-                  <tr><td>File Size Limit</td><td>50 MB</td><td>Storage</td><td><button class="action-link">Configure</button></td></tr>
-                  <tr><td>Session Duration</td><td>24 hours</td><td>Time</td><td><button class="action-link">Configure</button></td></tr>
-                  <tr><td>Feature: Code Execution</td><td><span class="status-pill online">Enabled</span></td><td>Features</td><td><button class="action-link">Toggle</button></td></tr>
-                  <tr><td>Feature: Live Chat</td><td><span class="status-pill online">Enabled</span></td><td>Features</td><td><button class="action-link">Toggle</button></td></tr>
-                  <tr><td>Email Notifications</td><td><span class="status-pill online">Enabled</span></td><td>Communication</td><td><button class="action-link">Configure</button></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="tab-panel" id="tab-logs">
-            <div class="table-scroll">
-              <table class="admin-table">
-                <thead>
-                  <tr><th>Timestamp</th><th>Event</th><th>User/Source</th><th>Level</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>04:55 PM</td><td>Admin login successful</td><td>administrator</td><td><span class="status-pill online">Info</span></td></tr>
-                  <tr><td>04:52 PM</td><td>Session created</td><td>GuestUser</td><td><span class="status-pill online">Info</span></td></tr>
-                  <tr><td>04:48 PM</td><td>File uploaded</td><td>127.0.0.1</td><td><span class="status-pill online">Info</span></td></tr>
-                  <tr><td>04:45 PM</td><td>API rate limit warning</td><td>192.168.1.10</td><td><span class="status-pill attention">Warning</span></td></tr>
-                  <tr><td>04:30 PM</td><td>Database backup completed</td><td>system</td><td><span class="status-pill online">Info</span></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-      <section class="hero">
-        <article class="hero-panel">
-          <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> PLATFORM CONTROL CENTER</div>
-          <h1>Admin tools for sessions, moderation, and platform health.</h1>
-          <p>
-            This is a management-facing view of CodX Editor. It is designed to give admins a clear place to monitor collaboration rooms,
-            review risky activity, manage roles, and keep the platform stable without digging through the editor itself.
-          </p>
-          <div class="hero-actions">
-            <a class="action-btn primary" href="frontend.html"><i class="fa-solid fa-rocket"></i> Open Editor</a>
-            <a class="action-btn secondary" href="help.html"><i class="fa-solid fa-book-open"></i> Review Feature Guide</a>
-          </div>
-        </article>
-
-        <aside class="side-panel">
-          <div class="panel-header">
-            <h2>Live Platform Health</h2>
-            <span class="pill online" id="platformHealthPill"><i class="fa-solid fa-signal"></i> Loading</span>
-          </div>
-          <div class="sidebar-copy">
-            <p>The sidebar holds the main monitoring and navigation tools, while this page area stays focused on live moderation, stats, and activity.</p>
-          </div>
-        </aside>
-      </section>
-
-      <section class="overview-grid" id="overview">
-        <article class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon"><i class="fa-solid fa-users"></i></span>
-            <span class="stat-trend" id="activeUsersTrend">Editor open</span>
-          </div>
-          <h3 id="activeUsersValue">--</h3>
-          <p>People currently inside the code editor, even if they are working alone.</p>
-        </article>
-
-        <article class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon"><i class="fa-solid fa-people-arrows"></i></span>
-            <span class="stat-trend" id="liveSessionsTrend">Collaborating now</span>
-          </div>
-          <h3 id="liveSessionsValue">--</h3>
-          <p>People currently inside active collaboration rooms.</p>
-        </article>
-
-        <article class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
-            <span class="stat-trend" id="moderationTrend">Needs attention</span>
-          </div>
-          <h3 id="moderationValue">--</h3>
-          <p>Reported issues, flags, or moderation events waiting for review.</p>
-        </article>
-
-        <article class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon"><i class="fa-solid fa-hard-drive"></i></span>
-            <span class="stat-trend" id="capacityTrend">Platform load</span>
-          </div>
-          <h3 id="capacityValue">--</h3>
-          <p>Current system capacity across active editor traffic.</p>
-        </article>
-      </section>
-
-      <section class="main-grid" id="moderation">
-        <article class="section-card">
-          <div class="section-header">
-            <div class="section-copy">
-              <h2>Moderation Queue</h2>
-              <p>High-signal actions admins would likely want close at hand.</p>
-            </div>
-            <span class="pill alert" id="moderationPill"><i class="fa-solid fa-list-check"></i> Live queue</span>
-          </div>
-
-          <div class="moderation-grid" id="moderationGrid"></div>
-        </article>
-
-        <aside class="queue-card">
-          <div class="section-header">
-            <div class="section-copy">
-              <h2>Admin Focus</h2>
-              <p>The most important room-control actions now sit in the left sidebar so this card can stay focused on the active workload.</p>
-            </div>
-            <span class="pill online"><i class="fa-solid fa-bolt"></i> Live</span>
-          </div>
-          <div class="sidebar-copy">
-            <p>Use the sidebar to move around the admin area, watch core platform health, and keep the current review queue visible while the center panel stays dedicated to moderation and activity.</p>
-          </div>
-        </aside>
-      </section>
-
-      <section class="lower-grid" id="activity">
-        <article class="log-card">
-          <div class="section-header">
-            <div class="section-copy">
-              <h2>Recent Activity</h2>
-              <p>A quick feed of actions an admin would want to scan fast.</p>
-            </div>
-            <span class="pill online"><i class="fa-solid fa-clock-rotate-left"></i> Last hour</span>
-          </div>
-
-          <div class="activity-list" id="activityList"></div>
-        </article>
-
-        <article class="tool-card" id="toolset">
-          <div class="section-header">
-            <div class="section-copy">
-              <h2>Admin Toolset</h2>
-              <p>Core control areas the panel is designed around.</p>
-            </div>
-            <span class="pill online"><i class="fa-solid fa-sliders"></i> Organized</span>
-          </div>
-
-          <div class="tool-list">
-            <div class="tool-item">
-              <i class="fa-solid fa-user-check"></i>
-              <div class="tool-copy">
-                <h3>User moderation</h3>
-                <p>Review reports, mute disruptive users, and audit role changes without leaving the panel.</p>
+          <!-- ─ Health ─ -->
+          <div class="tab-panel" id="inner-tab-health">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">System Health</div>
+                <div class="ts-sub">Server components and their current operational status.</div>
               </div>
+              <div class="ts-header-right"><span class="pill green"><i class="fa-solid fa-heart-pulse"></i> All systems</span></div>
             </div>
-            <div class="tool-item">
-              <i class="fa-solid fa-people-roof"></i>
-              <div class="tool-copy">
-                <h3>Room control</h3>
-                <p>Lock rooms, manage join approvals, regenerate invite links, and enforce session-wide permissions.</p>
-              </div>
-            </div>
-            <div class="tool-item">
-              <i class="fa-solid fa-wave-square"></i>
-              <div class="tool-copy">
-                <h3>System health</h3>
-                <p>Track runtime stability, collaboration traffic, and queue pressure before problems spread.</p>
-              </div>
-            </div>
-            <div class="tool-item">
-              <i class="fa-solid fa-file-shield"></i>
-              <div class="tool-copy">
-                <h3>Export oversight</h3>
-                <p>Monitor project exports, storage limits, and retention policies for shared workspace files.</p>
-              </div>
-            </div>
-            <div class="tool-item">
-              <i class="fa-solid fa-chart-line"></i>
-              <div class="tool-copy">
-                <h3>Usage analytics</h3>
-                <p>Watch which features are most active so we can prioritize reliability and product improvements.</p>
-              </div>
-            </div>
-            <div class="tool-item">
-              <i class="fa-solid fa-screwdriver-wrench"></i>
-              <div class="tool-copy">
-                <h3>Incident response</h3>
-                <p>Handle unstable rooms, preview failures, reconnect spikes, and permission conflicts from one place.</p>
-              </div>
+            <div class="tbl-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Component</th><th>Status</th><th>Current Value</th><th>Threshold</th><th>Load</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-microchip" style="color:var(--green-d);margin-right:6px"></i>Server CPU</div><div class="cell-sub">Compute capacity</div></td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Healthy</span></td><td>34%</td><td>&lt; 85%</td><td><div class="progress-bar"><div class="progress-fill" style="width:34%"></div></div></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-memory" style="color:var(--green-d);margin-right:6px"></i>Memory Usage</div><div class="cell-sub">RAM consumption</div></td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Healthy</span></td><td>2.1 GB</td><td>&lt; 4 GB</td><td><div class="progress-bar"><div class="progress-fill" style="width:52%"></div></div></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-hard-drive" style="color:var(--green-d);margin-right:6px"></i>Disk Space</div><div class="cell-sub">Available storage</div></td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Healthy</span></td><td>56 GB free</td><td>&gt; 10 GB</td><td><div class="progress-bar"><div class="progress-fill" style="width:28%"></div></div></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-database" style="color:var(--green-d);margin-right:6px"></i>Database</div><div class="cell-sub">Connection pool</div></td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Connected</span></td><td>Connected</td><td>24h uptime</td><td><div class="progress-bar"><div class="progress-fill" style="width:15%"></div></div></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-bolt" style="color:var(--green-d);margin-right:6px"></i>API Response</div><div class="cell-sub">Average latency</div></td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Healthy</span></td><td>145 ms avg</td><td>&lt; 500 ms</td><td><div class="progress-bar"><div class="progress-fill" style="width:29%"></div></div></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-wifi" style="color:var(--green-d);margin-right:6px"></i>WebSocket Layer</div><div class="cell-sub">Realtime connections</div></td><td><span class="s-pill online"><i class="fa-solid fa-circle"></i> Live</span></td><td id="healthSocketsValue2">--</td><td>&lt; 5000 conn.</td><td><div class="progress-bar"><div class="progress-fill" style="width:8%"></div></div></td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
-        </article>
-      </section>
 
-      <p class="footer-note">
-        <span id="adminStatus">Admin panel is connecting to live platform data.</span>
-      </p>
-      </div>
-      </div>
-    </main>
+          <!-- ─ Analytics ─ -->
+          <div class="tab-panel" id="inner-tab-analytics">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Usage Analytics</div>
+                <div class="ts-sub">Platform engagement metrics for today and this week.</div>
+              </div>
+              <div class="ts-header-right"><span class="pill green"><i class="fa-solid fa-chart-line"></i> Updated live</span></div>
+            </div>
+            <div class="tbl-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Metric</th><th>Today</th><th>This Week</th><th>Last Week</th><th>Trend</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="cell-main">New Sessions Created</div><div class="cell-sub">Collaboration rooms started</div></td><td>24</td><td>168</td><td>150</td><td><span class="s-pill online">↑ 12%</span></td></tr>
+                  <tr><td><div class="cell-main">Total Participants</div><div class="cell-sub">Unique people who joined a room</div></td><td>89</td><td>612</td><td>567</td><td><span class="s-pill online">↑ 8%</span></td></tr>
+                  <tr><td><div class="cell-main">Code Executions</div><div class="cell-sub">Run button presses</div></td><td>341</td><td>2,847</td><td>2,476</td><td><span class="s-pill online">↑ 15%</span></td></tr>
+                  <tr><td><div class="cell-main">Files Shared</div><div class="cell-sub">Cross-participant file accesses</div></td><td>127</td><td>894</td><td>843</td><td><span class="s-pill online">↑ 6%</span></td></tr>
+                  <tr><td><div class="cell-main">Avg Session Duration</div><div class="cell-sub">Mean time spent in a room</div></td><td>24 m 13 s</td><td>22 m 45 s</td><td>22 m 01 s</td><td><span class="s-pill online">↑ 3%</span></td></tr>
+                  <tr><td><div class="cell-main">Published Projects</div><div class="cell-sub">Projects pushed to share URL</div></td><td>14</td><td>98</td><td>84</td><td><span class="s-pill online">↑ 17%</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ─ Security ─ -->
+          <div class="tab-panel" id="inner-tab-security">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Security Policies</div>
+                <div class="ts-sub">Active security controls, rate limits, and access restrictions.</div>
+              </div>
+              <div class="ts-header-right"><span class="pill green"><i class="fa-solid fa-shield-halved"></i> Enforced</span></div>
+            </div>
+            <div class="tbl-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Policy</th><th>Current Setting</th><th>Category</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="cell-main">Rate Limiting</div><div class="cell-sub">Per-IP request throttle</div></td><td>100 req / min per IP</td><td><span class="chip">Network</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><button class="tbl-btn view">Edit</button></td></tr>
+                  <tr><td><div class="cell-main">IP Allowlist</div><div class="cell-sub">Trusted IP addresses</div></td><td>5 IPs configured</td><td><span class="chip">Access</span></td><td><span class="s-pill flagged"><i class="fa-solid fa-pen"></i> Custom</span></td><td><button class="tbl-btn view">Manage</button></td></tr>
+                  <tr><td><div class="cell-main">Session Timeout</div><div class="cell-sub">Idle disconnect threshold</div></td><td>30 minutes</td><td><span class="chip">Auth</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><button class="tbl-btn view">Edit</button></td></tr>
+                  <tr><td><div class="cell-main">Two-Factor Auth</div><div class="cell-sub">Admin 2FA enforcement</div></td><td>Optional for admins</td><td><span class="chip">Auth</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><button class="tbl-btn view">Edit</button></td></tr>
+                  <tr><td><div class="cell-main">HTTPS Only</div><div class="cell-sub">TLS enforcement</div></td><td>Enforced on all routes</td><td><span class="chip">Network</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><button class="tbl-btn ghost">View</button></td></tr>
+                  <tr><td><div class="cell-main">Admin PIN Gate</div><div class="cell-sub">Password overlay on this panel</div></td><td>Username + password required</td><td><span class="chip">Access</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Active</span></td><td><button class="tbl-btn ghost">View</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ─ Tools ─ -->
+          <div class="tab-panel" id="inner-tab-tools">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Admin Tools</div>
+                <div class="ts-sub">Available admin actions and their current operational status.</div>
+              </div>
+              <div class="ts-header-right"><span class="pill green"><i class="fa-solid fa-sliders"></i> Ready</span></div>
+            </div>
+            <div class="tbl-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Tool</th><th>Description</th><th>Scope</th><th>Status</th><th>Use</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-lock" style="color:var(--green-d);margin-right:6px"></i>Session Lock</div><div class="cell-sub">Prevent new joins</div></td><td>Lock or unlock any active collaboration room to block new participants from joining.</td><td><span class="chip green">Per-room</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Ready</span></td><td><button class="tbl-btn view">Apply</button></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-eye" style="color:var(--green-d);margin-right:6px"></i>Spectator Mode</div><div class="cell-sub">View rooms invisibly</div></td><td>View any room's file state, preview, and participants without appearing in the session.</td><td><span class="chip green">Per-room</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Ready</span></td><td><button class="tbl-btn view">Spectate</button></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-rotate" style="color:var(--green-d);margin-right:6px"></i>Link Regeneration</div><div class="cell-sub">Rotate share URLs</div></td><td>Generate a new share link for a session, invalidating the old one immediately.</td><td><span class="chip green">Per-room</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Ready</span></td><td><button class="tbl-btn view">Regen</button></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-pause" style="color:var(--amber);margin-right:6px"></i>Freeze Session</div><div class="cell-sub">Pause editing globally</div></td><td>Freeze all editing in a room while keeping participants connected and visible.</td><td><span class="chip green">Per-room</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Ready</span></td><td><button class="tbl-btn warn">Freeze</button></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-user-slash" style="color:var(--danger);margin-right:6px"></i>User Ban</div><div class="cell-sub">Block account access</div></td><td>Permanently or temporarily ban a user account from accessing the platform.</td><td><span class="chip amber">Platform-wide</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Ready</span></td><td><button class="tbl-btn danger">Ban</button></td></tr>
+                  <tr><td><div class="cell-main"><i class="fa-solid fa-xmark-circle" style="color:var(--danger);margin-right:6px"></i>End Session</div><div class="cell-sub">Terminate a room</div></td><td>Immediately close a session and disconnect all participants from the room.</td><td><span class="chip amber">Platform-wide</span></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Ready</span></td><td><button class="tbl-btn danger">End</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ─ Settings ─ -->
+          <div class="tab-panel" id="inner-tab-settings">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">Platform Settings</div>
+                <div class="ts-sub">Global configuration values and feature flags.</div>
+              </div>
+              <div class="ts-header-right"><span class="pill green"><i class="fa-solid fa-gear"></i> Applied</span></div>
+            </div>
+            <div class="tbl-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Setting</th><th>Current Value</th><th>Category</th><th>Type</th><th>Action</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="cell-main">Max Users Per Session</div><div class="cell-sub">Participant cap per room</div></td><td>50 users</td><td><span class="chip">Collaboration</span></td><td><span class="chip">Numeric</span></td><td><button class="tbl-btn view">Configure</button></td></tr>
+                  <tr><td><div class="cell-main">File Size Limit</div><div class="cell-sub">Max upload size</div></td><td>50 MB</td><td><span class="chip">Storage</span></td><td><span class="chip">Numeric</span></td><td><button class="tbl-btn view">Configure</button></td></tr>
+                  <tr><td><div class="cell-main">Session Duration Limit</div><div class="cell-sub">Max room lifetime</div></td><td>24 hours</td><td><span class="chip">Time</span></td><td><span class="chip">Duration</span></td><td><button class="tbl-btn view">Configure</button></td></tr>
+                  <tr><td><div class="cell-main">Code Execution</div><div class="cell-sub">Run button availability</div></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><span class="chip">Features</span></td><td><span class="chip">Flag</span></td><td><button class="tbl-btn ghost">Toggle</button></td></tr>
+                  <tr><td><div class="cell-main">Live Chat</div><div class="cell-sub">In-session messaging</div></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><span class="chip">Features</span></td><td><span class="chip">Flag</span></td><td><button class="tbl-btn ghost">Toggle</button></td></tr>
+                  <tr><td><div class="cell-main">Publish &amp; Share</div><div class="cell-sub">External project sharing</div></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><span class="chip">Features</span></td><td><span class="chip">Flag</span></td><td><button class="tbl-btn ghost">Toggle</button></td></tr>
+                  <tr><td><div class="cell-main">Email Notifications</div><div class="cell-sub">System alert emails</div></td><td><span class="s-pill online"><i class="fa-solid fa-check"></i> Enabled</span></td><td><span class="chip">Comms</span></td><td><span class="chip">Flag</span></td><td><button class="tbl-btn view">Configure</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ─ Logs ─ -->
+          <div class="tab-panel" id="inner-tab-logs">
+            <div class="table-section-header">
+              <div class="ts-title-block">
+                <div class="ts-title">System Logs</div>
+                <div class="ts-sub">Timestamped platform events, warnings, and errors.</div>
+              </div>
+              <div class="ts-header-right"><span class="pill green"><i class="fa-solid fa-file-lines"></i> Live tail</span></div>
+            </div>
+            <div class="tbl-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Timestamp</th><th>Event</th><th>Detail</th><th>User / Source</th><th>Level</th></tr></thead>
+                <tbody>
+                  <tr><td class="cell-sub">04:55 PM</td><td><div class="cell-main">Admin login successful</div></td><td class="cell-sub">Credentials validated, session started</td><td>administrator</td><td><span class="s-pill online">Info</span></td></tr>
+                  <tr><td class="cell-sub">04:52 PM</td><td><div class="cell-main">Session created</div></td><td class="cell-sub">New collaboration room opened</td><td>GuestUser</td><td><span class="s-pill online">Info</span></td></tr>
+                  <tr><td class="cell-sub">04:48 PM</td><td><div class="cell-main">File uploaded</div></td><td class="cell-sub">project.zip — 2.3 MB</td><td>127.0.0.1</td><td><span class="s-pill online">Info</span></td></tr>
+                  <tr><td class="cell-sub">04:45 PM</td><td><div class="cell-main">API rate limit warning</div></td><td class="cell-sub">80 / 100 req/min threshold reached</td><td>192.168.1.10</td><td><span class="s-pill flagged"><i class="fa-solid fa-triangle-exclamation"></i> Warning</span></td></tr>
+                  <tr><td class="cell-sub">04:30 PM</td><td><div class="cell-main">Database backup completed</div></td><td class="cell-sub">Snapshot stored successfully</td><td>system</td><td><span class="s-pill online">Info</span></td></tr>
+                  <tr><td class="cell-sub">04:18 PM</td><td><div class="cell-main">Session ended by admin</div></td><td class="cell-sub">Room terminated — 3 participants disconnected</td><td>administrator</td><td><span class="s-pill info">Info</span></td></tr>
+                  <tr><td class="cell-sub">03:55 PM</td><td><div class="cell-main">User flagged</div></td><td class="cell-sub">Abuse report submitted by participant</td><td>usr_003</td><td><span class="s-pill danger"><i class="fa-solid fa-radiation"></i> Alert</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+        <!-- ── END TABLE SECTION ──────────────────────── -->
+
+        <!-- Activity + live feed -->
+        <div class="activity-grid">
+          <article class="log-card">
+            <div class="log-header">
+              <div class="log-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--green-d);margin-right:6px"></i>Recent Activity</div>
+              <span class="pill green">Last hour</span>
+            </div>
+            <div id="activityList">
+              <div class="log-item"><div class="log-top"><strong>No recent activity yet</strong><time>now</time></div><p>Activity will appear here as sessions are created, moderated, or updated.</p></div>
+            </div>
+          </article>
+          <article class="log-card">
+            <div class="log-header">
+              <div class="log-title"><i class="fa-solid fa-list-check" style="color:var(--amber);margin-right:6px"></i>Moderation Queue</div>
+              <span class="pill amber">Live queue</span>
+            </div>
+            <div id="moderationFeed">
+              <div class="log-item"><div class="log-top"><strong>Queue is empty</strong><time>now</time></div><p>No sessions currently need moderation attention.</p></div>
+            </div>
+          </article>
+        </div>
+
+        <p class="admin-footer" id="adminStatus">Admin panel is connecting to live platform data.</p>
+
+      </main>
+    </div><!-- end page-shell -->
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const healthPill = document.getElementById("platformHealthPill");
-      const healthSessionsValue = document.getElementById("healthSessionsValue");
-      const healthSessionsText = document.getElementById("healthSessionsText");
-      const healthSocketsValue = document.getElementById("healthSocketsValue");
-      const healthSocketsText = document.getElementById("healthSocketsText");
-      const healthQueueValue = document.getElementById("healthQueueValue");
-      const healthQueueText = document.getElementById("healthQueueText");
-      const activeUsersValue = document.getElementById("activeUsersValue");
-      const liveSessionsValue = document.getElementById("liveSessionsValue");
-      const moderationValue = document.getElementById("moderationValue");
-      const capacityValue = document.getElementById("capacityValue");
-      const liveSessionsTrend = document.getElementById("liveSessionsTrend");
-      const moderationPill = document.getElementById("moderationPill");
-      const moderationGrid = document.getElementById("moderationGrid");
-      const queueApprovalsValue = document.getElementById("queueApprovalsValue");
-      const queueApprovalsText = document.getElementById("queueApprovalsText");
-      const queueFlaggedValue = document.getElementById("queueFlaggedValue");
-      const queueFlaggedText = document.getElementById("queueFlaggedText");
-      const queueLockedValue = document.getElementById("queueLockedValue");
-      const queueLockedText = document.getElementById("queueLockedText");
-      const queuePausedValue = document.getElementById("queuePausedValue");
-      const queuePausedText = document.getElementById("queuePausedText");
-      const queuePublishedValue = document.getElementById("queuePublishedValue");
-      const queuePublishedText = document.getElementById("queuePublishedText");
-      const activityList = document.getElementById("activityList");
-      const adminStatus = document.getElementById("adminStatus");
-      const spectateOverlay = document.getElementById("spectateOverlay");
-      const spectateCloseBtn = document.getElementById("spectateCloseBtn");
-      const spectateSessionId = document.getElementById("spectateSessionId");
-      const spectateHost = document.getElementById("spectateHost");
-      const spectateParticipantCount = document.getElementById("spectateParticipantCount");
-      const spectateActiveFile = document.getElementById("spectateActiveFile");
-      const spectateChatCount = document.getElementById("spectateChatCount");
-      const spectateParticipants = document.getElementById("spectateParticipants");
-      const spectateFileSelect = document.getElementById("spectateFileSelect");
-      const spectateFileMeta = document.getElementById("spectateFileMeta");
-      const spectateCodeView = document.getElementById("spectateCodeView");
-      const spectatePreviewTitle = document.getElementById("spectatePreviewTitle");
-      const spectatePreviewFrame = document.getElementById("spectatePreviewFrame");
-      const adminPinOverlay = document.getElementById("adminPinOverlay");
-      const adminPinCard = document.getElementById("adminPinCard");
-      const adminPinForm = document.getElementById("adminPinForm");
-      const adminPinMessage = document.getElementById("adminPinMessage");
-      const adminUsernameInput = document.getElementById("adminUsernameInput");
-      const adminPasswordInput = document.getElementById("adminPasswordInput");
-      const adminSocket = typeof io === "function" ? io() : null;
-      let adminRefreshTimer = null;
-      let currentSpectateSessionId = "";
-      let currentSpectateData = null;
-      const ADMIN_PRIVATE_KEY = "codxAdminPrivateUnlocked";
-
+      /* ── helpers ── */
+      function escapeHtml(v) {
+        return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
       function formatRelativeTime(ts) {
-        const diff = Math.max(0, Date.now() - Number(ts || 0));
-        const mins = Math.floor(diff / 60000);
-        if (mins < 1) return "just now";
-        if (mins < 60) return `${mins} min ago`;
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return `${hours} hr ago`;
-        const days = Math.floor(hours / 24);
-        return `${days} day${days === 1 ? "" : "s"} ago`;
+        const diff = Math.max(0, Date.now() - Number(ts||0));
+        const mins = Math.floor(diff/60000);
+        if (mins<1) return 'just now';
+        if (mins<60) return `${mins} min ago`;
+        const hours = Math.floor(mins/60);
+        if (hours<24) return `${hours} hr ago`;
+        return `${Math.floor(hours/24)} day${Math.floor(hours/24)===1?'':'s'} ago`;
+      }
+      function formatCompact(v) {
+        const n = Number(v||0);
+        if (!Number.isFinite(n)) return '--';
+        if (n<1000) return `${n}`;
+        if (n<1000000) return `${Math.floor(n/100)/10}K`;
+        return `${Math.floor(n/100000)/10}M`;
       }
 
-      function formatCompactCount(value) {
-        const count = Number(value || 0);
-        if (!Number.isFinite(count)) return "--";
-        if (count < 1000) return `${count}`;
-        if (count < 10000) return `${Math.floor(count / 100) / 10}K`;
-        if (count < 1000000) return `${Math.floor(count / 1000)}K`;
-        return `${Math.floor(count / 100000) / 10}M`;
-      }
+      /* ── state ── */
+      const ADMIN_KEY = 'codxAdminPrivateUnlocked';
+      let refreshTimer = null;
+      let currentSpectateSessionId = '';
+      let currentSpectateData = null;
+      const adminSocket = typeof io === 'function' ? io() : null;
 
-      function escapeHtml(value) {
-        return String(value || "").replace(/[&<>"']/g, (char) => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          "\"": "&quot;",
-          "'": "&#39;",
-        })[char]);
-      }
+      /* ── DOM refs ── */
+      const $ = id => document.getElementById(id);
+      const adminPinOverlay = $('adminPinOverlay');
+      const adminPinCard    = $('adminPinCard');
+      const adminPinForm    = $('adminPinForm');
+      const adminPinMessage = $('adminPinMessage');
+      const adminUsernameInput = $('adminUsernameInput');
+      const adminPasswordInput = $('adminPasswordInput');
 
-      function setStatus(text) {
-        adminStatus.textContent = text;
+      /* ── pin/lock ── */
+      function isUnlocked() { return sessionStorage.getItem(ADMIN_KEY)==='true'; }
+      function setLocked(locked) {
+        document.body.classList.toggle('admin-locked', locked);
+        adminPinOverlay.classList.toggle('hidden', !locked);
       }
-
-      function isAdminUnlocked() {
-        return sessionStorage.getItem(ADMIN_PRIVATE_KEY) === "true";
-      }
-
-      function setAdminLockedState(locked) {
-        document.body.classList.toggle("admin-locked", locked);
-        adminPinOverlay.classList.toggle("hidden", !locked);
-      }
-
       function clearPinError() {
-        adminPinCard.classList.remove("error");
-        adminPinMessage.textContent = "Enter your admin credentials to continue.";
+        adminPinCard.classList.remove('error');
+        adminPinMessage.textContent = 'Enter your admin credentials to continue.';
       }
-
-      function relockAdminPanel(message = "Admin authentication required.") {
-        sessionStorage.removeItem(ADMIN_PRIVATE_KEY);
-        setAdminLockedState(true);
-        adminPinCard.classList.remove("error");
-        adminPinMessage.textContent = message;
-        if (adminUsernameInput) adminUsernameInput.value = "";
-        if (adminPasswordInput) adminPasswordInput.value = "";
-        focusFirstEmptyPin();
+      function triggerPinError() {
+        adminPinCard.classList.remove('error');
+        void adminPinCard.offsetWidth;
+        adminPinCard.classList.add('error');
+        adminPinMessage.textContent = 'Incorrect username or password. Try again.';
+        if (adminPasswordInput) adminPasswordInput.value='';
+        (adminUsernameInput||adminPasswordInput)?.focus();
       }
-
-      function focusFirstEmptyPin() {
-        const target = adminUsernameInput || adminPasswordInput;
-        if (target) {
-          target.focus();
-          if (typeof target.select === "function") target.select();
-        }
+      function relockAdmin(msg='Admin authentication required.') {
+        sessionStorage.removeItem(ADMIN_KEY);
+        setLocked(true);
+        adminPinCard.classList.remove('error');
+        adminPinMessage.textContent=msg;
+        if (adminUsernameInput) adminUsernameInput.value='';
+        if (adminPasswordInput) adminPasswordInput.value='';
+        (adminUsernameInput||adminPasswordInput)?.focus();
       }
-
-      function unlockAdminPanel() {
-        sessionStorage.setItem(ADMIN_PRIVATE_KEY, "true");
-        setAdminLockedState(false);
-        setStatus("Admin panel unlocked.");
+      function unlockAdmin() {
+        sessionStorage.setItem(ADMIN_KEY,'true');
+        setLocked(false);
+        setStatus('Admin panel unlocked.');
         loadAdminData();
       }
+      async function authenticateAdmin(username, password) {
+        const res = await fetch('/admin/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok||data.ok===false) throw new Error(data.error||'Invalid credentials.');
+        return data;
+      }
 
-      async function authenticateAdminPin(username, password) {
-        const response = await fetch("/admin/api/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
+      [adminUsernameInput,adminPasswordInput].forEach(el=>{if(el)el.addEventListener('input',clearPinError);});
+      adminPinForm.addEventListener('submit', async e=>{
+        e.preventDefault();
+        const u=String(adminUsernameInput?.value||'').trim();
+        const p=String(adminPasswordInput?.value||'');
+        if (!u||!p) { triggerPinError(); return; }
+        adminPinMessage.textContent='Checking credentials…';
+        try { await authenticateAdmin(u,p); clearPinError(); unlockAdmin(); }
+        catch { triggerPinError(); }
+      });
+
+      /* ── sidebar tab switching (syncs both sidebar + inner tab bar) ── */
+      function activateTab(name) {
+        document.querySelectorAll('.sb-link[data-tab]').forEach(b=>{
+          b.classList.toggle('active', b.dataset.tab===name);
         });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload.ok === false) {
-          throw new Error(payload.error || "Invalid admin username or password.");
-        }
-        return payload;
-      }
-
-      function triggerPinError() {
-        adminPinCard.classList.remove("error");
-        void adminPinCard.offsetWidth;
-        adminPinCard.classList.add("error");
-        adminPinMessage.textContent = "Incorrect username or password. Try again.";
-        if (adminPasswordInput) adminPasswordInput.value = "";
-        focusFirstEmptyPin();
-      }
-
-      function scheduleAdminRefresh(reason = "live update") {
-        if (!isAdminUnlocked()) return;
-        window.clearTimeout(adminRefreshTimer);
-        adminRefreshTimer = window.setTimeout(() => {
-          setStatus(`Refreshing admin panel after ${reason}...`);
-          loadAdminData();
-        }, 180);
-      }
-
-      function closeSpectateView() {
-        currentSpectateSessionId = "";
-        currentSpectateData = null;
-        spectateOverlay.classList.add("hidden");
-      }
-
-      function renderSpectateCode() {
-        if (!currentSpectateData) return;
-        const selectedName = spectateFileSelect.value;
-        const file = (currentSpectateData.files || []).find((entry) => entry.name === selectedName);
-        if (!file) {
-          spectateFileMeta.textContent = "No file selected.";
-          spectateCodeView.textContent = "";
-          return;
-        }
-        spectateFileMeta.textContent = `${file.name} � ${String(file.type || "file").toUpperCase()} � ${String(file.content || "").length} characters`;
-        spectateCodeView.textContent = String(file.content || "");
-      }
-
-      function renderSpectateSession(session) {
-        const preservedSelectedFile = spectateFileSelect.value;
-        currentSpectateData = session;
-        spectateSessionId.textContent = session.sessionId || "--";
-        spectateHost.textContent = session.hostName || "--";
-        spectateParticipantCount.textContent = `${session.participantCount || 0}`;
-        spectateActiveFile.textContent = session.activeFileName || "No active file";
-        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group � ${session.chat?.privateThreadCount || 0} private`;
-
-        spectateParticipants.innerHTML = (session.participants || []).map((participant) => {
-          const tags = [];
-          tags.push(`<span class="spectate-tag"><i class="fa-solid fa-user"></i> ${escapeHtml(participant.role || "participant")}</span>`);
-          if (participant.currentFile) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-file-lines"></i> ${escapeHtml(participant.currentFile)}</span>`);
-          if (participant.mutedChat) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-volume-xmark"></i> Muted chat</span>`);
-          if (participant.frozenEditing) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-snowflake"></i> Frozen editing</span>`);
-          if (participant.priority) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-star"></i> Priority</span>`);
-          if (Array.isArray(participant.allowedFiles)) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-folder-tree"></i> Restricted files</span>`);
-          return `
-            <div class="spectate-participant">
-              <div class="spectate-participant-top">
-                <div class="spectate-name">
-                  <span class="spectate-color-dot" style="background:${escapeHtml(participant.theme || "#4CAF50")}"></span>
-                  ${escapeHtml(participant.name)}
-                </div>
-              </div>
-              <div class="spectate-tags">${tags.join("")}</div>
-            </div>
-          `;
-        }).join("") || `<div class="spectate-empty">No participants in this room.</div>`;
-
-        const fileOptions = (session.files || []).map((file) => `<option value="${escapeHtml(file.name)}">${escapeHtml(file.name)}</option>`).join("");
-        spectateFileSelect.innerHTML = fileOptions || `<option value="">No files</option>`;
-        const nextSelectedFile =
-          (session.files || []).some((file) => file.name === preservedSelectedFile)
-            ? preservedSelectedFile
-            : session.activeFileName && (session.files || []).some((file) => file.name === session.activeFileName)
-              ? session.activeFileName
-              : ((session.files || [])[0]?.name || "");
-        spectateFileSelect.value = nextSelectedFile;
-        renderSpectateCode();
-      }
-
-      async function openSpectateView(sessionId) {
-        if (!isAdminUnlocked()) return;
-        const response = await fetch(`/admin/api/session/${encodeURIComponent(sessionId)}`);
-        const payload = await response.json().catch(() => ({}));
-        if (response.status === 401) {
-          relockAdminPanel("Your admin session expired. Enter the PIN again.");
-          throw new Error("Admin session expired.");
-        }
-        if (!response.ok || payload.ok === false || !payload.session) {
-          throw new Error(payload.error || "Could not spectate this session.");
-        }
-        currentSpectateSessionId = sessionId;
-        renderSpectateSession(payload.session);
-        spectateOverlay.classList.remove("hidden");
-      }
-
-      function buildSpectatePreviewHtml(session) {
-        const files = Array.isArray(session?.files) ? session.files : [];
-        const activeFileName = session?.activeFileName || "";
-        const htmlFile =
-          files.find((file) => String(file?.name || "") === activeFileName && String(file?.type || "").toLowerCase() === "html") ||
-          files.find((file) => String(file?.type || "").toLowerCase() === "html");
-
-        if (!htmlFile) {
-          return {
-            title: "Live Preview",
-            html: `<!doctype html><html><head><meta charset="UTF-8"><title>No HTML file</title><style>body{font-family:Segoe UI,Tahoma,sans-serif;padding:24px;color:#1b2a1f;background:#f7faf7}.box{max-width:680px;margin:0 auto;padding:24px;border:1px solid rgba(20,41,27,.12);border-radius:20px;background:#fff}h1{margin:0 0 12px;font-size:1.4rem}p{margin:0;color:#5b675f;line-height:1.6}</style></head><body><div class="box"><h1>No previewable HTML file</h1><p>This session does not currently contain an HTML file that can be rendered in the admin spectator preview.</p></div></body></html>`,
-          };
-        }
-
-        const normalizeProjectName = (value) => String(value || "").trim().replace(/^\.\/+/, "").toLowerCase();
-        const resolveProjectFile = (rawName, typeHint = "") => {
-          const target = normalizeProjectName(rawName);
-          if (!target) return null;
-          return files.find((file) => {
-            const candidate = normalizeProjectName(file.name);
-            const sameName = candidate === target || candidate.endsWith(`/${target}`) || candidate.split("/").pop() === target.split("/").pop();
-            if (!sameName) return false;
-            if (!typeHint) return true;
-            return String(file.type || "").toLowerCase() === typeHint.toLowerCase();
-          }) || null;
-        };
-
-        let html = String(htmlFile.content || "");
-        const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
-        const title = titleMatch ? titleMatch[1].trim() || htmlFile.name : htmlFile.name;
-
-        html = html.replace(/<link\b([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi, (full, before, href) => {
-          const cssFile = resolveProjectFile(href, "css");
-          if (!cssFile) return full;
-          return `<style data-spectate-source="${cssFile.name}">\n${String(cssFile.content || "")}\n</style>`;
+        document.querySelectorAll('.tab-btn[data-inner-tab]').forEach(b=>{
+          b.classList.toggle('active', b.dataset.innerTab===name);
         });
-
-        html = html.replace(/<script\b([^>]*?)src=["']([^"']+)["']([^>]*)><\/script>/gi, (full, before, src) => {
-          const jsFile = resolveProjectFile(src, "js");
-          if (!jsFile) return full;
-          return `<script data-spectate-source="${jsFile.name}">\n${String(jsFile.content || "")}\n<\/script>`;
+        document.querySelectorAll('.tab-panel').forEach(p=>{
+          p.classList.toggle('active', p.id===`inner-tab-${name}`);
         });
-
-        return { title, html };
       }
+      document.querySelectorAll('.sb-link[data-tab]').forEach(b=>{
+        b.addEventListener('click',()=>activateTab(b.dataset.tab));
+      });
+      document.querySelectorAll('.tab-btn[data-inner-tab]').forEach(b=>{
+        b.addEventListener('click',()=>activateTab(b.dataset.innerTab));
+      });
+      activateTab('overview');
 
-      function renderSpectatePreview(session) {
-        const preview = buildSpectatePreviewHtml(session);
-        spectatePreviewTitle.textContent = preview.title || "Live Preview";
-        spectatePreviewFrame.srcdoc = preview.html;
-      }
+      /* ── status bar ── */
+      function setStatus(txt) { const el=$('adminStatus'); if(el) el.textContent=txt; }
 
-      function renderSpectateCode() {
-        if (!currentSpectateData) return;
-        const selectedName = spectateFileSelect.value;
-        const file = (currentSpectateData.files || []).find((entry) => entry.name === selectedName);
-        if (!file) {
-          spectateFileMeta.textContent = "No file selected.";
-          spectateCodeView.textContent = "";
+      /* ── render sessions table ── */
+      function renderSessionsTable(sessions) {
+        const body = $('sessionsTableBody');
+        if (!body) return;
+        if (!sessions||!sessions.length) {
+          body.innerHTML='<tr><td colspan="10" class="empty-state"><i class="fa-solid fa-satellite-dish"></i>No active sessions.</td></tr>';
           return;
         }
-        spectateFileMeta.textContent = `${file.name} � ${String(file.type || "file").toUpperCase()} � ${String(file.content || "").length} characters`;
-        spectateCodeView.textContent = String(file.content || "");
+        body.innerHTML = sessions.map(s=>{
+          const locked = s.roomLocked;
+          const paused = s.paused;
+          const flags = [];
+          if (s.pendingJoinCount) flags.push(`<span class="chip amber"><i class="fa-solid fa-user-plus"></i> ${s.pendingJoinCount} pending</span>`);
+          if (s.flaggedParticipants) flags.push(`<span class="chip red"><i class="fa-solid fa-flag"></i> ${s.flaggedParticipants} flagged</span>`);
+
+          const statusPill = locked
+            ? '<span class="s-pill danger"><i class="fa-solid fa-lock"></i> Locked</span>'
+            : paused
+              ? '<span class="s-pill flagged"><i class="fa-solid fa-pause"></i> Paused</span>'
+              : '<span class="s-pill online"><span class="live-dot"></span> Active</span>';
+
+          const roomState = [];
+          if (locked) roomState.push('<span class="chip amber"><i class="fa-solid fa-lock"></i> Locked</span>');
+          if (paused) roomState.push('<span class="chip red"><i class="fa-solid fa-pause"></i> Paused</span>');
+          if (s.pinnedFile) roomState.push(`<span class="chip"><i class="fa-solid fa-thumbtack"></i> ${escapeHtml(s.pinnedFile)}</span>`);
+          if (!roomState.length) roomState.push('<span class="chip green"><i class="fa-solid fa-check"></i> Normal</span>');
+
+          return `<tr>
+            <td><div class="cell-main">${escapeHtml(s.sessionId)}</div><div class="cell-sub"><i class="fa-solid fa-link" style="font-size:.6rem"></i> ${escapeHtml(s.shareLink||'—')}</div></td>
+            <td><div class="cell-main">${escapeHtml(s.hostName||'Unknown')}</div></td>
+            <td><div class="cell-main">${s.participantCount||0}</div><div class="cell-sub">participants</div></td>
+            <td><div class="cell-main">${escapeHtml(s.activeFileName||'—')}</div></td>
+            <td class="cell-sub">${s.createdAt ? new Date(s.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}</td>
+            <td class="cell-sub">${s.createdAt ? formatRelativeTime(s.createdAt) : '—'}</td>
+            <td>${flags.join('')||'<span class="chip">None</span>'}</td>
+            <td>${roomState.join('')}</td>
+            <td>${statusPill}</td>
+            <td>
+              <div class="btn-group">
+                <button class="tbl-btn dark" type="button" data-action="spectate" data-session="${escapeHtml(s.sessionId)}"><i class="fa-solid fa-eye"></i></button>
+                <button class="tbl-btn view" type="button" data-action="open-editor" data-link="${escapeHtml(s.shareLink||'frontend.html')}">Open</button>
+                <button class="tbl-btn ${locked?'view':'warn'}" type="button" data-action="lock-toggle" data-session="${escapeHtml(s.sessionId)}">${locked?'Unlock':'Lock'}</button>
+                <button class="tbl-btn danger" type="button" data-action="end-session" data-session="${escapeHtml(s.sessionId)}">End</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
       }
 
-      function renderSpectateSession(session) {
-        const preservedSelectedFile = spectateFileSelect.value;
-        currentSpectateData = session;
-        spectateSessionId.textContent = session.sessionId || "--";
-        spectateHost.textContent = session.hostName || "--";
-        spectateParticipantCount.textContent = `${session.participantCount || 0}`;
-        spectateActiveFile.textContent = session.activeFileName || "No active file";
-        spectateChatCount.textContent = `${session.chat?.groupCount || 0} group � ${session.chat?.privateThreadCount || 0} private`;
-        renderSpectatePreview(session);
-
-        spectateParticipants.innerHTML = (session.participants || []).map((participant) => {
-          const tags = [];
-          tags.push(`<span class="spectate-tag"><i class="fa-solid fa-user"></i> ${escapeHtml(participant.role || "participant")}</span>`);
-          if (participant.currentFile) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-file-lines"></i> ${escapeHtml(participant.currentFile)}</span>`);
-          if (participant.mutedChat) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-volume-xmark"></i> Muted chat</span>`);
-          if (participant.frozenEditing) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-snowflake"></i> Frozen editing</span>`);
-          if (participant.priority) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-star"></i> Priority</span>`);
-          if (Array.isArray(participant.allowedFiles)) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-folder-tree"></i> Restricted files</span>`);
-          return `
-            <div class="spectate-participant">
-              <div class="spectate-participant-top">
-                <div class="spectate-name">
-                  <span class="spectate-color-dot" style="background:${escapeHtml(participant.theme || "#4CAF50")}"></span>
-                  ${escapeHtml(participant.name)}
-                </div>
-              </div>
-              <div class="spectate-tags">${tags.join("")}</div>
-            </div>
-          `;
-        }).join("") || `<div class="spectate-empty">No participants in this room.</div>`;
-
-        const fileOptions = (session.files || []).map((file) => `<option value="${escapeHtml(file.name)}">${escapeHtml(file.name)}</option>`).join("");
-        spectateFileSelect.innerHTML = fileOptions || `<option value="">No files</option>`;
-        const nextSelectedFile =
-          (session.files || []).some((file) => file.name === preservedSelectedFile)
-            ? preservedSelectedFile
-            : session.activeFileName && (session.files || []).some((file) => file.name === session.activeFileName)
-              ? session.activeFileName
-              : ((session.files || [])[0]?.name || "");
-        spectateFileSelect.value = nextSelectedFile;
-        renderSpectateCode();
-      }
-
-      function renderModerationSessions(sessionItems) {
-        if (!sessionItems.length) {
-          moderationGrid.innerHTML = `
-            <div class="moderation-row">
-              <div>
-                <strong>No live sessions need attention</strong>
-                <div class="row-meta">
-                  <span class="mini-pill"><i class="fa-solid fa-check"></i> Queue is clear</span>
-                </div>
-              </div>
-            </div>
-          `;
+      /* ── render activity table ── */
+      function renderActivityTable(items) {
+        const body = $('activityTableBody');
+        if (!body) return;
+        if (!items||!items.length) {
+          body.innerHTML='<tr><td colspan="4" class="empty-state"><i class="fa-solid fa-satellite-dish"></i>No activity found.</td></tr>';
           return;
         }
-
-        moderationGrid.innerHTML = sessionItems.map((session) => {
-          const meta = [];
-          meta.push(`<span class="mini-pill"><i class="fa-solid fa-users"></i> ${session.participantCount} participants</span>`);
-          if (session.pendingJoinCount) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-user-plus"></i> ${session.pendingJoinCount} pending joins</span>`);
-          }
-          if (session.flaggedParticipants) {
-            meta.push(`<span class="mini-pill danger"><i class="fa-solid fa-triangle-exclamation"></i> ${session.flaggedParticipants} flagged</span>`);
-          }
-          if (session.roomLocked) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-lock"></i> Room locked</span>`);
-          }
-          if (session.paused) {
-            meta.push(`<span class="mini-pill danger"><i class="fa-solid fa-pause"></i> Paused</span>`);
-          }
-          if (session.pinnedFile) {
-            meta.push(`<span class="mini-pill"><i class="fa-solid fa-thumbtack"></i> ${escapeHtml(session.pinnedFile)}</span>`);
-          }
-          if (session.disableSaveProject) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-floppy-disk"></i> Save off</span>`);
-          }
-          if (session.disableOpenSavedProjects) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-folder-open"></i> Saved off</span>`);
-          }
-          if (session.disableTemplates) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-layer-group"></i> Templates off</span>`);
-          }
-          if (session.disablePublishShare) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-share-nodes"></i> Publish off</span>`);
-          }
-          if (session.disableConsoleAccess) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-terminal"></i> Console off</span>`);
-          }
-          if (session.disableRunCode) {
-            meta.push(`<span class="mini-pill warn"><i class="fa-solid fa-play"></i> Run off</span>`);
-          }
-
-          return `
-            <div class="moderation-row">
-              <div>
-                <strong>Session ${escapeHtml(session.sessionId)}</strong>
-                <div class="row-meta">
-                  ${meta.join("")}
-                </div>
-              </div>
-              <div class="row-actions">
-                <button class="tiny-btn dark" type="button" data-action="open-editor" data-link="${escapeHtml(session.shareLink)}">Open Room</button>
-                <button class="tiny-btn dark" type="button" data-action="spectate" data-session="${escapeHtml(session.sessionId)}">Spectate</button>
-                <button class="tiny-btn green" type="button" data-action="freeze-toggle" data-session="${escapeHtml(session.sessionId)}">${session.paused ? "Resume Room" : "Freeze Session"}</button>
-                <button class="tiny-btn green" type="button" data-action="lock-toggle" data-session="${escapeHtml(session.sessionId)}">${session.roomLocked ? "Unlock Room" : "Lock Room"}</button>
-                <button class="tiny-btn red" type="button" data-action="regenerate-link" data-session="${escapeHtml(session.sessionId)}">Regenerate Link</button>
-                <button class="tiny-btn red" type="button" data-action="end-session" data-session="${escapeHtml(session.sessionId)}">End Session</button>
-              </div>
-            </div>
-          `;
-        }).join("");
+        body.innerHTML = items.slice(0,12).map(item=>`
+          <tr>
+            <td><div class="cell-main">${escapeHtml(item.title)}</div></td>
+            <td class="cell-sub">${escapeHtml(item.detail)}</td>
+            <td class="cell-sub">${escapeHtml(item.user||item.source||'system')}</td>
+            <td class="cell-sub">${formatRelativeTime(item.ts)}</td>
+          </tr>`).join('');
       }
 
-      function renderActivity(items) {
-        if (!items.length) {
-          activityList.innerHTML = `
-            <div class="log-item">
-              <div class="log-top">
-                <strong>No recent admin activity yet</strong>
-                <time>now</time>
-              </div>
-              <p>Activity will appear here as sessions are created, moderated, or updated.</p>
-            </div>
-          `;
+      /* ── render activity log feed ── */
+      function renderActivityFeed(items) {
+        const el = $('activityList');
+        if (!el) return;
+        if (!items||!items.length) {
+          el.innerHTML='<div class="log-item"><div class="log-top"><strong>No recent activity yet</strong><time>now</time></div><p>Activity will appear as sessions are created, moderated, or updated.</p></div>';
           return;
         }
-
-        activityList.innerHTML = items.map((item) => `
+        el.innerHTML = items.slice(0,6).map(item=>`
           <div class="log-item">
             <div class="log-top">
               <strong>${escapeHtml(item.title)}</strong>
               <time>${formatRelativeTime(item.ts)}</time>
             </div>
             <p>${escapeHtml(item.detail)}</p>
-          </div>
-        `).join("");
+          </div>`).join('');
       }
 
-      function activateAdminTab(tabName) {
-        document.querySelectorAll('.sidebar-link[data-tab]').forEach((link) => {
-          link.classList.toggle('active', link.dataset.tab === tabName);
-        });
-        document.querySelectorAll('.tab-panel').forEach((panel) => {
-          panel.classList.toggle('active', panel.id === `tab-${tabName}`);
-        });
-      }
-
-      function renderSessionsTable(sessions) {
-        const body = document.getElementById('sessionsTableBody');
-        if (!body) return;
-        if (!sessions || !sessions.length) {
-          body.innerHTML = `<tr><td colspan="4">No sessions available.</td></tr>`;
+      /* ── render moderation feed ── */
+      function renderModerationFeed(sessions) {
+        const el = $('moderationFeed');
+        if (!el) return;
+        const items = (sessions||[]).filter(s=>s.flaggedParticipants||s.pendingJoinCount||s.roomLocked||s.paused);
+        if (!items.length) {
+          el.innerHTML='<div class="log-item"><div class="log-top"><strong>Queue is clear</strong><time>now</time></div><p>No sessions currently need moderation attention.</p></div>';
           return;
         }
-        body.innerHTML = sessions.slice(0, 8).map((session) => {
-          const status = session.roomLocked ? '<span class="status-pill danger">Locked</span>' : '<span class="status-pill online">Active</span>';
-          return `
-            <tr>
-              <td>${escapeHtml(session.sessionId)}</td>
-              <td>${escapeHtml(String(session.participantCount || 0))}</td>
-              <td>${escapeHtml(session.shareLink || '—')}</td>
-              <td>${status}</td>
-            </tr>
-          `;
+        el.innerHTML = items.slice(0,5).map(s=>{
+          const chips=[];
+          if(s.pendingJoinCount) chips.push(`<span class="chip amber">${s.pendingJoinCount} pending joins</span>`);
+          if(s.flaggedParticipants) chips.push(`<span class="chip red">${s.flaggedParticipants} flagged</span>`);
+          if(s.roomLocked) chips.push('<span class="chip amber">Locked</span>');
+          if(s.paused) chips.push('<span class="chip red">Paused</span>');
+          return `<div class="log-item">
+            <div class="log-top"><strong>Session ${escapeHtml(s.sessionId)}</strong><time>${s.participantCount||0} participants</time></div>
+            <div style="margin-top:4px">${chips.join(' ')}</div>
+          </div>`;
         }).join('');
       }
 
-      function renderActivityTable(items) {
-        const body = document.getElementById('activityTableBody');
-        if (!body) return;
-        if (!items || !items.length) {
-          body.innerHTML = `<tr><td colspan="3">No activity found.</td></tr>`;
+      /* ── render moderation queue rows ── */
+      function renderModerationGrid(sessions) {
+        const el = $('moderationGrid');
+        if (!el) return;
+        if (!sessions||!sessions.length) {
+          el.innerHTML='<div class="mod-row"><div><strong>No sessions need attention</strong><div class="mod-meta"><span class="chip green"><i class="fa-solid fa-check"></i> Queue clear</span></div></div></div>';
           return;
         }
-        body.innerHTML = items.slice(0, 8).map((item) => `
-          <tr>
-            <td>${escapeHtml(item.title)}</td>
-            <td>${escapeHtml(item.detail)}</td>
-            <td>${escapeHtml(formatRelativeTime(item.ts))}</td>
-          </tr>
-        `).join('');
+        el.innerHTML = sessions.slice(0,6).map(s=>{
+          const meta=[];
+          meta.push(`<span class="chip"><i class="fa-solid fa-users"></i> ${s.participantCount} participants</span>`);
+          if(s.pendingJoinCount) meta.push(`<span class="chip amber"><i class="fa-solid fa-user-plus"></i> ${s.pendingJoinCount} pending</span>`);
+          if(s.flaggedParticipants) meta.push(`<span class="chip red"><i class="fa-solid fa-flag"></i> ${s.flaggedParticipants} flagged</span>`);
+          if(s.roomLocked) meta.push('<span class="chip amber"><i class="fa-solid fa-lock"></i> Locked</span>');
+          if(s.paused) meta.push('<span class="chip red"><i class="fa-solid fa-pause"></i> Paused</span>');
+          return `<div class="mod-row">
+            <div>
+              <strong>Session ${escapeHtml(s.sessionId)}</strong>
+              <div class="mod-meta">${meta.join('')}</div>
+            </div>
+            <div class="mod-actions">
+              <button class="tbl-btn dark" data-action="spectate" data-session="${escapeHtml(s.sessionId)}">Spectate</button>
+              <button class="tbl-btn ${s.paused?'view':'warn'}" data-action="freeze-toggle" data-session="${escapeHtml(s.sessionId)}">${s.paused?'Resume':'Freeze'}</button>
+              <button class="tbl-btn ${s.roomLocked?'view':'ghost'}" data-action="lock-toggle" data-session="${escapeHtml(s.sessionId)}">${s.roomLocked?'Unlock':'Lock'}</button>
+              <button class="tbl-btn danger" data-action="end-session" data-session="${escapeHtml(s.sessionId)}">End</button>
+            </div>
+          </div>`;
+        }).join('');
       }
 
-      function updateAdminTableData(overview, sessions, activity) {
-        const tableActiveSessions = document.getElementById('tableActiveSessions');
-        const tableLiveSessions = document.getElementById('tableLiveSessions');
-        const tableModerationItems = document.getElementById('tableModerationItems');
-        const tableCapacityLoad = document.getElementById('tableCapacityLoad');
-        if (tableActiveSessions) tableActiveSessions.textContent = formatCompactCount(overview.stats.activeUsers);
-        if (tableLiveSessions) tableLiveSessions.textContent = formatCompactCount(overview.stats.collaboratingUsers || 0);
-        if (tableModerationItems) tableModerationItems.textContent = `${overview.stats.moderationItems}`;
-        if (tableCapacityLoad) tableCapacityLoad.textContent = `${overview.stats.capacityLoad}%`;
-        renderSessionsTable(sessions || []);
-        renderActivityTable(activity || []);
-      }
-
-      function initializeAdminTabs() {
-        document.querySelectorAll('.sidebar-link[data-tab]').forEach((button) => {
-          button.addEventListener('click', () => activateAdminTab(button.dataset.tab));
-        });
-        activateAdminTab('overview');
-      }
-
+      /* ── load all admin data ── */
       async function loadAdminData() {
-        if (!isAdminUnlocked()) return;
+        if (!isUnlocked()) return;
         try {
-          setStatus("Refreshing live admin data...");
-          const [overviewRes, sessionsRes, activityRes] = await Promise.all([
-            fetch("/admin/api/overview"),
-            fetch("/admin/api/sessions"),
-            fetch("/admin/api/activity"),
+          setStatus('Refreshing live admin data…');
+          const [ovRes, sesRes, actRes] = await Promise.all([
+            fetch('/admin/api/overview'),
+            fetch('/admin/api/sessions'),
+            fetch('/admin/api/activity'),
           ]);
+          if ([ovRes.status,sesRes.status,actRes.status].includes(401)) { relockAdmin('Your admin session expired. Please sign in again.'); return; }
+          if (!ovRes.ok||!sesRes.ok||!actRes.ok) throw new Error('Failed to load admin data.');
 
-          if ([overviewRes.status, sessionsRes.status, activityRes.status].includes(401)) {
-            relockAdminPanel("Your admin session expired. Enter the PIN again.");
-            setStatus("Admin session expired.");
-            return;
-          }
+          const ov  = await ovRes.json();
+          const ses = await sesRes.json();
+          const act = await actRes.json();
 
-          if (!overviewRes.ok || !sessionsRes.ok || !activityRes.ok) {
-            throw new Error("Failed to load admin data.");
-          }
+          // health pill
+          $('platformHealthPill').innerHTML = `<span class="live-dot"></span> ${ov.health.ok?'Stable':'Attention needed'}`;
 
-          const overview = await overviewRes.json();
-          const sessionsPayload = await sessionsRes.json();
-          const activityPayload = await activityRes.json();
+          // sidebar health
+          $('healthSessionsValue').textContent = ov.health.sessions;
+          $('healthSessionsText').textContent  = `${ov.health.sessions} room${ov.health.sessions===1?'':'s'} active.`;
+          $('healthSocketsValue').textContent  = ov.health.connectedSockets;
+          $('healthSocketsText').textContent   = `${ov.health.connectedSockets} connections.`;
+          $('healthQueueValue').textContent    = ov.stats.moderationItems;
+          $('healthQueueText').textContent     = ov.stats.moderationItems ? `${ov.stats.moderationItems} need review.` : 'Queue is clear.';
 
-          healthPill.innerHTML = `<i class="fa-solid fa-signal"></i> ${overview.health.ok ? "Stable" : "Attention needed"}`;
-          healthSessionsValue.textContent = `${overview.health.sessions}`;
-          healthSessionsText.textContent = `${overview.health.sessions} collaboration room${overview.health.sessions === 1 ? "" : "s"} currently active.`;
-          healthSocketsValue.textContent = `${overview.health.connectedSockets}`;
-          healthSocketsText.textContent = `${overview.health.connectedSockets} realtime connection${overview.health.connectedSockets === 1 ? "" : "s"} attached to the server.`;
-          healthQueueValue.textContent = `${overview.stats.moderationItems}`;
-          healthQueueText.textContent = overview.stats.moderationItems
-            ? `${overview.stats.moderationItems} moderation item${overview.stats.moderationItems === 1 ? "" : "s"} need review.`
-            : "No moderation items need review right now.";
+          // stat cards
+          $('activeUsersValue').textContent  = formatCompact(ov.stats.activeUsers);
+          $('liveSessionsValue').textContent = formatCompact(ov.stats.collaboratingUsers||0);
+          $('moderationValue').textContent   = `${ov.stats.moderationItems}`;
+          $('capacityValue').textContent     = `${ov.stats.capacityLoad}%`;
+          $('liveSessionsTrend').textContent = `${ov.stats.liveSessions} room${ov.stats.liveSessions===1?'':'s'}`;
+          $('moderationPill').innerHTML = `<i class="fa-solid fa-list-check"></i> ${ov.stats.moderationItems} item${ov.stats.moderationItems===1?'':'s'}`;
 
-          activeUsersValue.textContent = formatCompactCount(overview.stats.activeUsers);
-          liveSessionsValue.textContent = formatCompactCount(overview.stats.collaboratingUsers || 0);
-          moderationValue.textContent = `${overview.stats.moderationItems}`;
-          capacityValue.textContent = `${overview.stats.capacityLoad}%`;
-          liveSessionsTrend.textContent = `${overview.stats.liveSessions} room${overview.stats.liveSessions === 1 ? "" : "s"}`;
-          moderationPill.innerHTML = `<i class="fa-solid fa-list-check"></i> ${overview.stats.moderationItems} live item${overview.stats.moderationItems === 1 ? "" : "s"}`;
+          // overview table
+          if ($('tableActiveSessions')) $('tableActiveSessions').textContent = formatCompact(ov.stats.activeUsers);
+          if ($('tableLiveSessions'))   $('tableLiveSessions').textContent   = formatCompact(ov.stats.collaboratingUsers||0);
+          if ($('tableModerationItems'))$('tableModerationItems').textContent= `${ov.stats.moderationItems}`;
+          if ($('tableCapacityLoad'))   $('tableCapacityLoad').textContent   = `${ov.stats.capacityLoad}%`;
 
-          const tableActiveSessions = document.getElementById("tableActiveSessions");
-          const tableLiveSessions = document.getElementById("tableLiveSessions");
-          const tableModerationItems = document.getElementById("tableModerationItems");
-          const tableCapacityLoad = document.getElementById("tableCapacityLoad");
-          if (tableActiveSessions) tableActiveSessions.textContent = formatCompactCount(overview.stats.activeUsers);
-          if (tableLiveSessions) tableLiveSessions.textContent = formatCompactCount(overview.stats.collaboratingUsers || 0);
-          if (tableModerationItems) tableModerationItems.textContent = `${overview.stats.moderationItems}`;
-          if (tableCapacityLoad) tableCapacityLoad.textContent = `${overview.stats.capacityLoad}%`;
+          // sidebar queue
+          $('queueApprovalsValue').textContent = `${ov.queue.pendingJoinApprovals}`;
+          $('queueApprovalsText').textContent  = `${ov.queue.pendingJoinApprovals} pending approval${ov.queue.pendingJoinApprovals===1?'':'s'}.`;
+          $('queueFlaggedValue').textContent   = `${ov.queue.flaggedParticipants}`;
+          $('queueFlaggedText').textContent    = `${ov.queue.flaggedParticipants} flag${ov.queue.flaggedParticipants===1?'':'s'} active.`;
+          $('queueLockedValue').textContent    = `${ov.queue.lockedRooms}`;
+          $('queueLockedText').textContent     = `${ov.queue.lockedRooms} room${ov.queue.lockedRooms===1?'':'s'} locked.`;
+          $('queuePausedValue').textContent    = `${ov.queue.pausedRooms}`;
+          $('queuePausedText').textContent     = `${ov.queue.pausedRooms} room${ov.queue.pausedRooms===1?'':'s'} paused.`;
+          $('queuePublishedValue').textContent = `${ov.stats.publishedProjects||0}`;
+          $('queuePublishedText').textContent  = `${ov.stats.publishedProjects||0} project${Number(ov.stats.publishedProjects||0)===1?'':'s'} published.`;
 
-          queueApprovalsValue.textContent = `${overview.queue.pendingJoinApprovals}`;
-          queueApprovalsText.textContent = `${overview.queue.pendingJoinApprovals} pending approval request${overview.queue.pendingJoinApprovals === 1 ? "" : "s"} across all rooms.`;
-          queueFlaggedValue.textContent = `${overview.queue.flaggedParticipants}`;
-          queueFlaggedText.textContent = `${overview.queue.flaggedParticipants} participant flag${overview.queue.flaggedParticipants === 1 ? "" : "s"} currently active.`;
-          queueLockedValue.textContent = `${overview.queue.lockedRooms}`;
-          queueLockedText.textContent = `${overview.queue.lockedRooms} room${overview.queue.lockedRooms === 1 ? "" : "s"} currently locked.`;
-          queuePausedValue.textContent = `${overview.queue.pausedRooms}`;
-          queuePausedText.textContent = `${overview.queue.pausedRooms} room${overview.queue.pausedRooms === 1 ? "" : "s"} currently paused.`;
-          queuePublishedValue.textContent = `${overview.stats.publishedProjects || 0}`;
-          queuePublishedText.textContent = `${overview.stats.publishedProjects || 0} published project${Number(overview.stats.publishedProjects || 0) === 1 ? "" : "s"} currently stored on the server.`;
+          // health socket mirror
+          if ($('healthSocketsValue2')) $('healthSocketsValue2').textContent = ov.health.connectedSockets;
 
-          updateAdminTableData(overview, sessionsPayload.sessions, activityPayload.activity || []);
-          renderModerationSessions((sessionsPayload.sessions || []).slice(0, 6));
-          renderActivity(activityPayload.activity || []);
-          setStatus(`Admin panel live. Last refresh ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`);
-        } catch (error) {
-          setStatus("Could not load live admin data. Check that the server is running.");
-          moderationGrid.innerHTML = `
-            <div class="moderation-row">
-              <div>
-                <strong>Admin data could not load</strong>
-                <div class="row-meta">
-                  <span class="mini-pill danger"><i class="fa-solid fa-wifi"></i> Server unavailable</span>
-                </div>
+          // tables
+          renderSessionsTable(ses.sessions||[]);
+          renderActivityTable(act.activity||[]);
+          renderActivityFeed(act.activity||[]);
+          renderModerationFeed(ses.sessions||[]);
+          renderModerationGrid(ses.sessions||[]);
+
+          setStatus(`Admin panel live. Last refresh ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}.`);
+        } catch(err) {
+          setStatus('Could not load live admin data. Check the server is running.');
+        }
+      }
+
+      /* ── post admin action ── */
+      async function postAdminAction(url, successMsg) {
+        if (!isUnlocked()) throw new Error('Unlock the admin panel first.');
+        const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        const data = await res.json().catch(()=>({}));
+        if (res.status===401) { relockAdmin('Your admin session expired.'); throw new Error('Expired.'); }
+        if (!res.ok||data.ok===false) throw new Error(data.error||'Action failed.');
+        setStatus(successMsg);
+        return data;
+      }
+
+      /* ── button delegation ── */
+      document.addEventListener('click', async e=>{
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action=btn.dataset.action, sid=btn.dataset.session||'', link=btn.dataset.link||'';
+        try {
+          if (action==='open-editor') { window.location.href=link||'frontend.html'; return; }
+          if (action==='spectate')    { await openSpectateView(sid); return; }
+          if (action==='freeze-toggle')    await postAdminAction(`/admin/api/session/${encodeURIComponent(sid)}/freeze-toggle`,`Updated collaboration state for ${sid}.`);
+          else if (action==='lock-toggle') await postAdminAction(`/admin/api/session/${encodeURIComponent(sid)}/lock-toggle`,`Updated lock for ${sid}.`);
+          else if (action==='regenerate-link') {
+            const p = await postAdminAction(`/admin/api/session/${encodeURIComponent(sid)}/regenerate-link`,`Link regenerated for ${sid}.`);
+            if (p.shareLink) await navigator.clipboard.writeText(p.shareLink).catch(()=>{});
+          } else if (action==='end-session') await postAdminAction(`/admin/api/session/${encodeURIComponent(sid)}/end`,`Ended session ${sid}.`);
+          await loadAdminData();
+        } catch(err) { setStatus(err.message||'Admin action failed.'); }
+      });
+
+      /* ── spectate ── */
+      async function openSpectateView(sessionId) {
+        if (!isUnlocked()) return;
+        const res = await fetch(`/admin/api/session/${encodeURIComponent(sessionId)}`);
+        const data = await res.json().catch(()=>({}));
+        if (res.status===401) { relockAdmin('Session expired.'); return; }
+        if (!res.ok||!data.session) throw new Error(data.error||'Could not spectate.');
+        currentSpectateSessionId=sessionId;
+        renderSpectateSession(data.session);
+        $('spectateOverlay').classList.remove('hidden');
+      }
+      function closeSpectateView() {
+        currentSpectateSessionId=''; currentSpectateData=null;
+        $('spectateOverlay').classList.add('hidden');
+      }
+      function renderSpectateSession(s) {
+        const prev = $('spectateFileSelect').value;
+        currentSpectateData=s;
+        $('spectateSessionId').textContent=s.sessionId||'--';
+        $('spectateHost').textContent=s.hostName||'--';
+        $('spectateParticipantCount').textContent=`${s.participantCount||0}`;
+        $('spectateActiveFile').textContent=s.activeFileName||'No active file';
+        $('spectateChatCount').textContent=`${s.chat?.groupCount||0} group · ${s.chat?.privateThreadCount||0} private`;
+        renderSpectatePreview(s);
+        $('spectateParticipants').innerHTML=(s.participants||[]).map(p=>{
+          const tags=[`<span class="spectate-tag"><i class="fa-solid fa-user"></i> ${escapeHtml(p.role||'participant')}</span>`];
+          if(p.currentFile) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-file-lines"></i> ${escapeHtml(p.currentFile)}</span>`);
+          if(p.mutedChat)   tags.push(`<span class="spectate-tag"><i class="fa-solid fa-volume-xmark"></i> Muted</span>`);
+          if(p.frozenEditing) tags.push(`<span class="spectate-tag"><i class="fa-solid fa-snowflake"></i> Frozen</span>`);
+          if(p.priority)    tags.push(`<span class="spectate-tag"><i class="fa-solid fa-star"></i> Priority</span>`);
+          return `<div class="spectate-participant">
+            <div class="spectate-participant-top">
+              <div class="spectate-name">
+                <span class="spectate-color-dot" style="background:${escapeHtml(p.theme||'#4CAF50')}"></span>
+                ${escapeHtml(p.name)}
               </div>
             </div>
-          `;
-          activityList.innerHTML = "";
-        }
+            <div class="spectate-tags">${tags.join('')}</div>
+          </div>`;
+        }).join('')||'<div class="spectate-empty">No participants.</div>';
+        const opts=(s.files||[]).map(f=>`<option value="${escapeHtml(f.name)}">${escapeHtml(f.name)}</option>`).join('');
+        $('spectateFileSelect').innerHTML=opts||'<option value="">No files</option>';
+        const next=(s.files||[]).some(f=>f.name===prev)?prev:(s.activeFileName||((s.files||[])[0]?.name||''));
+        $('spectateFileSelect').value=next;
+        renderSpectateCode();
       }
-
-      async function postAdminAction(url, successMessage) {
-        if (!isAdminUnlocked()) {
-          throw new Error("Unlock the admin panel first.");
-        }
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: "{}",
+      function renderSpectateCode() {
+        if (!currentSpectateData) return;
+        const name=$('spectateFileSelect').value;
+        const file=(currentSpectateData.files||[]).find(f=>f.name===name);
+        if (!file) { $('spectateFileMeta').textContent='No file selected.'; $('spectateCodeView').textContent=''; return; }
+        $('spectateFileMeta').textContent=`${file.name} · ${String(file.type||'file').toUpperCase()} · ${String(file.content||'').length} chars`;
+        $('spectateCodeView').textContent=String(file.content||'');
+      }
+      function renderSpectatePreview(s) {
+        const files=Array.isArray(s?.files)?s.files:[];
+        const af=s?.activeFileName||'';
+        const html=files.find(f=>f.name===af&&String(f.type||'').toLowerCase()==='html')||files.find(f=>String(f.type||'').toLowerCase()==='html');
+        if (!html) { $('spectatePreviewTitle').textContent='No HTML file'; $('spectatePreviewFrame').srcdoc=''; return; }
+        let src=String(html.content||'');
+        src=src.replace(/<link\b([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi,(full,a,href)=>{
+          const f=files.find(x=>x.name===href||x.name.split('/').pop()===href.split('/').pop());
+          return f?`<style>${f.content}</style>`:full;
         });
-        const payload = await response.json().catch(() => ({}));
-        if (response.status === 401) {
-          relockAdminPanel("Your admin session expired. Enter the PIN again.");
-          throw new Error("Admin session expired.");
-        }
-        if (!response.ok || payload.ok === false) {
-          throw new Error(payload.error || "Action failed.");
-        }
-        setStatus(successMessage);
-        return payload;
+        src=src.replace(/<script\b([^>]*?)src=["']([^"']+)["']([^>]*)><\/script>/gi,(full,a,src2)=>{
+          const f=files.find(x=>x.name===src2||x.name.split('/').pop()===src2.split('/').pop());
+          return f?`<script>${f.content}<\/script>`:full;
+        });
+        $('spectatePreviewTitle').textContent=html.name;
+        $('spectatePreviewFrame').srcdoc=src;
       }
+      $('spectateCloseBtn').addEventListener('click', closeSpectateView);
+      $('spectateOverlay').addEventListener('click', e=>{ if(e.target===$('spectateOverlay')) closeSpectateView(); });
+      $('spectateFileSelect').addEventListener('change', renderSpectateCode);
 
-      document.addEventListener("click", async (event) => {
-        const button = event.target.closest("[data-action]");
-        if (!button) return;
-
-        const action = button.dataset.action;
-        const sessionId = button.dataset.session || "";
-        const link = button.dataset.link || "";
-
-        try {
-          if (action === "open-editor") {
-            window.location.href = link || "frontend.html";
-            return;
-          }
-          if (action === "spectate") {
-            await openSpectateView(sessionId);
-            setStatus(`Spectating session ${sessionId}.`);
-            return;
-          }
-          if (action === "freeze-toggle") {
-            await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/freeze-toggle`, `Updated collaboration state for ${sessionId}.`);
-          } else if (action === "lock-toggle") {
-            await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/lock-toggle`, `Updated room lock for ${sessionId}.`);
-          } else if (action === "regenerate-link") {
-            const payload = await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/regenerate-link`, `Invite link regenerated for ${sessionId}.`);
-            if (payload.shareLink) {
-              await navigator.clipboard.writeText(payload.shareLink).catch(() => {});
-            }
-          } else if (action === "end-session") {
-            await postAdminAction(`/admin/api/session/${encodeURIComponent(sessionId)}/end`, `Ended session ${sessionId}.`);
-          }
-          await loadAdminData();
-        } catch (error) {
-          setStatus(error.message || "Admin action failed.");
-        }
-      });
-
-      [adminUsernameInput, adminPasswordInput].forEach((input) => {
-        if (!input) return;
-        input.addEventListener("input", clearPinError);
-      });
-
-      adminPinForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const username = String(adminUsernameInput?.value || "").trim();
-        const password = String(adminPasswordInput?.value || "");
-        if (!username || !password) {
-          triggerPinError();
-          return;
-        }
-        adminPinMessage.textContent = "Checking credentials...";
-        try {
-          await authenticateAdminPin(username, password);
-          clearPinError();
-          unlockAdminPanel();
-          return;
-        } catch (_error) {
-          triggerPinError();
-        }
-      });
-
-      spectateCloseBtn.addEventListener("click", closeSpectateView);
-      spectateOverlay.addEventListener("click", (event) => {
-        if (event.target === spectateOverlay) {
-          closeSpectateView();
-        }
-      });
-      spectateFileSelect.addEventListener("change", renderSpectateCode);
-
-      initializeAdminTabs();
-      setAdminLockedState(!isAdminUnlocked());
-      if (!isAdminUnlocked()) {
-        focusFirstEmptyPin();
-      }
-
+      /* ── socket ── */
       if (adminSocket) {
-        adminSocket.on("connect", () => {
-          if (isAdminUnlocked()) {
-            setStatus("Admin panel connected for live updates.");
-            scheduleAdminRefresh("socket connect");
-          }
-        });
-
-        adminSocket.on("admin:update", (payload) => {
-          if (currentSpectateSessionId && isAdminUnlocked()) {
-            openSpectateView(currentSpectateSessionId).catch(() => {});
-          }
-          scheduleAdminRefresh(payload?.reason || "live update");
-        });
-
-        adminSocket.on("disconnect", () => {
-          if (isAdminUnlocked()) {
-            setStatus("Admin live updates disconnected. Falling back to background refresh.");
-          }
-        });
+        adminSocket.on('connect',()=>{ if(isUnlocked()){setStatus('Admin panel connected for live updates.'); loadAdminData();} });
+        adminSocket.on('admin:update',payload=>{ if(currentSpectateSessionId&&isUnlocked()) openSpectateView(currentSpectateSessionId).catch(()=>{}); scheduleRefresh(payload?.reason||'live update'); });
+        adminSocket.on('disconnect',()=>{ if(isUnlocked()) setStatus('Live updates disconnected. Falling back to polling.'); });
+      }
+      function scheduleRefresh(reason='live update') {
+        if (!isUnlocked()) return;
+        clearTimeout(refreshTimer);
+        refreshTimer=setTimeout(()=>{ setStatus(`Refreshing after ${reason}…`); loadAdminData(); }, 200);
       }
 
-      if (isAdminUnlocked()) {
-        loadAdminData();
-      }
-      setInterval(() => {
-        if (isAdminUnlocked()) {
-          loadAdminData();
-        }
-      }, 30000);
+      /* ── init ── */
+      setLocked(!isUnlocked());
+      if (!isUnlocked()) (adminUsernameInput||adminPasswordInput)?.focus();
+      if (isUnlocked()) loadAdminData();
+      setInterval(()=>{ if(isUnlocked()) loadAdminData(); }, 30000);
     </script>
   </body>
 </html>
-
-
-
-
